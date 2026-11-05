@@ -1,5 +1,5 @@
 [Unit]
-Description=Signal Atlas ingestion scheduler (08:00 and 16:00 America/New_York)
+Description=Market Trends → Theses ingestion scheduler (08:00 and 16:00 America/New_York)
 After=network-online.target
 
 [Service]

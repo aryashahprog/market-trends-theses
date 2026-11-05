@@ -6,7 +6,7 @@ LABEL = {"primary": "Primary source", "corroborated": "Independent corroboration
 
 
 def edition_markdown(snap: dict[str, Any]) -> str:
-    out = [f"# Signal Atlas — Edition {snap['edition_date']}", "",
+    out = [f"# Market Trends → Theses — Edition {snap['edition_date']}", "",
            f"_Generated {snap['generated_at']} UTC. Ranking points order the feed; they are not probabilities "
            "or recommendations._", "", f"## {snap['note']['headline']}", "", snap["note"]["summary"], ""]
     for s in snap["signals"]:

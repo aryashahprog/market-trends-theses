@@ -29,7 +29,7 @@ def get_settings() -> Settings:
         admin_token=token,
         http_user_agent=os.environ.get(
             "SIGNAL_ATLAS_USER_AGENT",
-            "SignalAtlasBot/1.0 (+public-source research; respects robots.txt)",
+            "MarketTrendsThesesBot/1.0 (+public-source research; respects robots.txt)",
         ),
         sec_user_agent=os.environ.get("SEC_USER_AGENT", ""),
         manual_refresh_min_interval_s=int(os.environ.get("SIGNAL_ATLAS_REFRESH_COOLDOWN_S", "600")),

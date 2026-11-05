@@ -1,7 +1,7 @@
 [project]
 name = "signal-atlas"
 version = "0.1.0"
-description = "Signal Atlas: a dated, evidence-backed feed of emerging market signals and working investment theses."
+description = "Market Trends → Theses: a dated, evidence-backed feed of emerging market signals and working investment theses."
 requires-python = ">=3.10"
 
 [tool.pytest.ini_options]

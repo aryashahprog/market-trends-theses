@@ -70,7 +70,7 @@ def test_fetcher_respects_robots_paywalls_and_cache(tmp_path):
             return httpx.Response(403)
         return httpx.Response(200, text="ok", headers={"etag": '"v1"'})
 
-    f = Fetcher(conn, "SignalAtlasTest", transport=httpx.MockTransport(handler), sleep=lambda s: None)
+    f = Fetcher(conn, "MarketTrendsThesesTest", transport=httpx.MockTransport(handler), sleep=lambda s: None)
     with pytest.raises(FetchError, match="robots"):
         f.get("https://x.example/private/a")
     with pytest.raises(FetchError, match="not bypassed"):

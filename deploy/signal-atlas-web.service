@@ -1,5 +1,5 @@
 [Unit]
-Description=Signal Atlas web/API
+Description=Market Trends → Theses web/API
 After=network-online.target
 
 [Service]

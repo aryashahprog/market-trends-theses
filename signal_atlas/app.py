@@ -48,7 +48,7 @@ def create_app(settings: Settings | None = None,
         if sched:
             sched.shutdown(wait=False)
 
-    app = FastAPI(title="Signal Atlas", docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan)
+    app = FastAPI(title="Market Trends → Theses", docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan)
 
     @app.middleware("http")
     async def security_headers(request: Request, call_next: Any) -> Any:

@@ -77,7 +77,7 @@ def test_public_api_and_security_headers(tmp_path):
         assert c.get("/api/edition", params={"date": "1999-01-01"}).status_code == 404
         assert c.get("/api/series/poc:composite").status_code == 404  # never fabricated before ingestion
         assert c.get("/").status_code == 200
-        assert "Signal Atlas" in c.get("/").text
+        assert "Market Trends → Theses" in c.get("/").text
 
 
 def test_manual_refresh_auth_and_rate_limit(tmp_path):

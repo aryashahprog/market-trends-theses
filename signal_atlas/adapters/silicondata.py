@@ -36,7 +36,7 @@ class SiliconDataAdapter:
             res.series.append(SeriesUpdate(
                 id=f"sd:{code}", label=f"Silicon Data {CODES[code]} ({code})", unit="USD",
                 source_url=PAGE, attribution="Source: Silicon Data public index page",
-                method="Value displayed on public page, observed by Signal Atlas once per retrieval day",
+                method="Value displayed on public page, observed by Market Trends → Theses once per retrieval day",
                 points=[(day, value)]))
         summary = "; ".join(f"{CODES[c]} ${v:.2f}" for c, v in found.items())
         res.items.append(RawItem(url=PAGE, title=f"Silicon Data index values observed {day}",

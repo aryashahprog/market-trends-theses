@@ -1,4 +1,4 @@
-# Signal Atlas
+# Market Trends → Theses
 
 A dated, evidence-backed feed of emerging market signals. Each signal is a working investment thesis with what changed,
 why now, the market indication (an economic implication, never a buy/sell call), the startup opportunity, the corporate

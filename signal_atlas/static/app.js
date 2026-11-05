@@ -142,7 +142,7 @@
     $("#heroHeadline").textContent = ed.note.headline;
     $("#heroSummary").textContent = ed.note.summary;
     $("#exportLink").href = `${STATIC ? "" : "/"}api/export/${ed.edition_date}.md`;
-    document.title = `Signal Atlas — Edition ${fmtDay(ed.edition_date)}`;
+    document.title = `Market Trends → Theses — Edition ${fmtDay(ed.edition_date)}`;
     const top = ed.signals[0], lead = $("#leadSignal"); lead.replaceChildren();
     if (!top) return;
     const chartHost = h("div");
@@ -390,5 +390,5 @@
     await loadStatus();
     await route();
     setInterval(loadStatus, 60000); // UI status display only; ingestion runs server-side on its own schedule
-  })().catch((err) => { $("#heroHeadline").textContent = "Signal Atlas is temporarily unavailable"; $("#heroSummary").textContent = String(err.message || err); });
+  })().catch((err) => { $("#heroHeadline").textContent = "Market Trends → Theses is temporarily unavailable"; $("#heroSummary").textContent = String(err.message || err); });
 })();

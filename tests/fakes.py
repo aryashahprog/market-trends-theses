@@ -11,7 +11,7 @@ from signal_atlas.fetcher import Fetcher, FetchError
 
 
 def settings_for(tmp: Path, token: str | None = "t" * 32) -> Settings:
-    return Settings(db_path=tmp / "test.db", admin_token=token, http_user_agent="SignalAtlasTest/1.0",
+    return Settings(db_path=tmp / "test.db", admin_token=token, http_user_agent="MarketTrendsThesesTest/1.0",
                     sec_user_agent="", manual_refresh_min_interval_s=600, stale_grace_minutes=90,
                     run_scheduler_in_web=False)
 
