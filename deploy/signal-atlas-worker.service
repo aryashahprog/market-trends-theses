@@ -1,0 +1,12 @@
+[Unit]
+Description=Signal Atlas ingestion scheduler (08:00 and 16:00 America/New_York)
+After=network-online.target
+
+[Service]
+WorkingDirectory=/opt/signal-atlas
+EnvironmentFile=/etc/signal-atlas.env
+ExecStart=/opt/signal-atlas/.venv/bin/python -m signal_atlas.worker
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,7 @@
+# Build plan (internal)
+Stack: Python3.10 FastAPI + SQLite(WAL) + APScheduler CronTrigger(hour=8,16, tz America/New_York) in a worker process (also `python -m signal_atlas.cli ingest` for cron). DB lease lock to avoid overlap. Vanilla HTML/CSS/JS served by FastAPI, self-hosted OFL fonts. Inline SVG charts only from sourced series (Price of Compute API, attribution).
+Adapters: milkroad_sitemap, marketwatch_rss (Dow Jones public RSS), sec_efts, priceofcompute_api, silicondata_page, ramp_ai_index. Cache+ETag, per-host rate limit, robots check, sanitize untrusted text, excerpt<=280 chars, provenance: event_date, published_at, first_seen_at, retrieved_at, source_type, adapter.
+Docs table unique canonical_url; revisions on content_hash change; clusters via title token Jaccard + entities. Leads inbox (unreviewed) vs published signals (need primary evidence). Editions snapshot per run/day. Ranking components 0-5 (novelty, evidence, relevance, impact) labelled not probabilities.
+Admin refresh: POST /api/admin/refresh Bearer ADMIN_TOKEN env, hmac.compare_digest, rate limit; token entered per use, never stored in bundle.
+Seed signals S1 compute scarcity vs token deflation; S2 enterprise AI demand broadening (Anthropic S-1 + Ramp); S3 seats->credits/outcome pricing (HubSpot, EXL); S4 memory/substrate shortage (Intel 10-Q); S5 compute capacity as vertically integrated revenue line (SpaceX 10-Q, Galaxy); S6 private 5G industrial sites (Ericsson; low confidence).
+Neutral branding only: no personal names/affiliations anywhere. SEC UA from env SEC_USER_AGENT.

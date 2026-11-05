@@ -1,0 +1,15 @@
+services:
+  web:
+    build: { context: .., dockerfile: deploy/Dockerfile }
+    ports: ["8080:8080"]
+    env_file: [../.env]
+    volumes: [atlas-data:/data]
+    restart: unless-stopped
+  worker:
+    build: { context: .., dockerfile: deploy/Dockerfile }
+    command: ["python", "-m", "signal_atlas.worker"]
+    env_file: [../.env]
+    volumes: [atlas-data:/data]
+    restart: unless-stopped
+volumes:
+  atlas-data: {}

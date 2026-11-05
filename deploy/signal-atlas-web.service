@@ -1,0 +1,12 @@
+[Unit]
+Description=Signal Atlas web/API
+After=network-online.target
+
+[Service]
+WorkingDirectory=/opt/signal-atlas
+EnvironmentFile=/etc/signal-atlas.env
+ExecStart=/opt/signal-atlas/.venv/bin/uvicorn signal_atlas.app:create_app --factory --host 127.0.0.1 --port 8080
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
