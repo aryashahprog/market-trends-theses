@@ -432,8 +432,10 @@
       if (e.key === "c" && !typing && !e.metaKey && !e.ctrlKey) { e.preventDefault(); $("#drawerPanel .thesis button").click(); }
       if (e.key === "Tab") { // focus trap
         const f = [...$("#drawerPanel").querySelectorAll("a[href],button,summary,[tabindex='0']")].filter((x) => x.offsetParent !== null); if (!f.length) return;
-        if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f.at(-1).focus(); }
-        else if (!e.shiftKey && document.activeElement === f.at(-1)) { e.preventDefault(); f[0].focus(); }
+        const panel = $("#drawerPanel"), cur = document.activeElement;
+        if (cur === panel || !panel.contains(cur)) { e.preventDefault(); (e.shiftKey ? f.at(-1) : f[0]).focus(); }
+        else if (e.shiftKey && cur === f[0]) { e.preventDefault(); f.at(-1).focus(); }
+        else if (!e.shiftKey && cur === f.at(-1)) { e.preventDefault(); f[0].focus(); }
       }
       return;
     }
