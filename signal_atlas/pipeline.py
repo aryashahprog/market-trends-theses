@@ -353,3 +353,16 @@ def get_status(conn: sqlite3.Connection, settings: Settings, now: datetime | Non
             "snapshots": conn.execute("SELECT COUNT(*) FROM edition_snapshots").fetchone()[0],
         },
     }
+
+
+def recent_leads(conn: sqlite3.Connection, days: int, limit: int) -> list[dict[str, Any]]:
+    rows = conn.execute(
+        "SELECT d.id, d.url, d.title, d.excerpt, d.source_type, d.published_at, d.event_date, d.first_seen_at, "
+        "d.retrieved_at, d.cluster_id, s.name AS source_name, s.kind AS source_kind, "
+        "(SELECT COUNT(*) FROM documents d2 WHERE d2.cluster_id=d.cluster_id) AS cluster_size, "
+        "(SELECT GROUP_CONCAT(signal_id) FROM signal_matches m WHERE m.document_id=d.id) AS matched_signals, "
+        "(SELECT COUNT(*) FROM document_revisions r WHERE r.document_id=d.id) AS revisions "
+        "FROM documents d LEFT JOIN sources s ON s.id=d.source_id "
+        "WHERE d.origin='ingested' AND d.first_seen_at >= strftime('%Y-%m-%dT%H:%M:%SZ','now',?) "
+        "ORDER BY COALESCE(d.published_at, d.first_seen_at) DESC LIMIT ?", (f"-{days} days", limit)).fetchall()
+    return [dict(r) for r in rows]

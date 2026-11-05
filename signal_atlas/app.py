@@ -18,7 +18,7 @@ from .adapters.base import Adapter
 from .config import Settings, get_settings
 from .db import connect
 from .export import edition_markdown
-from .pipeline import get_series, get_status, latest_snapshot, list_editions, lock_held, run_pipeline
+from .pipeline import get_series, get_status, latest_snapshot, list_editions, lock_held, recent_leads, run_pipeline
 from .seed import seed_if_empty
 
 STATIC = Path(__file__).parent / "static"
@@ -106,16 +106,7 @@ def create_app(settings: Settings | None = None,
         days, limit = max(1, min(days, 30)), max(1, min(limit, 200))
         c = db()
         try:
-            rows = c.execute(
-                "SELECT d.id, d.url, d.title, d.excerpt, d.source_type, d.published_at, d.event_date, d.first_seen_at, "
-                "d.retrieved_at, d.cluster_id, s.name AS source_name, s.kind AS source_kind, "
-                "(SELECT COUNT(*) FROM documents d2 WHERE d2.cluster_id=d.cluster_id) AS cluster_size, "
-                "(SELECT GROUP_CONCAT(signal_id) FROM signal_matches m WHERE m.document_id=d.id) AS matched_signals, "
-                "(SELECT COUNT(*) FROM document_revisions r WHERE r.document_id=d.id) AS revisions "
-                "FROM documents d LEFT JOIN sources s ON s.id=d.source_id "
-                "WHERE d.origin='ingested' AND d.first_seen_at >= strftime('%Y-%m-%dT%H:%M:%SZ','now',?) "
-                "ORDER BY COALESCE(d.published_at, d.first_seen_at) DESC LIMIT ?", (f"-{days} days", limit)).fetchall()
-            return [dict(r) for r in rows]
+            return recent_leads(c, days, limit)
         finally:
             c.close()
 

@@ -6,6 +6,15 @@
   const CLAIM = { primary: "Primary", corroborated: "Corroborated", reported: "Reported" };
   const TYPE = { regulatory_filing: "Filing", podcast: "Podcast", newsletter_analysis: "Newsletter", news_brief: "News brief",
     news_headline: "Headline", pricing_dataset: "Pricing dataset", adoption_dataset: "Adoption dataset" };
+  const STATIC = document.documentElement.dataset.mode === "static";
+  const safeId = (s) => s.replace(/[^A-Za-z0-9_-]/g, "_");
+  function staticPath(p) {
+    const u = new URL(p, "http://x"), path = u.pathname;
+    if (path === "/api/edition") return `api/edition/${u.searchParams.get("date") || "latest"}.json`;
+    if (path.startsWith("/api/series/")) return `api/series/${safeId(decodeURIComponent(path.slice(12)))}.json`;
+    if (path === "/api/leads") return "api/leads.json";
+    return `${path.slice(1)}.json`;
+  }
   const state = { editions: [], edition: null, status: null, leads: [], q: "", theme: null, conf: null, active: 0,
     openId: null, lastFocus: null, seriesCache: new Map() };
 
@@ -24,7 +33,7 @@
   const svg = (tag, attrs) => { const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
     for (const [k, v] of Object.entries(attrs || {})) el.setAttribute(k, v); return el; };
   async function api(path, opts) {
-    const r = await fetch(path, opts);
+    const r = await fetch(STATIC ? staticPath(path) : path, opts);
     if (!r.ok) { const e = new Error(`HTTP ${r.status}`); e.status = r.status; try { e.body = await r.json(); } catch {} throw e; }
     return r.json();
   }
@@ -132,7 +141,7 @@
     $("#editionLabel").textContent = `Edition · ${fmtLong(ed.edition_date)}` + (ed.edition_date !== latest ? " · archived snapshot" : "");
     $("#heroHeadline").textContent = ed.note.headline;
     $("#heroSummary").textContent = ed.note.summary;
-    $("#exportLink").href = `/api/export/${ed.edition_date}.md`;
+    $("#exportLink").href = `${STATIC ? "" : "/"}api/export/${ed.edition_date}.md`;
     document.title = `Signal Atlas — Edition ${fmtDay(ed.edition_date)}`;
     const top = ed.signals[0], lead = $("#leadSignal"); lead.replaceChildren();
     if (!top) return;
@@ -210,6 +219,7 @@
   }
   function renderStatus() {
     const s = state.status; if (!s) return;
+    if (STATIC) s.stale = !!s.last_success_at && Date.now() > d(s.next_scheduled).getTime() + (s.stale_grace_minutes || 90) * 60000;
     const pill = $("#statusPill"), never = !s.last_success_at;
     pill.dataset.state = s.running ? "running" : never ? "never" : s.stale ? "stale" : "fresh";
     $("#statusText").textContent = s.running ? "Ingestion running…" : never ? "Awaiting first ingestion"
@@ -224,10 +234,10 @@
     const kv = [["Schedule", s.schedule], ["Next scheduled", fmtDT(s.next_scheduled)],
       ["Last successful refresh", s.last_success_at ? `${fmtDT(s.last_success_at)} (${rel(s.last_success_at)})` : "none yet"],
       ["Last run", lr ? `${lr.status} · ${lr.trigger} · ${fmtDT(lr.finished_at || lr.started_at)}` : "none"],
-      ["Scheduler process", sch.alive ? `running · heartbeat ${rel(sch.heartbeat_at)}` : sch.heartbeat_at ? `not responding · last heartbeat ${rel(sch.heartbeat_at)}` : "not detected"],
+      ["Scheduler", STATIC ? "GitHub Actions workflow · 08:00 & 16:00 ET" : sch.alive ? `running · heartbeat ${rel(sch.heartbeat_at)}` : sch.heartbeat_at ? `not responding · last heartbeat ${rel(sch.heartbeat_at)}` : "not detected"],
       ["Freshness", s.stale ? "stale" : "current"],
       ["Archive", `${s.counts.snapshots} snapshots · ${s.counts.documents} documents · ${s.counts.clusters} story clusters`],
-      ["Manual refresh", s.manual_refresh_enabled ? "enabled (token required)" : "disabled on this server"]];
+      ["Manual refresh", STATIC ? "maintainers only (workflow dispatch)" : s.manual_refresh_enabled ? "enabled (token required)" : "disabled on this server"]];
     $("#pipelineKv").replaceChildren(...kv.flatMap(([k, v]) => [h("dt", {}, k),
       h("dd", { class: /stale|not |failed|none yet|disabled/.test(v) ? "warn" : /running|current|success/.test(v) ? "ok" : "" }, v)]));
     $("#sourceRows").replaceChildren(...s.sources.map((x) => h("tr", {},
@@ -236,6 +246,7 @@
       h("td", {}, h("span", { class: `badge badge--${x.last_status || "none"}` }, x.last_status || "not run"),
         x.last_status === "failed" || x.last_status === "degraded" ? h("span", { class: "err" }, x.last_error || "") : null))));
     $("#refreshForm").querySelector("button").disabled = !s.manual_refresh_enabled || s.running;
+    $("#refreshForm").hidden = STATIC;
   }
   function renderEditionNav() {
     const sel = $("#editionSelect"), cur = state.edition.edition_date;
