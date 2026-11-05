@@ -13,7 +13,9 @@ from signal_atlas.pipeline import (
     run_pipeline,
     write_snapshot,
 )
+from signal_atlas.ranking import novelty
 from signal_atlas.seed import SIGNALS, seed, sync_content, validate_signal
+from signal_atlas.timeutil import parse_iso
 
 RULES = {s["id"]: s["match"] for s in SIGNALS}
 
@@ -64,7 +66,7 @@ def test_unreviewed_mentions_do_not_affect_ranking_or_evidence(tmp_path):
     gpu = next(x for x in snap["signals"] if x["id"] == "gpu-rent-vs-token-deflation")
     assert gpu["unreviewed_mentions"] and gpu["unreviewed_mentions"][0]["terms"]["why"]
     assert gpu["scores"]["evidence"] == before[gpu["id"]]["evidence"]
-    assert gpu["scores"]["novelty"] == before[gpu["id"]]["novelty"]
+    assert gpu["scores"]["novelty"] == novelty(gpu["first_published_at"], parse_iso(snap["generated_at"]))  # recency only
 
 
 def test_sync_content_revises_without_rewriting_archived_snapshots(tmp_path):
