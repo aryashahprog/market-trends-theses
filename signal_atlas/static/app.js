@@ -103,7 +103,7 @@
     ends.sort((a, b) => a.y - b.y).forEach((e, i, arr) => { if (i && e.y - arr[i - 1].y < 12) e.y = arr[i - 1].y + 12;
       const t = svg("text", { x: e.x, y: e.y }); t.textContent = e.v.toFixed(0); root.append(t); });
     const src = series[0];
-    const spec = { svg: root, title: sig.chart.title || sig.chart.caption, insight: sig.chart.insight, source: src.attribution, sourceUrl: src.source_url, asof: days.at(-1),
+    const spec = { svg: root, title: sig.chart.title || sig.chart.caption, insight: sig.chart.insight, source: src.attribution.replace(/^Data:\s*/, ""), sourceUrl: src.source_url, asof: days.at(-1),
       legend: series.map((s, i) => ({ label: s.label, color: COLORS[i % COLORS.length] })),
       csvHead: ["date", ...series.map((s) => s.label)], csv: days.map((dd) => [dd, ...series.map((s) => s.points.find((p) => p.day === dd)?.value ?? "")]) };
     host.append(h("figure", { class: "chart" }, sig.chart.insight ? h("p", { class: "chart-insight" }, sig.chart.insight) : null, root,

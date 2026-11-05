@@ -1,3 +1,4 @@
+import copy
 from datetime import datetime, timezone
 
 from fakes import Good, null_fetcher, settings_for
@@ -122,3 +123,15 @@ def test_partial_refresh_summary_is_plain_language(tmp_path):
     assert rs["status"] == "partial" and rs["ok"] == 1 and rs["total"] == 2
     assert rs["issues"] == [{"source": "Failing source", "status": "failed",
                              "reason": "access restricted by the publisher (not bypassed)"}]
+
+
+def test_key_figures_cite_registered_sources_and_reach_exports(tmp_path):
+    figs = {s["id"]: s.get("figures") or [] for s in SIGNALS}
+    assert figs["memory-substrate-reallocation"][0]["bars"][1]["value"] == 7318
+    bad = copy.deepcopy(next(s for s in SIGNALS if s.get("figures")))
+    bad["figures"][0]["source_url"] = "https://example.com/unreviewed"
+    assert any("figure" in e for e in validate_signal(bad))
+    conn = connect(tmp_path / "f.db")
+    seed(conn)
+    md = edition_markdown(latest_snapshot(conn))
+    assert "**Figure — Intel Q3 revenue by segment**" in md and "7,318" in md
