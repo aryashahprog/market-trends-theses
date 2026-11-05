@@ -3,16 +3,20 @@ while building this edition; statements are paraphrased or short-quoted, never f
 from __future__ import annotations
 
 import sqlite3
+from datetime import datetime
 from typing import Any
 
 from .adapters.base import RawItem
 from .db import dumps, loads, tx
-from .pipeline import upsert_document, write_snapshot
-from .timeutil import iso, parse_iso
+from .pipeline import rematch_ingested, upsert_document, write_snapshot
+from .timeutil import iso, parse_iso, utcnow
+from .urlnorm import canonicalize
 
 EDITION_DATE = "2026-11-05"
 PUBLISHED_AT = "2026-11-05T16:00:00Z"
 VERIFIED_AT = "2026-11-05T15:45:00Z"  # verification window for first-edition retrievals: 15:30–16:00 UTC
+REVISED_AT = "2026-11-05T17:52:15Z"  # editorial revision v2: business relevance, scoped headlines (no new evidence)
+CONTENT_VERSION = 2
 
 SOURCES: list[tuple[str, str, str, str, str]] = [
     ("milkroad", "Milk Road", "discovery", "https://milkroad.com/",
@@ -84,56 +88,123 @@ ERIC = "https://www.sec.gov/Archives/edgar/data/717826/000162828026065962/a2026q
 
 # (url, claim_type, stance, statement)
 Ev = tuple[str, str, str, str]
+ROLES = ("buyer", "benefits", "pressure")
+CRYPTO = ["ethereum", "bitcoin", "crypto", "cryptocurrency", "defi", "stablecoin", "stablecoins", "solana", "altcoin",
+          "altcoins", "memecoin", "xrp", "nft"]
 
 SIGNALS: list[dict[str, Any]] = [
     {
         "id": "gpu-rent-vs-token-deflation",
-        "title": "GPU rent is rising while the price of a token keeps falling",
-        "dek": "Scarcer capacity and cheaper output at the same time — the spread between them is where new "
-               "infrastructure businesses get built.",
+        "content_version": CONTENT_VERSION,
+        "title": "Rental prices for older and mid-generation GPUs are rising while blended token prices fall",
+        "dek": "Renting A100, H100 and H200 GPUs has become more expensive since August, while the average price "
+               "businesses paid per AI token fell. The newest GPUs got cheaper.",
+        "takeaway": "Since mid-August, on-demand rental prices for A100, H100 and H200 GPUs have risen on Price of "
+                    "Compute's indices. Over a recent four-week window, the blended price businesses paid OpenAI and "
+                    "Anthropic per million tokens (a token is a small unit of model text) fell 26.8% on Ramp's data. "
+                    "If this gap persists, the cost of an AI workload depends more on how much useful work each "
+                    "GPU-hour produces than on list prices.",
+        "caveats": [
+            "The two measures are not directly comparable: the rental indices cover about three months, the token "
+            "figure four weeks; workload and model mix differ; and neither adjusts for output quality.",
+            "Prices are rising for older and mid-generation GPUs only. B300 sits below its August level and B200 fell "
+            "9.9% in a week, so this does not show that all compute is getting scarcer.",
+            "A margin squeeze for AI software companies is an inference. It has not been shown with comparable unit "
+            "economics.",
+        ],
         "sector": "AI infrastructure",
         "themes": ["Compute economics", "Inference efficiency", "Compute markets"],
         "direction": "Strengthening",
-        "what_changed": "Two independent public GPU-rental trackers show on-demand prices up since mid-August 2026, "
-                        "led by older parts: Price of Compute's composite index stood at 142.28 on Nov 5 (base 100 on "
-                        "Aug 10), with A100 SXM 80GB at 140, H200 SXM at 155 and H100 SXM at 124. Over a similar window, Ramp's "
-                        "card-spend panel shows the blended OpenAI/Anthropic price businesses pay per million tokens "
-                        "fell 26.8% (week ending Oct 23 vs. Sep 25) while token volume rose 37.1%.",
-        "why_now": "Demand has broadened beyond frontier labs: older A100-class capacity is repricing upward, which "
-                   "suggests buyers are absorbing whatever is available rather than waiting for newer supply. At the "
-                   "same time model vendors are cutting cost per completed task (the Anthropic S-1 cites ~25–40% "
-                   "reductions for newer models), so output deflates while the key input inflates.",
-        "market_indication": "Margin pressure moves to whoever sits between GPU-hours and tokens. Serving providers "
-                             "without efficiency gains or long-dated capacity face a squeeze; operators that extract "
-                             "more completed work per GPU-hour (batching, caching, scheduling, routing to cheaper "
-                             "models) capture the spread. Competing public price indices indicate compute is becoming a "
-                             "priced, benchmarkable commodity.",
-        "startup_opportunity": "Inference-efficiency software sold on measured cost per completed task (KV-cache "
-                               "reuse, scheduling, model routing); compute procurement and hedging tools built on "
-                               "public indices; marketplaces that re-monetize older-generation GPUs.",
-        "corporate_buyer": "CIO and finance teams with AI line items facing rising reserved/on-demand capacity costs "
-                           "but falling API token prices — they need build-vs-buy-vs-API analysis and ways to lock "
-                           "in capacity.",
+        "what_changed": "Price of Compute's composite on-demand GPU index stood at 142.28 on Nov 5 (100 = Aug 10), with "
+                        "A100 SXM 80GB at 140, H200 SXM at 155 and H100 SXM at 124. Ramp's card-spend panel shows the "
+                        "blended OpenAI/Anthropic price per million tokens fell 26.8% (weeks ending Sep 25 to Oct 23) "
+                        "while token volume rose 37.1%.",
+        "changed_points": [
+            "Price of Compute composite on-demand GPU index: 142.28 on Nov 5 (Aug 10 = 100). A100 SXM 80GB 140, "
+            "H200 SXM 155, H100 SXM 124.",
+            "Newest parts moved the other way: B300 at 88 versus its August base; B200 down 9.9% in seven days.",
+            "Ramp: blended OpenAI/Anthropic price per million tokens $0.76 → $0.56 (−26.8%), weeks ending Sep 25 → "
+            "Oct 23. Token volume +37.1%; token spend +8.9%.",
+            "Anthropic's S-1 says newer models cut customer cost per task by roughly 25–40%.",
+        ],
+        "why_now": "Buyers appear to be renting older capacity rather than waiting for newer supply, while model "
+                   "vendors keep lowering the cost of a unit of output. Both moves are recent; the rental indices "
+                   "only begin in August 2026.",
+        "market_indication": "The cost of an AI workload increasingly depends on throughput per GPU-hour and on the "
+                             "choice between owned, rented and API capacity. Whether this compresses anyone's margins "
+                             "depends on contract terms that are not public.",
+        "audiences": [
+            {"segment": "Enterprises", "role": "buyer",
+             "who": "CIOs, heads of infrastructure and FP&A teams with AI workloads in production.",
+             "impact": "Rented or reserved GPU capacity may cost more while per-token API prices fall, which can "
+                       "change the build, rent or API decision.",
+             "action": "Compare cost per completed task for current workloads across owned hardware, rented GPUs and "
+                       "model APIs at matched quality.",
+             "trigger": "The composite index stays above ~130 over the next refreshes, or a reserved-capacity renewal "
+                        "is quoted above the prior contract."},
+            {"segment": "SMBs", "role": "benefits",
+             "who": "Owners and operations leads who buy packaged AI tools rather than infrastructure.",
+             "impact": "Falling token prices can make AI tools cheaper per task, but vendors may not pass savings on.",
+             "action": "Judge AI tools by staff hours saved or added revenue per month, not by headline price.",
+             "trigger": "Vendors cut prices or raise usage limits on plans you already pay for."},
+            {"segment": "Software companies", "role": "pressure",
+             "who": "Founders, CFOs and pricing leads at AI application companies.",
+             "impact": "Revenue per token may fall with API prices while any rented GPU capacity costs more, which "
+                       "would squeeze margins on fixed-price plans.",
+             "action": "Model gross margin under both trends and split serving cost between rented GPUs and APIs.",
+             "trigger": "Public AI software companies attribute gross-margin declines to inference or hosting costs."},
+            {"segment": "Service providers", "role": "benefits",
+             "who": "IT consultancies, managed service providers and cloud resellers.",
+             "impact": "Clients need help choosing between capacity options and measuring cost per task.",
+             "action": "Offer a cost-per-task assessment that benchmarks a client's workloads across APIs and "
+                       "rented GPUs.",
+             "trigger": "Client RFPs start asking for cost-per-task or capacity-procurement advice."},
+        ],
+        "implications": [
+            {"trend": "Older GPU rents rising while token prices fall",
+             "problem": "Budgets set on last quarter's prices drift, and the cheapest option per task changes month "
+                        "to month.",
+             "buyer": "Enterprise infrastructure and FP&A teams",
+             "solution": "Cost-per-task benchmarking and routing workloads across APIs and rented capacity",
+             "investigate": "Inference-optimization and model-routing software; GPU marketplaces and procurement "
+                            "platforms (categories)"},
+            {"trend": "Public GPU price indices now exist (Price of Compute, Silicon Data)",
+             "problem": "No standard way to budget for or hedge rented compute",
+             "buyer": "Finance teams at AI-heavy companies and GPU cloud providers",
+             "solution": "Index-linked capacity contracts and procurement analytics",
+             "investigate": "Compute procurement and index-linked contracting tools (category)"},
+        ],
+        "card_implication": "Re-check the build, rent or API decision on cost per completed task.",
+        "customer_validation": "Interview 5–10 enterprise infrastructure or FinOps leads: has a GPU capacity renewal "
+                               "or quote risen since August, and do they measure cost per completed task?",
+        "view_triggers": [
+            "The composite index falls back toward 100 while token volume growth stalls.",
+            "Silicon Data's H100 index diverges from Price of Compute's for several weeks.",
+            "Ramp's next releases show blended token prices flat or rising.",
+        ],
         "value_chain": ["GPU rental & neoclouds", "Inference serving software", "Model APIs",
                         "Enterprise AI budgets", "Compute indices & derivatives"],
         "confidence": "Medium",
         "corroboration": "Corroborated (direction)",
-        "confidence_rationale": "Direction is corroborated by two independent rental trackers and a large card-spend "
-                                "dataset. Levels differ materially between trackers (H100 on-demand: $4.07/hr median "
-                                "vs $2.97/hr on the same day), the index history is under three months long, and the "
-                                "token-price measure covers spend with two vendors only. Single-SKU series can be noisy (A100 PCIe 80GB "
-                                "alternates between ~117 and ~212 day to day), so this signal relies on the composite and stable SKUs.",
-        "next_validation": "Check whether the composite holds above ~130 across the next scheduled refreshes; compare "
-                           "Ramp's next tokenomics release for spend growth vs volume; check whether Silicon Data's "
-                           "H100 index moves in the same direction as Price of Compute's.",
-        "falsifier": "Rental indices revert toward their August base while token volume growth stalls — implying a "
-                     "short-lived capacity squeeze rather than a durable spread.",
-        "thesis_sentence": "GPU-hour prices are rising while the price of a token falls, so value is shifting to "
-                           "software and operators that turn each GPU-hour into more completed work.",
+        "confidence_rationale": "The direction is corroborated by two independent rental trackers and a large "
+                                "card-spend dataset. Levels differ between trackers (H100 on-demand $4.07/hr median vs "
+                                "$2.97/hr the same day), the index history is under three months, and the token measure "
+                                "covers two vendors. Single-SKU series can be noisy (A100 PCIe 80GB alternates between "
+                                "~117 and ~212), so this thesis relies on the composite and steadier series.",
+        "next_validation": "Check whether the composite holds above ~130 over the next refreshes; compare Ramp's next "
+                           "release for spend versus volume; check that Silicon Data's H100 index moves the same way.",
+        "falsifier": "Rental indices revert to their August base while token volume growth stalls, which would point "
+                     "to a short-lived capacity squeeze rather than a durable gap.",
+        "thesis_sentence": "Rental prices for older and mid-generation GPUs are rising while blended token prices "
+                           "fall, so the cost of AI work increasingly depends on how much useful work each GPU-hour "
+                           "produces.",
+        "evidence_reviewed_at": VERIFIED_AT,
         "analyst_scores": {"relevance": 5, "impact": 4},
-        "match_terms": ["gpu", "gpus", "h100", "a100", "b200", "compute", "rental", "token", "tokens", "inference",
-                        "neocloud", "coreweave", "nebius", "nvidia", "data center"],
-        "match_min": 2,
+        "match": {"anchors": ["gpu", "gpus", "h100", "a100", "h200", "b200", "b300", "neocloud", "coreweave", "nebius",
+                              "gpu rental", "compute prices"],
+                  "context": ["rental", "rent", "price", "prices", "pricing", "token", "tokens", "inference", "compute",
+                              "capacity", "nvidia", "shortage"],
+                  "exclude": CRYPTO, "min_terms": 2, "topic": "GPU rental or token pricing"},
         "chart": {"series": ["poc:composite", "poc:sku:A100-SXM-80GB", "poc:sku:H200-SXM", "poc:sku:B300"],
                   "caption": "Daily on-demand GPU rental indices, rebased to 100 on 2026-08-10."},
         "discovery": {"label": "Milk Road podcast, Nov 2, 2026", "url": MR_CHART},
@@ -155,8 +226,8 @@ SIGNALS: list[dict[str, Any]] = [
              "Silicon Data's public page listed H100 rental at $2.97/hr, B200 $6.70/hr, B300 $7.56/hr and its LLM "
              "token index at $0.86 on Nov 5, 2026."),
             (POC, "corroborated", "challenges",
-             "Newest-generation parts are not following the squeeze: B300 on-demand fell 19.1% over 7 days and sits "
-             "at 88 vs its August base; B200 fell 9.9% over 7 days."),
+             "Newest-generation parts are moving the other way: B300 on-demand fell 19.1% over 7 days and sits at 88 "
+             "vs its August base; B200 fell 9.9% over 7 days."),
             (POC_H100, "corroborated", "challenges",
              "Trackers disagree on level: H100 SXM on-demand median $4.065/hr across 8 providers (spot $2.445, 3 "
              "providers) vs $2.97/hr on Silicon Data's H100 index the same day."),
@@ -167,28 +238,88 @@ SIGNALS: list[dict[str, Any]] = [
     },
     {
         "id": "enterprise-ai-spend-compounding",
-        "title": "Enterprise AI spend is compounding inside existing customers, not just adding logos",
-        "dek": "An issuer filing and a card-spend panel both show deepening usage. The next wedge is helping "
-               "enterprises govern, attribute and diversify that spend.",
-        "sector": "Enterprise software",
+        "content_version": CONTENT_VERSION,
+        "title": "Enterprise AI spend is deepening inside existing customers, not only adding new ones",
+        "dek": "An AI vendor's filing and a card-spend panel both show usage growing within accounts, with spend "
+               "concentrated in a few model vendors.",
+        "takeaway": "Anthropic's S-1 reports about 900% net revenue retention (revenue this year from last year's "
+                    "customers, relative to what they paid before) and over 11,900 customers paying $100k+ a year, up "
+                    "from about 950. Ramp's panel shows 55.9% of sampled US businesses paying for AI, with construction "
+                    "and retail rising fastest. Spend is growing inside accounts and spreading to less-digitized "
+                    "industries, which raises governance and vendor-concentration questions.",
+        "caveats": [
+            "The S-1 metrics are issuer-defined and come from one unusually fast-growing vendor; net revenue "
+            "retention excludes consumer plans.",
+            "Ramp measures whether a business pays for AI, not how deeply it uses it.",
+        ],
+        "sector": "Enterprise software & services",
         "themes": ["Enterprise AI adoption", "AI spend management", "Vertical AI"],
         "direction": "Strengthening",
         "what_changed": "Anthropic's S-1 (filed Oct 26, 2026) discloses ~900% net revenue retention as of Sep 30, "
-                        "2026, more than 11,900 customers above $100k trailing-twelve-month revenue (vs. more than "
-                        "950 a year earlier) and ~250 above $10M. Ramp's AI Index shows 55.9% of sampled US "
-                        "businesses paying for AI in September 2026, up 12.1 points year over year, with construction "
-                        "(+1.9 pts) and retail (+1.6 pts) rising fastest month over month.",
-        "why_now": "Falling cost per task lowers the bar for production workloads, and adoption gains are now coming "
-                   "from less-digitized sectors such as construction and retail rather than only technology firms.",
-        "market_indication": "Budget is consolidating into a few model vendors while usage per customer expands — "
-                             "creating demand for spend visibility, chargeback, evaluation and switching layers, and "
-                             "raising vendor-concentration risk for enterprise buyers.",
-        "startup_opportunity": "AI spend governance and chargeback per team and workflow; task-level ROI attribution; "
-                               "multi-vendor routing and evaluation; vertical agent products for late-adopting "
-                               "industries (construction, retail operations).",
-        "corporate_buyer": "Finance, FP&A and procurement teams watching AI bills grow inside existing contracts; "
-                           "operations leaders in construction, retail and manufacturing moving pilots into "
-                           "production.",
+                        "2026 and more than 11,900 customers above $100k trailing-twelve-month revenue, up from more "
+                        "than 950 a year earlier. Ramp's AI Index shows 55.9% of sampled US businesses paying for AI in "
+                        "September 2026, up 12.1 points year over year.",
+        "changed_points": [
+            "Anthropic S-1: ~900% net revenue retention at Sep 30, 2026; >11,900 customers at $100k+ (vs >950 a year "
+            "earlier); ~250 at $10M+.",
+            "Anthropic S-1: $16.3B revenue in H1 2026 vs $1.2B a year earlier.",
+            "Ramp AI Index: 55.9% of sampled US businesses paid for AI in September (+12.1 pts y/y). Construction "
+            "43.2% (+1.9 pts m/m) and retail 49.9% (+1.6 pts) rose fastest.",
+        ],
+        "why_now": "Lower cost per task makes production workloads easier to justify, and adoption gains now come from "
+                   "construction and retail rather than only technology firms.",
+        "market_indication": "Budget is concentrating in a few model vendors while usage per customer expands. That "
+                             "creates demand for spend visibility, chargeback and switching options, and raises "
+                             "vendor-concentration risk for buyers.",
+        "audiences": [
+            {"segment": "Enterprises", "role": "buyer",
+             "who": "CFOs, FP&A and procurement teams, and CIOs who own AI vendor contracts.",
+             "impact": "AI bills can grow inside existing contracts without new approvals, and spend concentrates on "
+                       "one or two vendors.",
+             "action": "Inventory AI spend by team and workflow; check contracts for usage commitments and switching "
+                       "costs.",
+             "trigger": "AI line items grow faster than headcount or revenue for two consecutive quarters."},
+            {"segment": "SMBs", "role": "pressure",
+             "who": "Owners and operations managers in construction, retail and other late-adopting sectors.",
+             "impact": "Peers are adopting AI tools; lagging can become a cost or response-time disadvantage.",
+             "action": "Pilot one AI tool on a measurable task (quotes, scheduling, customer replies) and track hours "
+                       "saved.",
+             "trigger": "Ramp's adoption rate for your sector passes half of businesses (construction 43.2%, retail "
+                        "49.9% in September)."},
+            {"segment": "Software companies", "role": "benefits",
+             "who": "Product and finance leaders at AI-enabled software vendors.",
+             "impact": "Customers expand usage after the first purchase, so revenue depends on usage growth and on "
+                       "the model costs you pass through.",
+             "action": "Report per-account usage expansion separately from new-customer growth, and model your "
+                       "dependence on one model vendor.",
+             "trigger": "Your main model vendor changes pricing or usage terms."},
+            {"segment": "Service providers", "role": "benefits",
+             "who": "Systems integrators and AI consultancies.",
+             "impact": "Moving pilots into production in less-digitized industries needs integration and change "
+                       "management.",
+             "action": "Build repeatable deployment packages for construction or retail operations.",
+             "trigger": "Client requests shift from pilots to production rollouts."},
+        ],
+        "implications": [
+            {"trend": "AI spend expanding within existing customers",
+             "problem": "Little visibility into which teams and workflows drive AI cost or value",
+             "buyer": "Enterprise finance and procurement",
+             "solution": "AI spend governance, chargeback and task-level ROI attribution",
+             "investigate": "AI spend-management and FinOps-for-AI tools (category)"},
+            {"trend": "Adoption rising fastest in construction and retail",
+             "problem": "General-purpose AI tools fit field and store operations poorly",
+             "buyer": "Operations leaders in construction and retail",
+             "solution": "Vertical AI for estimating, scheduling and store operations",
+             "investigate": "Vertical AI products for construction and retail operations (category)"},
+        ],
+        "card_implication": "Finance teams need AI spend visibility by team before it compounds further.",
+        "customer_validation": "Ask 5–10 enterprise finance or procurement leads whether AI spend is tracked by team "
+                               "and whether any AI contract auto-expanded in the past two quarters.",
+        "view_triggers": [
+            "Net revenue retention falls sharply in S-1 amendments or later filings.",
+            "Ramp adoption flattens for two months, especially in construction and retail.",
+            "Token spend keeps lagging usage, suggesting price cuts offset volume.",
+        ],
         "value_chain": ["Model vendors", "AI spend management", "Vertical AI applications", "Systems integrators"],
         "confidence": "Medium",
         "corroboration": "Corroborated (two independent sources)",
@@ -198,14 +329,17 @@ SIGNALS: list[dict[str, Any]] = [
                                 "depth.",
         "next_validation": "Read S-1 amendments for NRR methodology and cohort detail; check whether Ramp's next "
                            "monthly release extends gains in construction and retail.",
-        "falsifier": "Net revenue retention falls sharply in subsequent filings while Ramp adoption flattens — "
-                     "pointing to pilot churn rather than compounding deployment.",
-        "thesis_sentence": "Enterprise AI revenue is compounding inside existing customers, creating a new budget line "
-                           "that needs governance, attribution and vertical-specific products.",
+        "falsifier": "Net revenue retention falls sharply in subsequent filings while Ramp adoption flattens, which "
+                     "would point to pilot churn rather than compounding deployment.",
+        "thesis_sentence": "Enterprise AI revenue is deepening inside existing customers, creating a fast-growing "
+                           "budget line that needs governance, attribution and industry-specific products.",
+        "evidence_reviewed_at": VERIFIED_AT,
         "analyst_scores": {"relevance": 5, "impact": 4},
-        "match_terms": ["anthropic", "openai", "enterprise", "adoption", "ai spend", "agents", "agentic", "copilot",
-                        "s-1", "ipo", "tokens"],
-        "match_min": 2,
+        "match": {"anchors": ["anthropic", "openai", "enterprise ai", "ai spend", "ai spending", "ai adoption",
+                              "ai budget", "ai budgets", "copilot", "net revenue retention"],
+                  "context": ["enterprise", "enterprises", "adoption", "spend", "spending", "customers", "revenue",
+                              "businesses", "budget", "s-1", "ipo", "contracts"],
+                  "exclude": CRYPTO, "min_terms": 2, "topic": "enterprise AI spending"},
         "discovery": {"label": "Milk Road, Oct 28, 2026", "url": "https://milkroad.com/ideas/wait-cheaper-ai-is-good-for-anthropic/"},
         "evidence": [
             (S1, "primary", "supports",
@@ -227,9 +361,18 @@ SIGNALS: list[dict[str, Any]] = [
     },
     {
         "id": "seats-to-outcome-pricing",
-        "title": "Software and services pricing is moving from seats to credits and outcomes — and filings show the friction",
-        "dek": "When agents complete work instead of adding users, seat counts stop tracking value. Issuers are "
-               "now disclosing the transition as a risk.",
+        "content_version": CONTENT_VERSION,
+        "title": "Two filers describe a shift from per-seat to credit and outcome pricing, and the friction it causes",
+        "dek": "HubSpot says credit and outcome pricing has lengthened sales cycles; ExlService describes moving "
+               "clients off headcount-based fees.",
+        "takeaway": "HubSpot's and ExlService's latest quarterly filings both describe moving from pricing per user or "
+                    "per person to pricing by credits, transactions or outcomes. HubSpot says the change has lengthened "
+                    "sales cycles and lowered initial contract values. Neither discloses how much revenue is priced "
+                    "this way yet.",
+        "caveats": [
+            "Two issuers describing intent and risk; neither quantifies revenue under the new models.",
+            "HubSpot warns credit spend may replace rather than add to seat spend.",
+        ],
         "sector": "Enterprise software & services",
         "themes": ["Outcome-based pricing", "Agentic workflows", "Revenue infrastructure"],
         "direction": "Emerging",
@@ -238,34 +381,86 @@ SIGNALS: list[dict[str, Any]] = [
                         "contract values. ExlService's Q3 10-Q (filed Oct 27, 2026) reports an industry shift toward "
                         "transaction- and outcome-based pricing and describes moving clients away from FTE-based "
                         "pricing.",
-        "why_now": "Agentic products complete tasks rather than add users. Vendors are disclosing the transition in "
-                   "risk factors, which means it is material enough to affect revenue timing and forecasting.",
-        "market_indication": "Expect a transition period of revenue volatility for incumbents — credit spend may "
-                             "substitute for seat spend — and a new requirement for metering, outcome measurement and "
-                             "contract terms both sides trust. Headcount-priced services firms face margin pressure "
-                             "unless they own the automation.",
-        "startup_opportunity": "Usage and outcome metering/billing infrastructure; outcome verification and "
-                               "attribution (proving a task was completed and what it saved); pricing analytics for "
-                               "vendors in transition; procurement tools comparing seat, credit and outcome contracts.",
-        "corporate_buyer": "Procurement and finance teams renegotiating SaaS and BPO contracts; revenue operations at "
-                           "software vendors moving to credits; BPO buyers seeking savings-linked pricing.",
+        "changed_points": [
+            "HubSpot 10-Q (Nov 4): credits-based and outcome-based pricing are \u201cnovel and evolving\u201d; the "
+            "changes lengthened sales cycles and lowered initial contract values.",
+            "ExlService 10-Q (Oct 27): industry pricing is shifting toward transaction- and outcome-based models; the "
+            "firm is moving clients off FTE (per-person) pricing.",
+        ],
+        "why_now": "AI agents complete tasks rather than add users, so seat counts track value less well. Both "
+                   "companies now discuss the transition in risk disclosures, which suggests it is material to revenue "
+                   "timing.",
+        "market_indication": "Expect a transition period of less predictable revenue for incumbents, and a new need "
+                             "for metering, outcome measurement and contract terms both sides trust. Firms that bill "
+                             "per person face margin pressure unless they own the automation.",
+        "audiences": [
+            {"segment": "Enterprises", "role": "buyer",
+             "who": "Procurement, finance and vendor-management teams renewing software and outsourcing contracts.",
+             "impact": "Credit- or outcome-priced contracts change how costs scale and require agreed measurement.",
+             "action": "Before renewal, ask vendors for credit or outcome options and define how a completed outcome "
+                       "is measured.",
+             "trigger": "A major vendor proposes moving your contract to credit or outcome terms at renewal."},
+            {"segment": "SMBs", "role": "pressure",
+             "who": "Small and mid-sized businesses on usage-metered software plans.",
+             "impact": "Bills may depend on credits consumed rather than users, which makes monthly costs less "
+                       "predictable.",
+             "action": "Find which features consume credits and set usage alerts or caps.",
+             "trigger": "Your software vendor adds credit-metered features to your plan."},
+            {"segment": "Software companies", "role": "pressure",
+             "who": "CFOs, pricing and revenue-operations leaders at software vendors.",
+             "impact": "Moving off seats can lengthen sales cycles and lower first-year contract values, as HubSpot "
+                       "reports, making revenue harder to forecast.",
+             "action": "Pilot credit or outcome pricing with one customer cohort and compare sales-cycle length and "
+                       "expansion against seat deals.",
+             "trigger": "Peers start disclosing the share of revenue under usage or outcome pricing."},
+            {"segment": "Service providers", "role": "pressure",
+             "who": "Outsourcing (BPO) and IT-services firms that bill per person.",
+             "impact": "Automation reduces billable headcount; outcome fees tie revenue to client savings.",
+             "action": "Identify contracts where automated work could be priced per transaction or on savings, as "
+                       "ExlService describes.",
+             "trigger": "Clients request savings-linked terms in RFPs."},
+        ],
+        "implications": [
+            {"trend": "Pricing moving to credits and outcomes",
+             "problem": "Vendors and buyers lack a trusted way to meter usage and verify outcomes",
+             "buyer": "Revenue operations at software vendors; procurement at enterprises",
+             "solution": "Usage and outcome metering, billing and verification",
+             "investigate": "Usage-based billing and outcome-verification infrastructure (category)"},
+            {"trend": "Outsourcing moving off per-person pricing",
+             "problem": "Outcome contracts need agreed baselines and savings measurement",
+             "buyer": "Outsourcing buyers and providers",
+             "solution": "Contract analytics comparing seat, credit and outcome terms",
+             "investigate": "Procurement and contract-analytics tools for AI-era pricing (category)"},
+        ],
+        "card_implication": "Define how outcomes are measured before accepting credit or outcome terms.",
+        "customer_validation": "Ask 5 software finance or revenue-operations leads whether they have launched credit "
+                               "or outcome pricing and what happened to sales-cycle length.",
+        "view_triggers": [
+            "Vendors revert to seat-based packaging.",
+            "Credit or outcome revenue stays negligible after two to three quarters.",
+            "Buyers reject outcome terms over measurement disputes.",
+        ],
         "value_chain": ["Application SaaS", "BPO & IT services", "Billing & metering", "Procurement"],
         "confidence": "Medium",
         "corroboration": "Primary sources (multiple issuers)",
-        "confidence_rationale": "Primary disclosures from issuers in different segments (SaaS and BPO) independently "
-                                "describe the shift. They describe intent and risk, not quantified adoption; neither "
-                                "discloses the share of revenue that is outcome-priced.",
+        "confidence_rationale": "Primary disclosures from issuers in different segments (software and outsourcing) "
+                                "independently describe the shift. They describe intent and risk, not quantified "
+                                "adoption; neither discloses the share of revenue that is outcome-priced.",
         "next_validation": "Search upcoming 10-K/10-Q filings and earnings materials for a disclosed share of revenue "
-                           "under usage/outcome pricing; track HubSpot's next-quarter commentary on credit "
-                           "consumption vs seat expansion.",
-        "falsifier": "Vendors revert to seat-based packaging, or report negligible credit/outcome revenue after two to "
-                     "three quarters, or buyers reject outcome terms over measurement disputes.",
-        "thesis_sentence": "As AI agents complete work instead of adding users, pricing is shifting to credits and "
-                           "outcomes, creating demand for trusted metering and outcome verification.",
+                           "under usage or outcome pricing; track HubSpot's next-quarter commentary on credit "
+                           "consumption versus seat expansion.",
+        "falsifier": "Vendors revert to seat-based packaging, report negligible credit or outcome revenue after two "
+                     "to three quarters, or buyers reject outcome terms over measurement disputes.",
+        "thesis_sentence": "As AI agents complete work instead of adding users, software and services pricing is "
+                           "moving to credits and outcomes, creating demand for trusted metering and outcome "
+                           "verification.",
+        "evidence_reviewed_at": VERIFIED_AT,
         "analyst_scores": {"relevance": 4, "impact": 4},
-        "match_terms": ["outcome-based", "outcome based", "credits-based", "usage-based", "pricing", "seat", "seats",
-                        "per seat", "agents", "agentic", "bpo"],
-        "match_min": 2,
+        "match": {"anchors": ["outcome-based", "outcome based", "credits-based", "usage-based", "per-seat", "per seat",
+                              "seat-based", "bpo", "hubspot", "exlservice"],
+                  "context": ["pricing", "price", "agents", "agentic", "saas", "software", "contracts", "revenue",
+                              "seats", "outsourcing"],
+                  "exclude": CRYPTO, "min_terms": 2, "topic": "software and services pricing models"},
         "evidence": [
             (HUBS, "primary", "supports",
              "\u201cOur credits-based and outcome-based pricing strategies are novel and evolving\u201d; the changes "
@@ -283,9 +478,18 @@ SIGNALS: list[dict[str, Any]] = [
     },
     {
         "id": "memory-substrate-reallocation",
-        "title": "Memory and substrate shortages are steering semiconductor profit toward data-center silicon",
-        "dek": "Scarce components flow to the highest-margin AI servers. Device refresh cycles and memory-hungry "
-               "inference absorb the cost.",
+        "content_version": CONTENT_VERSION,
+        "title": "Intel's data-center chips are growing fast while it flags industry-wide memory and substrate shortages",
+        "dek": "Constrained components appear to be flowing to higher-margin AI servers; the PC-side impact on Intel "
+               "is so far modest.",
+        "takeaway": "Intel's Q3 filing shows data-center revenue up 78% year over year, with that segment's operating "
+                    "margin rising from 23% to 42%, while PC-chip revenue fell about 5%. The filing names "
+                    "industry-wide memory and substrate (chip-packaging material) shortages as a risk. This is one "
+                    "company's data; an industry-wide shift needs memory makers' and hardware makers' figures.",
+        "caveats": [
+            "Single issuer; an industry-wide reallocation is an inference.",
+            "Q4 guidance and PC-market forecasts come from a newsletter and are not yet checked against Intel's 8-K.",
+        ],
         "sector": "Semiconductors & hardware",
         "themes": ["Supply-chain constraints", "Memory efficiency", "Data-center silicon"],
         "direction": "Strengthening",
@@ -293,16 +497,56 @@ SIGNALS: list[dict[str, Any]] = [
                         "$4.12B a year earlier, with DCAI operating margin at 42% vs 23%, while client (CCPG) revenue "
                         "fell to $8.10B from $8.54B. The filing cites \u201ccurrent industry-wide substrate and memory "
                         "shortages\u201d as a supply-chain risk.",
-        "why_now": "AI servers are absorbing memory and advanced-packaging capacity, so constrained components are "
-                   "flowing to the highest-margin data-center products and away from PCs.",
-        "market_indication": "Component scarcity favors data-center platforms and penalizes device refresh cycles. "
-                             "Software that reduces memory footprint and services that extend hardware life gain value "
-                             "for as long as the shortage persists.",
-        "startup_opportunity": "Memory-efficiency software for inference (KV-cache compression, quantization, "
-                               "offloading); enterprise device lifecycle and refurbishment platforms; supply-chain "
-                               "risk intelligence for constrained components.",
-        "corporate_buyer": "Enterprise IT planning PC and server refreshes amid shortages; infrastructure teams "
-                           "sizing inference clusters where memory, not compute, is the binding constraint.",
+        "changed_points": [
+            "Intel data-center (DCAI) revenue $7.32B in Q3 2026 vs $4.12B a year earlier (+78%); operating margin "
+            "42% vs 23%.",
+            "Intel PC-chip (CCPG) revenue $8.10B vs $8.54B (about −5%).",
+            "Risk language cites \u201ccurrent industry-wide substrate and memory shortages\u201d.",
+        ],
+        "why_now": "AI servers are absorbing memory and advanced-packaging capacity, so scarce components may be "
+                   "flowing to the highest-margin data-center products ahead of PCs.",
+        "market_indication": "If the shortage persists, component scarcity favors data-center platforms and delays "
+                             "device refreshes. Software that reduces memory use and services that extend hardware "
+                             "life gain value while it lasts.",
+        "audiences": [
+            {"segment": "Enterprises", "role": "pressure",
+             "who": "IT and infrastructure leaders planning PC and server refreshes.",
+             "impact": "Shortages can raise prices and lengthen lead times for servers and PCs.",
+             "action": "Secure refresh quotes and lead times early; consider extending device life where performance "
+                       "allows.",
+             "trigger": "Hardware vendors raise quotes or extend lead times, citing memory."},
+            {"segment": "Software companies", "role": "benefits",
+             "who": "Teams building or running AI inference.",
+             "impact": "When memory is the binding constraint, software that uses less memory per request lowers cost.",
+             "action": "Measure memory use per request, not just compute, and test compression or quantization "
+                       "(storing model numbers at lower precision).",
+             "trigger": "Memory makers report rising contract prices."},
+            {"segment": "Service providers", "role": "benefits",
+             "who": "Device-lifecycle, refurbishment and IT asset-management providers.",
+             "impact": "Longer refresh cycles raise demand for repair, refurbishment and extended support.",
+             "action": "Offer refresh-deferral assessments to enterprise clients.",
+             "trigger": "PC makers guide shipments down, citing component shortages."},
+        ],
+        "implications": [
+            {"trend": "Scarce memory and substrates",
+             "problem": "AI inference clusters hit memory limits before compute limits",
+             "buyer": "AI infrastructure teams",
+             "solution": "Memory-efficient inference (cache compression, quantization, offloading)",
+             "investigate": "Inference memory-optimization software (category)"},
+            {"trend": "Device refreshes under supply pressure",
+             "problem": "Enterprises must run older fleets for longer",
+             "buyer": "Enterprise IT asset managers",
+             "solution": "Device lifecycle, refurbishment and extended-support services",
+             "investigate": "Enterprise device-lifecycle and refurbishment providers (category)"},
+        ],
+        "card_implication": "IT teams planning refreshes should secure quotes and lead times early.",
+        "customer_validation": "Ask enterprise IT buyers and resellers whether server or PC quotes and lead times "
+                               "changed in the past quarter, and why.",
+        "view_triggers": [
+            "Memory contract prices fall within two quarters.",
+            "Intel's PC segment recovers while data-center margin normalizes.",
+            "Memory makers' filings do not mention allocation to AI servers.",
+        ],
         "value_chain": ["Memory & substrates", "Server OEMs", "PC OEMs", "Inference software"],
         "confidence": "Medium",
         "corroboration": "Primary source; guidance claims reported only",
@@ -310,15 +554,18 @@ SIGNALS: list[dict[str, Any]] = [
                                 "Forward guidance and PC-market forecasts were reported by a secondary source and not "
                                 "yet checked against the earnings 8-K.",
         "next_validation": "Verify Q4 guidance in Intel's Oct 29 earnings 8-K exhibit; read memory makers' next "
-                           "filings for pricing and allocation commentary; watch PC OEM guidance.",
+                           "filings for pricing and allocation commentary; watch PC makers' guidance.",
         "falsifier": "Memory contract prices fall and Intel's client segment recovers within two quarters, "
                      "indicating a transient rather than structural reallocation.",
-        "thesis_sentence": "AI servers are absorbing scarce memory and substrates, shifting semiconductor profit to "
-                           "data-center silicon and raising the value of software that does more with less memory.",
+        "thesis_sentence": "AI servers are absorbing scarce memory and substrates, favoring data-center silicon and "
+                           "raising the value of software that does more with less memory.",
+        "evidence_reviewed_at": VERIFIED_AT,
         "analyst_scores": {"relevance": 4, "impact": 4},
-        "match_terms": ["memory", "dram", "hbm", "substrate", "shortage", "intel", "micron", "pc market", "packaging",
-                        "semiconductor", "chips"],
-        "match_min": 2,
+        "match": {"anchors": ["dram", "hbm", "nand", "substrate", "substrates", "memory shortage", "memory prices",
+                              "micron", "sk hynix", "intel"],
+                  "context": ["memory", "shortage", "shortages", "chips", "chip", "semiconductor", "pc", "pcs",
+                              "data center", "supply", "prices", "earnings"],
+                  "exclude": CRYPTO, "min_terms": 2, "topic": "memory and chip supply"},
         "discovery": {"label": "Milk Road, Nov 2, 2026", "url": "https://milkroad.com/ideas/intel-s-worst-day-since-1974/"},
         "evidence": [
             (INTC, "primary", "supports",
@@ -335,26 +582,74 @@ SIGNALS: list[dict[str, Any]] = [
     },
     {
         "id": "powered-compute-as-product",
-        "title": "Powered compute capacity is becoming a sellable product outside the hyperscalers",
-        "dek": "Aerospace, crypto-infrastructure and energy owners are monetizing power-ready sites as GPU rents rise. "
-               "Financing quality and contract duration become the risk.",
-        "sector": "AI infrastructure & energy",
+        "content_version": CONTENT_VERSION,
+        "title": "Owners of powered sites outside the hyperscalers are adding compute capacity and renting it out",
+        "dek": "SpaceX reports 1.7 GW of compute capacity; Galaxy reportedly leased a Texas campus to CoreWeave. "
+               "Financing and contract length are the risks.",
+        "takeaway": "SpaceX's Q3 filing reports 1.7 GW of nameplate compute capacity (installed power capacity, not "
+                    "how much is used), up from 0.6 GW a year earlier. Milk Road reports that Galaxy leased its Helios "
+                    "campus in West Texas to CoreWeave and that SpaceX rents capacity on short-term contracts. "
+                    "Power-ready sites look sellable, but utilization and external revenue are not disclosed.",
+        "caveats": [
+            "Nameplate capacity is not utilization or external revenue.",
+            "The Galaxy lease and SpaceX rental terms are reported by a newsletter, not yet matched to filings.",
+        ],
+        "sector": "AI infrastructure",
         "themes": ["Compute markets", "Power & sites", "Infrastructure finance"],
         "direction": "Emerging",
         "what_changed": "SpaceX's Q3 10-Q (filed Oct 22, 2026) reports 1.7 GW of nameplate compute capacity at Sep 30, "
                         "2026, up from 0.6 GW a year earlier, alongside a new 'Super Intelligence' segment. Milk Road "
                         "reported that Galaxy leased its Helios West Texas campus to CoreWeave and that SpaceX rents "
                         "capacity on short-term contracts that reprice as GPU rents rise.",
-        "why_now": "Rising rental prices make short-term capacity leasing lucrative, and energized, permitted sites are "
-                   "the scarce input — companies with power, land and capital are monetizing them directly.",
-        "market_indication": "Capacity with energized power is pricing like a scarce asset, pulling non-traditional "
-                             "owners into compute. Contract duration and financing terms will separate durable "
-                             "operators from those exposed to a rent reversal.",
-        "startup_opportunity": "Site underwriting and power-availability data; capacity brokerage and short-term "
-                               "compute marketplaces; risk and monitoring tools for GPU-backed lending; energy-aware "
-                               "workload scheduling.",
-        "corporate_buyer": "Enterprises and AI developers seeking capacity outside hyperscaler queues; utilities and "
-                           "industrial landowners evaluating data-center conversions.",
+        "changed_points": [
+            "SpaceX 10-Q: 1.7 GW nameplate compute capacity at Sep 30, 2026 vs 0.6 GW a year earlier; segments now "
+            "include Super Intelligence.",
+            "Reported (Milk Road): Galaxy's Helios campus in West Texas is leased to CoreWeave.",
+            "Reported (Milk Road): SpaceX rents compute on short-term contracts that reprice as GPU rents rise.",
+        ],
+        "why_now": "Rising rents for many GPUs make short-term capacity leasing attractive, and energized, permitted "
+                   "sites are scarce, so companies that already have power, land and capital can monetize them.",
+        "market_indication": "Capacity with energized power is pricing like a scarce asset and pulling in "
+                             "non-traditional owners. Contract length and financing terms will separate durable "
+                             "operators from those exposed to a fall in rents.",
+        "audiences": [
+            {"segment": "Enterprises", "role": "buyer",
+             "who": "AI and infrastructure leaders who need capacity outside hyperscaler queues.",
+             "impact": "More non-traditional providers may offer capacity, often on short contracts that reprice.",
+             "action": "Evaluate alternative providers on contract length, repricing terms and power reliability, not "
+                       "only price.",
+             "trigger": "Alternative providers publish pricing, or hyperscaler waitlists lengthen."},
+            {"segment": "Infrastructure & energy owners", "role": "benefits",
+             "who": "Utilities, industrial landowners and site developers with power and permits.",
+             "impact": "Energized, permitted land may be monetizable as compute capacity.",
+             "action": "Assess which sites have deliverable power and what conversion would cost.",
+             "trigger": "Comparable sites lease to AI tenants on disclosed terms."},
+            {"segment": "Lenders & investors", "role": "pressure",
+             "who": "Lenders and investors financing GPU and site build-outs.",
+             "impact": "Short contracts, and falling rents for the newest GPUs, raise refinancing risk.",
+             "action": "Stress-test GPU-backed loans against a rent decline like B300's since August.",
+             "trigger": "Smaller AI-infrastructure firms report tighter or costlier financing."},
+        ],
+        "implications": [
+            {"trend": "Non-hyperscalers monetizing powered sites",
+             "problem": "Hard to know which sites can deliver power on schedule",
+             "buyer": "Developers, utilities and capacity buyers",
+             "solution": "Site underwriting and power-availability data",
+             "investigate": "Power-availability data and site-underwriting providers (category)"},
+            {"trend": "Short-term capacity contracts",
+             "problem": "Lenders cannot easily monitor GPU utilization and pricing behind their collateral",
+             "buyer": "GPU-backed lenders",
+             "solution": "Collateral monitoring and risk tools for compute finance",
+             "investigate": "Compute-finance risk and monitoring tools (category)"},
+        ],
+        "card_implication": "Capacity buyers should weigh contract length and repricing terms, not just price.",
+        "customer_validation": "Verify the Helios lease in Galaxy's Q3 filing; ask 3–5 capacity buyers whether they "
+                               "have contracted with non-hyperscaler providers and on what term length.",
+        "view_triggers": [
+            "GPU rents fall as short-term contracts roll off.",
+            "SpaceX segment disclosures show capacity is mostly for internal use.",
+            "Financing for smaller AI-infrastructure firms tightens further.",
+        ],
         "value_chain": ["Power & sites", "Neoclouds", "Hyperscalers", "GPU finance"],
         "confidence": "Low",
         "corroboration": "Partially corroborated",
@@ -362,15 +657,18 @@ SIGNALS: list[dict[str, Any]] = [
                                 "and rental terms and revenue attribution come from secondary reporting not yet "
                                 "matched to filings.",
         "next_validation": "Verify the Helios lease in Galaxy's Q3 filing; check SpaceX segment disclosures for "
-                           "external compute rental revenue vs internal use.",
+                           "external compute rental revenue versus internal use.",
         "falsifier": "GPU rents fall back as short-term contracts roll off, leaving non-traditional owners with "
-                     "under-utilized sites.",
-        "thesis_sentence": "Powered compute is becoming a sellable product for non-hyperscalers, making power-ready "
-                           "sites and capacity financing the next infrastructure bottleneck.",
+                     "under-used sites.",
+        "thesis_sentence": "Powered compute is becoming a sellable product for owners outside the hyperscalers, making "
+                           "power-ready sites and capacity financing key constraints.",
+        "evidence_reviewed_at": VERIFIED_AT,
         "analyst_scores": {"relevance": 4, "impact": 3},
-        "match_terms": ["gigawatt", "gw", "megawatt", "mw", "data center", "power", "spacex", "galaxy", "coreweave",
-                        "lease", "capacity", "neocloud"],
-        "match_min": 2,
+        "match": {"anchors": ["gigawatt", "gigawatts", "megawatt", "megawatts", "data center", "data centers",
+                              "data centre", "coreweave", "helios", "neocloud", "colocation"],
+                  "context": ["power", "lease", "leased", "capacity", "compute", "gpu", "gpus", "ai", "financing",
+                              "site", "campus", "spacex", "galaxy"],
+                  "exclude": CRYPTO, "min_terms": 2, "topic": "powered compute capacity"},
         "discovery": {"label": "Milk Road, Nov 4, 2026", "url": "https://milkroad.com/ideas/why-our-team-keeps-buying-spacex/"},
         "evidence": [
             (SPCX, "primary", "supports",
@@ -392,9 +690,19 @@ SIGNALS: list[dict[str, Any]] = [
     },
     {
         "id": "mission-critical-private-5g",
-        "title": "Mission-critical private 5G is landing in transport infrastructure, but vendor enterprise revenue is flat",
-        "dek": "Large operators are validating cellular for operational systems. Value may accrue to integrators and "
+        "content_version": CONTENT_VERSION,
+        "title": "Mission-critical private 5G won a rail contract, but Ericsson's enterprise revenue is flat",
+        "dek": "Operators are testing cellular networks for operational systems; value may go to integrators and "
                "managed operators rather than radio vendors.",
+        "takeaway": "Ericsson's Q3 report says it was selected for the first stage of Queensland's next-generation "
+                    "rail communications network using mission-critical private 5G (a dedicated cellular network "
+                    "built for safety-critical operations). The same report shows Enterprise segment sales down 10%, "
+                    "about +1% organically. Operational adoption is real but early, and vendor revenue shows no "
+                    "acceleration yet.",
+        "caveats": [
+            "One vendor and one contract, with no disclosed value.",
+            "Flat organic segment revenue directly challenges near-term growth.",
+        ],
         "sector": "Industrial connectivity",
         "themes": ["Private networks", "Critical infrastructure", "Managed services"],
         "direction": "Contested",
@@ -402,32 +710,69 @@ SIGNALS: list[dict[str, Any]] = [
                         "of Queensland's next-generation rail communications network using mission-critical private 5G "
                         "capabilities. The same report shows Enterprise segment sales down 10% to SEK 4.6b — about +1% "
                         "organically after a divestment.",
-        "why_now": "Rail and other critical-infrastructure operators are replacing legacy narrowband radio; "
-                   "mission-critical 5G capabilities make cellular viable for operational, not just office, "
+        "changed_points": [
+            "Ericsson Q3 report: selected for the first stage of Queensland's next-generation rail communications "
+            "network with mission-critical private 5G.",
+            "Same report: Enterprise segment sales −10% to SEK 4.6b; about +1% organically after the iconectiv "
+            "divestment.",
+        ],
+        "why_now": "Rail and other critical-infrastructure operators are replacing legacy narrowband radio, and "
+                   "mission-critical 5G features make cellular viable for operational systems, not just office "
                    "connectivity.",
         "market_indication": "Infrastructure contracts validate private 5G for operational use, but flat vendor "
-                             "enterprise revenue suggests value accrues to integration, devices and managed operations "
-                             "rather than RAN equipment.",
-        "startup_opportunity": "Managed private-network operations for multi-site industrial operators; rugged "
-                               "devices and applications on mission-critical 5G; ROI measurement (downtime, safety "
-                               "incidents) for connectivity investments.",
-        "corporate_buyer": "Rail, port, mining and utility operators replacing legacy radio; industrial companies with "
-                           "distributed sites that need deterministic connectivity.",
+                             "enterprise revenue suggests value goes to integration, devices and managed operations "
+                             "rather than radio equipment.",
+        "audiences": [
+            {"segment": "Industrial operators", "role": "buyer",
+             "who": "Rail, port, mining and utility operators replacing legacy radio.",
+             "impact": "Cellular networks may replace narrowband radio for operational systems, changing capital and "
+                       "operating costs.",
+             "action": "Benchmark private 5G against current radio on uptime, coverage and total cost at one site.",
+             "trigger": "Peers announce operational (not office) private 5G deployments with disclosed scope."},
+            {"segment": "Service providers", "role": "benefits",
+             "who": "Systems integrators and managed network operators.",
+             "impact": "Operators rarely have in-house cellular skills, so integration and operations may capture "
+                       "the value.",
+             "action": "Package managed private-network operations for multi-site industrial clients.",
+             "trigger": "Tenders specify managed operations alongside equipment."},
+        ],
+        "implications": [
+            {"trend": "Mission-critical private 5G entering transport",
+             "problem": "Operators cannot run cellular networks in-house",
+             "buyer": "Rail, port and utility operators",
+             "solution": "Managed private-network operations",
+             "investigate": "Managed private-network operators and integrators (category)"},
+            {"trend": "Connectivity upgrades need a business case",
+             "problem": "The return on connectivity spending is hard to prove",
+             "buyer": "Industrial operations and finance teams",
+             "solution": "Measurement of downtime and safety-incident reduction",
+             "investigate": "Industrial connectivity ROI-measurement tools (category)"},
+        ],
+        "card_implication": "Operators can pilot private 5G at one site and measure uptime and total cost.",
+        "customer_validation": "Find Queensland procurement records for scope and value; ask 3–5 industrial operators "
+                               "what would justify replacing their current radio.",
+        "view_triggers": [
+            "Competing vendors also report flat private-wireless revenue for two quarters.",
+            "No new large operator deployments are announced.",
+        ],
         "value_chain": ["RAN vendors", "Systems integrators", "Industrial devices", "Managed network services"],
         "confidence": "Low",
         "corroboration": "Single primary source",
         "confidence_rationale": "One vendor report with a contract selection but no disclosed value; flat organic "
                                 "segment revenue directly challenges near-term acceleration.",
-        "next_validation": "Find Queensland procurement records for scope and value; check other RAN vendors' Q3 "
+        "next_validation": "Find Queensland procurement records for scope and value; check other radio vendors' Q3 "
                            "enterprise and private-wireless figures for corroboration.",
         "falsifier": "Competing vendors also report flat private-wireless revenue over the next two quarters with no "
                      "new large operator deployments.",
         "thesis_sentence": "Mission-critical private 5G is being adopted for transport infrastructure, but flat vendor "
-                           "revenue suggests value will accrue to integrators and managed operators.",
+                           "revenue suggests value will go to integrators and managed operators.",
+        "evidence_reviewed_at": VERIFIED_AT,
         "analyst_scores": {"relevance": 3, "impact": 3},
-        "match_terms": ["private 5g", "5g", "private network", "private wireless", "ericsson", "nokia", "rail",
-                        "industrial", "connectivity", "ran"],
-        "match_min": 2,
+        "match": {"anchors": ["private 5g", "private network", "private networks", "private wireless",
+                              "mission-critical", "ericsson", "nokia", "cbrs"],
+                  "context": ["rail", "industrial", "network", "connectivity", "5g", "port", "ports", "mining",
+                              "utility", "utilities", "enterprise"],
+                  "exclude": CRYPTO, "min_terms": 2, "topic": "industrial and private networks"},
         "evidence": [
             (ERIC, "primary", "supports",
              "Selected for the first stage of Queensland's next-generation rail communications network with "
@@ -441,16 +786,25 @@ SIGNALS: list[dict[str, Any]] = [
 ]
 
 NOTE = {
-    "headline": "Compute is getting scarcer as AI output gets cheaper",
-    "summary": "The first edition opens six working theses. The common thread: AI demand is broadening into "
-               "enterprise budgets and less-digitized industries while physical inputs — GPU-hours, memory, "
-               "powered sites — tighten. Each signal separates reported claims, primary disclosures and independent "
-               "corroboration from analyst inference, and names what would prove it wrong.",
+    "headline": "Older GPUs cost more to rent while AI output gets cheaper",
+    "summary": "Six working theses on where AI spending, pricing and infrastructure are shifting. Each one says who "
+               "it affects, what to check next and what would change the view.",
+    "takeaways": [
+        "Rental prices for A100, H100 and H200 GPUs rose since August while blended token prices fell; the newest "
+        "GPUs got cheaper.",
+        "Enterprise AI spend is deepening inside existing customers, and two filers say pricing is moving from seats "
+        "to credits and outcomes, with longer sales cycles.",
+        "Memory, substrates and powered sites look like binding constraints; private 5G is winning operational "
+        "contracts, but vendor revenue is flat.",
+    ],
 }
 
-REQUIRED = ("title", "dek", "sector", "themes", "direction", "what_changed", "why_now", "market_indication",
-            "startup_opportunity", "corporate_buyer", "value_chain", "confidence", "corroboration",
-            "confidence_rationale", "next_validation", "falsifier", "thesis_sentence", "evidence")
+REQUIRED = ("title", "dek", "takeaway", "caveats", "sector", "themes", "direction", "what_changed", "why_now",
+            "market_indication", "audiences", "implications", "card_implication", "customer_validation",
+            "value_chain", "confidence", "corroboration", "confidence_rationale", "next_validation", "falsifier",
+            "thesis_sentence", "evidence_reviewed_at", "evidence")
+AUDIENCE_KEYS = ("segment", "role", "who", "impact", "action", "trigger")
+IMPLICATION_KEYS = ("trend", "problem", "buyer", "solution", "investigate")
 
 
 def validate_signal(sig: dict[str, Any]) -> list[str]:
@@ -463,53 +817,117 @@ def validate_signal(sig: dict[str, Any]) -> list[str]:
     for e in ev:
         if e[0] not in DOCS:
             errs.append(f"evidence url not registered: {e[0]}")
+    for a in sig.get("audiences") or []:
+        errs += [f"audience {a.get('segment')}: missing {k}" for k in AUDIENCE_KEYS if not a.get(k)]
+        if a.get("role") not in ROLES:
+            errs.append(f"audience {a.get('segment')}: role must be one of {ROLES}")
+    segs = [a.get("segment") for a in sig.get("audiences") or []]
+    if len(segs) != len(set(segs)):
+        errs.append("duplicate audience segment")
+    for i in sig.get("implications") or []:
+        errs += [f"implication missing {k}" for k in IMPLICATION_KEYS if not i.get(k)]
     return errs
 
 
+def _data(sig: dict[str, Any]) -> dict[str, Any]:
+    return {k: v for k, v in sig.items() if k not in ("id", "evidence")}
+
+
+def _doc_ids(conn: sqlite3.Connection) -> dict[str, int]:
+    ids: dict[str, int] = {}
+    for url, (src, title, stype, pub, event) in DOCS.items():
+        row = conn.execute("SELECT id FROM documents WHERE canonical_url=?", (canonicalize(url),)).fetchone()
+        if row:
+            ids[url] = int(row["id"])
+            continue
+        item = RawItem(url=url, title=title, source_type=stype, published_at=pub, event_date=event,
+                       meta={"verified_for_edition": EDITION_DATE})
+        ids[url], _ = upsert_document(conn, item, src, VERIFIED_AT, origin="seed")
+    return ids
+
+
+def _write_evidence(conn: sqlite3.Connection, sig: dict[str, Any], doc_ids: dict[str, int]) -> None:
+    conn.execute("DELETE FROM signal_evidence WHERE signal_id=?", (sig["id"],))
+    for pos, (url, claim, stance, statement) in enumerate(sig["evidence"]):
+        conn.execute("INSERT INTO signal_evidence(signal_id, document_id, claim_type, stance, statement, position) "
+                     "VALUES (?,?,?,?,?,?)", (sig["id"], doc_ids[url], claim, stance, statement, pos))
+
+
+def _upsert_note(conn: sqlite3.Connection) -> None:
+    conn.execute("INSERT INTO edition_notes(edition_date, headline, summary, takeaways, created_at) VALUES (?,?,?,?,?) "
+                 "ON CONFLICT(edition_date) DO UPDATE SET headline=excluded.headline, summary=excluded.summary, "
+                 "takeaways=excluded.takeaways",
+                 (EDITION_DATE, NOTE["headline"], NOTE["summary"], dumps(NOTE["takeaways"]), PUBLISHED_AT))
+
+
+def _check() -> None:
+    for sig in SIGNALS:
+        errs = validate_signal(sig)
+        if errs:
+            raise ValueError(f"{sig['id']}: {errs}")
+
+
 def seed_if_empty(conn: sqlite3.Connection) -> bool:
+    """Seed an empty database; otherwise apply any newer editorial content (see sync_content)."""
     if conn.execute("SELECT COUNT(*) FROM signals").fetchone()[0]:
+        sync_content(conn)
         return False
     seed(conn)
     return True
 
 
 def seed(conn: sqlite3.Connection) -> None:
-    for sig in SIGNALS:
-        errs = validate_signal(sig)
-        if errs:
-            raise ValueError(f"{sig['id']}: {errs}")
+    _check()
     with tx(conn):
         for sid, name, kind, home, note in SOURCES:
             conn.execute("INSERT INTO sources(id, name, kind, homepage, access_note) VALUES (?,?,?,?,?) "
                          "ON CONFLICT(id) DO NOTHING", (sid, name, kind, home, note))
-        doc_ids: dict[str, int] = {}
-        for url, (src, title, stype, pub, event) in DOCS.items():
-            item = RawItem(url=url, title=title, source_type=stype, published_at=pub, event_date=event,
-                           meta={"verified_for_edition": EDITION_DATE})
-            doc_ids[url], _ = upsert_document(conn, item, src, VERIFIED_AT, origin="seed")
+        doc_ids = _doc_ids(conn)
         for sig in SIGNALS:
-            data = {k: v for k, v in sig.items() if k not in ("id", "evidence")}
-            existing = conn.execute("SELECT data FROM signals WHERE id=?", (sig["id"],)).fetchone()
-            if existing and loads(existing["data"]) == data:
-                continue
-            if existing:
-                conn.execute("UPDATE signals SET data=?, updated_at=? WHERE id=?", (dumps(data), PUBLISHED_AT, sig["id"]))
-            else:
-                conn.execute("INSERT INTO signals(id, data, first_published_at, updated_at) VALUES (?,?,?,?)",
-                             (sig["id"], dumps(data), PUBLISHED_AT, PUBLISHED_AT))
+            conn.execute("INSERT INTO signals(id, data, first_published_at, updated_at) VALUES (?,?,?,?)",
+                         (sig["id"], dumps(_data(sig)), PUBLISHED_AT, REVISED_AT))
             conn.execute("INSERT INTO signal_revisions(signal_id, revised_at, reason, data) VALUES (?,?,?,?)",
-                         (sig["id"], PUBLISHED_AT, "first edition" if not existing else "seed update", dumps(data)))
-            conn.execute("DELETE FROM signal_evidence WHERE signal_id=?", (sig["id"],))
-            for pos, (url, claim, stance, statement) in enumerate(sig["evidence"]):
-                conn.execute("INSERT INTO signal_evidence(signal_id, document_id, claim_type, stance, statement, position) "
-                             "VALUES (?,?,?,?,?,?)", (sig["id"], doc_ids[url], claim, stance, statement, pos))
-        conn.execute("INSERT INTO edition_notes(edition_date, headline, summary, created_at) VALUES (?,?,?,?) "
-                     "ON CONFLICT(edition_date) DO NOTHING", (EDITION_DATE, NOTE["headline"], NOTE["summary"], PUBLISHED_AT))
+                         (sig["id"], REVISED_AT, "first edition", dumps(_data(sig))))
+            _write_evidence(conn, sig, doc_ids)
+        _upsert_note(conn)
         run_id = int(conn.execute("INSERT INTO pipeline_runs(trigger, started_at, finished_at, status, summary) "
                                   "VALUES ('seed', ?, ?, 'seeded', ?)",
-                                  (PUBLISHED_AT, PUBLISHED_AT, dumps({"note": "verified first edition loaded"}))
+                                  (REVISED_AT, REVISED_AT, dumps({"note": "verified first edition loaded"}))
                                   ).lastrowid or 0)
-        now = parse_iso(PUBLISHED_AT)
+        now = parse_iso(REVISED_AT)
         assert now is not None
         write_snapshot(conn, run_id, now, EDITION_DATE)
-    _ = iso  # keep import used for type checkers
+
+
+def sync_content(conn: sqlite3.Connection, now: datetime | None = None) -> int:
+    """Apply editorial revisions to existing theses. Records a revision, keeps first-publication dates, re-checks
+    unreviewed discovery matches under the current rules and writes a new snapshot for *today's* edition only;
+    archived snapshots are never rewritten. Evidence review timestamps are not changed by a revision."""
+    _check()
+    now = now or utcnow()
+    changed = 0
+    with tx(conn):
+        doc_ids = _doc_ids(conn)
+        for sig in SIGNALS:
+            data = _data(sig)
+            row = conn.execute("SELECT data FROM signals WHERE id=?", (sig["id"],)).fetchone()
+            if row and loads(row["data"]) == data:
+                continue
+            if row:
+                conn.execute("UPDATE signals SET data=?, updated_at=? WHERE id=?", (dumps(data), REVISED_AT, sig["id"]))
+            else:
+                conn.execute("INSERT INTO signals(id, data, first_published_at, updated_at) VALUES (?,?,?,?)",
+                             (sig["id"], dumps(data), REVISED_AT, REVISED_AT))
+            conn.execute("INSERT INTO signal_revisions(signal_id, revised_at, reason, data) VALUES (?,?,?,?)",
+                         (sig["id"], REVISED_AT, f"editorial revision v{CONTENT_VERSION}: business relevance, "
+                          "evidence-scoped headline; evidence unchanged", dumps(data)))
+            _write_evidence(conn, sig, doc_ids)
+            changed += 1
+        if changed:
+            _upsert_note(conn)
+            rematch_ingested(conn, iso(now))
+            run_id = int(conn.execute("INSERT INTO pipeline_runs(trigger, started_at, finished_at, status, summary) "
+                                      "VALUES ('editorial', ?, ?, 'revised', ?)",
+                                      (iso(now), iso(now), dumps({"revised_signals": changed}))).lastrowid or 0)
+            write_snapshot(conn, run_id, now)
+    return changed

@@ -85,3 +85,16 @@ Any host with a persistent disk works. A preview server without the worker proce
 entries for both EDT and EST, gated by `cli due` so each slot runs once), keeps the SQLite database on a `data`
 branch, and publishes a read-only static build (`cli export`) to GitHub Pages. In static mode manual refresh is the
 workflow's "Run workflow" button; set the optional `SEC_USER_AGENT` repository secret to enable SEC EDGAR.
+
+### Thesis structure
+
+Each thesis carries a takeaway with visible caveats, structured audiences (segment, role — likely buyer, benefits or
+faces pressure — who, impact, possible action, trigger to watch), business implications (trend → problem → buyer →
+solution → what to investigate), a customer-validation step, counterevidence and validation triggers. Audiences and
+implications are analyst inference and are labelled as such. Editorial revisions are applied by `cli seed`
+(`sync_content`): a revision record is saved, a new snapshot is written for today's edition only, archived
+snapshots are never rewritten, and evidence-review timestamps are unchanged. "Since the last edition" appears only
+when the previous edition's snapshot shows a real change.
+
+Discovery leads link to a thesis only when they name a thesis-specific anchor term plus supporting context and none
+of its exclusion terms; the stored match explains why. Unreviewed mentions never count as evidence or affect ranking.

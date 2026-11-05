@@ -121,26 +121,64 @@ def load_signals(conn: sqlite3.Connection, now: datetime | None = None) -> list[
     return out
 
 
-def match_signals(conn: sqlite3.Connection, doc_ids: Sequence[int], now_iso: str) -> int:
+def _has(term: str, text: str) -> bool:
+    return re.search(rf"(?<![a-z0-9]){re.escape(term.lower())}(?![a-z0-9])", text) is not None
+
+
+def match_rule(data: dict[str, Any]) -> dict[str, Any]:
+    if data.get("match"):
+        return dict(data["match"])
+    return {"anchors": data.get("match_terms") or [], "context": [], "min_terms": int(data.get("match_min", 2)),
+            "topic": data.get("title", "this thesis")}  # pre-v2 records
+
+
+def match_document(text: str, rule: dict[str, Any]) -> dict[str, Any] | None:
+    """A lead matches only when it names a thesis-specific anchor term plus enough distinct supporting terms,
+    and none of the thesis's exclusion terms. Broad keyword overlap alone is not a match."""
+    text = text.lower()
+    if any(_has(t, text) for t in rule.get("exclude", [])):
+        return None
+    anchors = [t for t in rule.get("anchors", []) if _has(t, text)]
+    if not anchors:
+        return None
+    context = [t for t in rule.get("context", []) if t not in anchors and _has(t, text)]
+    if len(anchors) + len(context) < int(rule.get("min_terms", 2)):
+        return None
+    why = f"Names {', '.join(anchors)}" + (f" alongside {', '.join(context)}" if context else "")
+    return {"anchors": anchors, "context": context, "why": f"{why}; may bear on {rule.get('topic', 'this thesis')}."}
+
+
+def match_signals(conn: sqlite3.Connection, doc_ids: Sequence[int], now_iso: str, prune: bool = False) -> int:
+    """Record unreviewed thesis mentions. With prune=True, existing matches that no longer satisfy the
+    current rule are removed (their original matched_at is kept for those that still qualify)."""
     if not doc_ids:
         return 0
-    sigs = [(r["id"], loads(r["data"])) for r in conn.execute("SELECT id, data FROM signals WHERE status='published'")]
+    sigs = [(r["id"], match_rule(loads(r["data"]))) for r in conn.execute("SELECT id, data FROM signals WHERE status='published'")]
     n = 0
     for doc_id in doc_ids:
         d = conn.execute("SELECT title, excerpt FROM documents WHERE id=?", (doc_id,)).fetchone()
-        text = f"{d['title']} {d['excerpt'] or ''}".lower()
-        for sid, data in sigs:
-            terms = data.get("match_terms") or []
-            hits = [t for t in terms if re.search(rf"(?<![a-z0-9]){re.escape(t.lower())}(?![a-z0-9])", text)]
-            if len(hits) < int(data.get("match_min", 2)):
+        text = f"{d['title']} {d['excerpt'] or ''}"
+        for sid, rule in sigs:
+            hit = match_document(text, rule)
+            existing = conn.execute("SELECT 1 FROM signal_matches WHERE signal_id=? AND document_id=?",
+                                    (sid, doc_id)).fetchone()
+            if not hit:
+                if prune and existing:
+                    conn.execute("DELETE FROM signal_matches WHERE signal_id=? AND document_id=?", (sid, doc_id))
                 continue
-            already = conn.execute("SELECT 1 FROM signal_evidence WHERE signal_id=? AND document_id=?",
-                                   (sid, doc_id)).fetchone()
-            if not already:
-                cur = conn.execute("INSERT OR IGNORE INTO signal_matches(signal_id, document_id, terms, matched_at) "
-                                   "VALUES (?,?,?,?)", (sid, doc_id, dumps(hits), now_iso))
-                n += cur.rowcount
+            if conn.execute("SELECT 1 FROM signal_evidence WHERE signal_id=? AND document_id=?", (sid, doc_id)).fetchone():
+                continue  # already reviewed evidence; never listed again as an unreviewed mention
+            if existing:
+                conn.execute("UPDATE signal_matches SET terms=? WHERE signal_id=? AND document_id=?", (dumps(hit), sid, doc_id))
+            else:
+                n += conn.execute("INSERT INTO signal_matches(signal_id, document_id, terms, matched_at) VALUES (?,?,?,?)",
+                                  (sid, doc_id, dumps(hit), now_iso)).rowcount
     return n
+
+
+def rematch_ingested(conn: sqlite3.Connection, now_iso: str) -> int:
+    ids = [r[0] for r in conn.execute("SELECT id FROM documents WHERE origin='ingested'")]
+    return match_signals(conn, ids, now_iso, prune=True)
 
 
 # ---------- editions ----------
@@ -167,22 +205,50 @@ def build_edition(conn: sqlite3.Connection, edition_date: str, now: datetime, ru
     sources_ok = conn.execute(
         "SELECT COUNT(DISTINCT source_id) FROM documents WHERE retrieved_at>=? AND retrieved_at<?",
         (start, end)).fetchone()[0]
-    note_row = conn.execute("SELECT headline, summary FROM edition_notes WHERE edition_date=?",
+    note_row = conn.execute("SELECT headline, summary, takeaways FROM edition_notes WHERE edition_date=?",
                             (edition_date,)).fetchone()
     if note_row:
-        note = {"headline": note_row["headline"], "summary": note_row["summary"], "auto": False}
+        note = {"headline": note_row["headline"], "summary": note_row["summary"],
+                "takeaways": loads(note_row["takeaways"]) or [], "auto": False}
     else:
         new = [s for s in signals if s["is_new_in_edition"]]
         note = {
-            "headline": f"{len(new)} new analyst-reviewed signal{'s' if len(new) != 1 else ''} in this edition"
-            if new else "No new analyst-reviewed signals in this edition",
-            "summary": f"Automated ingestion recorded {leads_new} new unreviewed leads from {sources_ok} sources "
-                       "today. Published signals carry forward with refreshed rankings; leads remain discovery "
-                       "material until checked against primary evidence.",
+            "headline": f"{len(new)} new analyst-reviewed thesis{'es' if len(new) != 1 else ''} in this edition"
+            if new else "Published theses carried forward; no new analyst-reviewed theses today",
+            "summary": f"Automated ingestion recorded {leads_new} new unreviewed leads from {sources_ok} sources. "
+                       "Theses are unchanged unless marked revised; fetching data does not re-review them.",
+            "takeaways": [s["dek"] for s in signals[:3]],
             "auto": True,
         }
+    prev = conn.execute("SELECT edition_date, payload FROM edition_snapshots WHERE edition_date<? "
+                        "ORDER BY edition_date DESC, created_at DESC, id DESC LIMIT 1", (edition_date,)).fetchone()
+    if prev:
+        prev_sigs = {p["id"]: p for p in loads(prev["payload"])["signals"]}
+        for s in signals:
+            ch = since_last(prev_sigs.get(s["id"]), s, prev["edition_date"])
+            if ch:
+                s["since_last"] = ch
     return {"edition_date": edition_date, "generated_at": iso(now), "run_id": run_id, "note": note,
             "signals": signals, "leads_new": leads_new, "ranking": METHOD}
+
+
+def since_last(prev: dict[str, Any] | None, cur: dict[str, Any], prev_date: str) -> dict[str, Any] | None:
+    """Changes recorded between a thesis in the previous edition and now. Returns None when nothing changed."""
+    if not prev:
+        return None
+    seen = {e["statement"] for e in prev.get("evidence", [])}
+    new_ev = [{k: e.get(k) for k in ("statement", "claim_type", "stance", "url", "source_name")}
+              for e in cur.get("evidence", []) if e["statement"] not in seen]
+    revised = [{"what": label, "from": prev.get(k), "to": cur.get(k)}
+               for k, label in (("title", "Headline"), ("takeaway", "Takeaway"), ("direction", "Direction"))
+               if prev.get(k) and cur.get(k) and prev.get(k) != cur.get(k)]
+    conf = ({"from": prev.get("confidence"), "to": cur.get("confidence")}
+            if prev.get("confidence") and prev.get("confidence") != cur.get("confidence") else None)
+    outcomes = [v for v in cur.get("validation_log") or [] if str(v.get("date", "")) > prev_date]
+    if not (new_ev or revised or conf or outcomes):
+        return None
+    return {"previous_edition": prev_date, "new_evidence": new_ev, "revised": revised, "confidence": conf,
+            "validation_outcomes": outcomes, "open_questions": [cur["next_validation"]] if cur.get("next_validation") else []}
 
 
 def write_snapshot(conn: sqlite3.Connection, run_id: int | None, now: datetime,
@@ -310,6 +376,24 @@ def run_pipeline(conn: sqlite3.Connection, settings: Settings, trigger: str,
 
 # ---------- status ----------
 
+def plain_error(err: str | None) -> str:
+    """Reader-facing reason for a source problem; the raw error stays in diagnostics."""
+    e = (err or "").lower()
+    if "sec_user_agent" in e or "contact" in e:
+        return "not configured: SEC requests need a contact address"
+    if "robots" in e:
+        return "skipped: the site's robots.txt does not allow this page"
+    if any(c in e for c in ("401", "402", "403", "access restricted", "not bypassed", "paywall")):
+        return "access restricted by the publisher (not bypassed)"
+    if "429" in e or "rate limit" in e:
+        return "rate-limited by the source; retried next run"
+    if "timeout" in e or "timed out" in e:
+        return "timed out; retried next run"
+    if "parse" in e:
+        return "returned data in an unexpected format"
+    return "unavailable this run; retried next run"
+
+
 def get_status(conn: sqlite3.Connection, settings: Settings, now: datetime | None = None) -> dict[str, Any]:
     now = now or utcnow()
     q = ",".join("?" * len(INGEST_TRIGGERS))
@@ -324,10 +408,20 @@ def get_status(conn: sqlite3.Connection, settings: Settings, now: datetime | Non
     sources = [dict(r) for r in conn.execute(
         "SELECT id, name, kind, homepage, access_note, last_success_at, last_error, last_error_at, last_status "
         "FROM sources ORDER BY kind, name")]
-    run = None
+    for src in sources:
+        src["plain_error"] = plain_error(src["last_error"]) if src["last_status"] in ("failed", "degraded") else None
+    run, refresh = None, None
     if last_run:
         run = dict(last_run)
         run["summary"] = loads(run["summary"])
+        rows = (run["summary"] or {}).get("sources") or []
+        if rows:
+            names = {x["id"]: x["name"] for x in sources}
+            refresh = {"status": run["status"], "finished_at": run["finished_at"], "total": len(rows),
+                       "ok": sum(r["status"] == "ok" for r in rows),
+                       "issues": [{"source": names.get(r["source"], r["source"]), "status": r["status"],
+                                   "reason": plain_error(r.get("error"))} for r in rows
+                                  if r["status"] in ("failed", "degraded")]}
     return {
         "now": iso(now),
         "timezone": "America/New_York",
@@ -335,6 +429,7 @@ def get_status(conn: sqlite3.Connection, settings: Settings, now: datetime | Non
         "next_scheduled": iso(next_slot(now)),
         "previous_slot": iso(previous_slot(now)),
         "last_run": run,
+        "refresh_summary": refresh,
         "last_success_at": iso(last_ok_dt) if last_ok_dt else None,
         "stale": is_stale(last_ok_dt, now, grace),
         "stale_grace_minutes": settings.stale_grace_minutes,
@@ -361,8 +456,15 @@ def recent_leads(conn: sqlite3.Connection, days: int, limit: int) -> list[dict[s
         "d.retrieved_at, d.cluster_id, s.name AS source_name, s.kind AS source_kind, "
         "(SELECT COUNT(*) FROM documents d2 WHERE d2.cluster_id=d.cluster_id) AS cluster_size, "
         "(SELECT GROUP_CONCAT(signal_id) FROM signal_matches m WHERE m.document_id=d.id) AS matched_signals, "
+        "(SELECT json_group_array(json_object('signal', m.signal_id, 'terms', json(m.terms))) FROM signal_matches m "
+        "WHERE m.document_id=d.id) AS matches, "
         "(SELECT COUNT(*) FROM document_revisions r WHERE r.document_id=d.id) AS revisions "
         "FROM documents d LEFT JOIN sources s ON s.id=d.source_id "
         "WHERE d.origin='ingested' AND d.first_seen_at >= strftime('%Y-%m-%dT%H:%M:%SZ','now',?) "
         "ORDER BY COALESCE(d.published_at, d.first_seen_at) DESC LIMIT ?", (f"-{days} days", limit)).fetchall()
-    return [dict(r) for r in rows]
+    out = []
+    for r in rows:
+        row = dict(r)
+        row["matches"] = loads(row["matches"]) or []
+        out.append(row)
+    return out

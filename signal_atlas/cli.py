@@ -29,7 +29,7 @@ def main() -> None:
     settings = get_settings()
     conn = connect(settings.db_path)
     if args.cmd == "seed":
-        print("seeded" if seed_if_empty(conn) else "already seeded")
+        print("seeded" if seed_if_empty(conn) else "already seeded; editorial content synced")
     elif args.cmd == "ingest":
         seed_if_empty(conn)
         print(json.dumps(run_pipeline(conn, settings, "cli"), indent=2))

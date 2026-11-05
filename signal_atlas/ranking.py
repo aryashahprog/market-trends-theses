@@ -11,10 +11,11 @@ CLAIM_POINTS = {"primary": 1.25, "corroborated": 1.0, "reported": 0.35}
 
 METHOD: dict[str, Any] = {
     "weights": WEIGHTS,
-    "scale": "Each component is 0–5 ranking points; the composite is a weighted sum used only to order "
-             "the feed. It is not a probability, forecast, or recommendation.",
+    "scale": "Each component is 0–5 points. The composite is a weighted sum used only for editorial "
+             "prioritization (the order of the feed). It is not a probability, forecast, or recommendation.",
     "components": {
-        "novelty": "Recency of first publication (−0.5/day from 5) plus up to +1 for new unreviewed mentions in 7 days.",
+        "novelty": "Recency of first publication: 5 points when new, −0.5 per day, floor 1. Unreviewed discovery "
+                   "mentions never affect ranking.",
         "evidence": "Points per supporting item (primary 1.25, corroborated 1.0, reported 0.35; context counts half), "
                     "capped at 4, plus up to +1 for independent source diversity.",
         "relevance": "Analyst judgement of usefulness to enterprise-focused investors and corporate innovation teams.",
@@ -36,17 +37,16 @@ def evidence_strength(evidence: list[dict[str, Any]]) -> float:
     return round(min(5.0, min(4.0, pts) + diversity), 2)
 
 
-def novelty(first_published: str, now: datetime, mentions_7d: int) -> float:
+def novelty(first_published: str, now: datetime) -> float:
     fp = parse_iso(first_published) or now
     age_days = max(0.0, (now - fp).total_seconds() / 86400)
-    base = max(1.0, 5.0 - 0.5 * age_days)
-    return round(min(5.0, base + min(1.0, 0.25 * mentions_7d)), 2)
+    return round(max(1.0, 5.0 - 0.5 * age_days), 2)
 
 
 def score_signal(sig: dict[str, Any], now: datetime) -> dict[str, float]:
     analyst = sig.get("analyst_scores") or {}
     comps = {
-        "novelty": novelty(sig["first_published_at"], now, int(sig.get("mentions_7d", 0))),
+        "novelty": novelty(sig["first_published_at"], now),
         "evidence": evidence_strength(sig.get("evidence", [])),
         "relevance": float(analyst.get("relevance", 3)),
         "impact": float(analyst.get("impact", 3)),
