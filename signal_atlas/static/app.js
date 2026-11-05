@@ -15,7 +15,7 @@
     if (path === "/api/leads") return "api/leads.json";
     return `${path.slice(1)}.json`;
   }
-  const state = { editions: [], edition: null, status: null, leads: [], q: "", theme: null, conf: null, active: 0,
+  const state = { editions: [], edition: null, status: null, leads: [], q: "", sector: null, aud: null, conf: null, active: 0,
     openId: null, lastFocus: null, seriesCache: new Map() };
 
   function h(tag, attrs, ...kids) {
@@ -53,23 +53,9 @@
   // ---------- small components ----------
   const confMeter = (c) => { const n = { High: 3, Medium: 2, Low: 1 }[c] || 0;
     return h("span", { class: "conf", "aria-hidden": "true" }, [1, 2, 3].map((i) => h("i", { class: i <= n ? "on" : "" }))); };
-  function freshness(sig) {
-    const latest = sig.evidence.map((e) => e.retrieved_at).filter(Boolean).sort().pop();
-    const hrs = latest ? (Date.now() - d(latest).getTime()) / 3.6e6 : Infinity;
-    const cls = hrs < 30 ? "" : hrs < 96 ? " fresh--aging" : " fresh--old";
-    return h("span", { title: `Most recent source retrieval: ${fmtDT(latest)}` }, h("i", { class: "fresh" + cls, "aria-hidden": "true" }), `Sources retrieved ${rel(latest)}`);
-  }
-  function evCounts(sig) {
-    const c = { primary: 0, corroborated: 0, reported: 0 }, ch = sig.evidence.filter((e) => e.stance === "challenges").length;
-    sig.evidence.forEach((e) => c[e.claim_type]++);
-    return h("span", {}, `${c.primary} primary · ${c.corroborated} corroborated · ${c.reported} reported · ${ch} counter`);
-  }
-  function scoreBar(sc, weights) {
-    const w = weights || { novelty: .2, evidence: .35, relevance: .2, impact: .25 };
-    const parts = ["novelty", "evidence", "relevance", "impact"];
-    const bar = h("span", { class: "scorebar", "aria-hidden": "true" }, parts.map((k) => { const b = h("b"); b.style.width = `${(w[k] * sc[k] / 5) * 100}%`; return b; }));
-    return h("span", { title: parts.map((k) => `${k} ${sc[k]}`).join(" · ") }, bar, `${sc.composite.toFixed(2)} ranking pts`);
-  }
+
+
+
   const kicker = (sig) => h("div", { class: "kicker" }, sig.sector, h("span", { class: "sep" }, "/"), sig.direction,
     sig.is_new_in_edition ? [" ", h("span", { class: "tag tag--new" }, "New")] : null);
 
@@ -125,39 +111,78 @@
   }
 
   // ---------- rendering ----------
+  const ROLE = { buyer: "Likely buyer", benefits: "Benefits", pressure: "Faces pressure" };
+  const ROLE_ORDER = { buyer: 0, pressure: 1, benefits: 2 };
+  const audiences = (s) => s.audiences || [];
   function filtered() {
     const q = state.q.trim().toLowerCase();
     return state.edition.signals.filter((s) => {
-      if (state.theme && !(s.themes.includes(state.theme) || s.sector === state.theme)) return false;
+      if (state.sector && s.sector !== state.sector) return false;
+      if (state.aud && !audiences(s).some((a) => a.segment === state.aud)) return false;
       if (state.conf && s.confidence !== state.conf) return false;
       if (!q) return true;
-      const hay = [s.title, s.dek, s.sector, s.what_changed, s.market_indication, s.startup_opportunity, s.corporate_buyer,
-        ...s.themes, ...s.value_chain, ...s.evidence.flatMap((e) => [e.statement, e.title, e.source_name])].join(" ").toLowerCase();
+      const hay = [s.title, s.dek, s.takeaway, s.sector, s.what_changed, s.market_indication, s.card_implication,
+        ...(s.themes || []), ...(s.value_chain || []),
+        ...audiences(s).flatMap((a) => [a.segment, a.who, a.impact, a.action]),
+        ...(s.implications || []).flatMap((i) => Object.values(i)),
+        ...s.evidence.flatMap((e) => [e.statement, e.title, e.source_name])].join(" ").toLowerCase();
       return q.split(/\s+/).every((t) => hay.includes(t));
     });
   }
+  const confLine = (s) => h("span", {}, confMeter(s.confidence), `${s.confidence} confidence`);
+  function audList(s, opts = {}) {
+    const a = audiences(s); if (!a.length) return null;
+    return h("div", { class: "aud" + (opts.dark ? " aud--dark" : "") }, h("span", { class: "aud__label" }, "Matters to"),
+      h("ul", {}, a.map((x) => h("li", { class: `aud__i aud__i--${x.role}`, title: ROLE[x.role] }, x.segment,
+        h("span", { class: "sr-only" }, ` (${ROLE[x.role]})`)))));
+  }
+  function stamps(s, compact) {
+    const rows = [];
+    if (state.status?.last_success_at) rows.push(["Data fetched", rel(state.status.last_success_at), fmtDT(state.status.last_success_at)]);
+    if (s.evidence_reviewed_at) rows.push(["Evidence reviewed", fmtDT(s.evidence_reviewed_at), fmtDT(s.evidence_reviewed_at)]);
+    if (s.updated_at) rows.push(["Thesis revised", fmtDT(s.updated_at), fmtDT(s.updated_at)]);
+    return h("dl", { class: "stamps" + (compact ? " stamps--compact" : ""), title: "Fetching data does not re-review a thesis." },
+      rows.map(([k, v, t]) => h("div", {}, h("dt", {}, k), h("dd", { title: t }, v))));
+  }
+
   function renderHero() {
-    const ed = state.edition, latest = state.editions[0]?.edition_date;
+    const ed = state.edition, latest = state.editions[0]?.edition_date, note = ed.note;
     $("#editionLabel").textContent = `Edition · ${fmtLong(ed.edition_date)}` + (ed.edition_date !== latest ? " · archived snapshot" : "");
-    $("#heroHeadline").textContent = ed.note.headline;
-    $("#heroSummary").textContent = ed.note.summary;
+    $("#heroHeadline").textContent = note.headline;
+    $("#heroSummary").textContent = note.summary;
+    const tk = note.takeaways || [];
+    $("#takeawaysLabel").hidden = !tk.length;
+    $("#takeawaysLabel").textContent = note.auto ? "Current top theses" : "Three takeaways";
+    $("#heroTakeaways").replaceChildren(...tk.map((t) => h("li", {}, t)));
     $("#exportLink").href = `${STATIC ? "" : "/"}api/export/${ed.edition_date}.md`;
     document.title = `Market Trends → Theses — Edition ${fmtDay(ed.edition_date)}`;
     const top = ed.signals[0], lead = $("#leadSignal"); lead.replaceChildren();
     if (!top) return;
     const chartHost = h("div");
-    lead.append(kicker(top), h("h2", {}, top.title), h("p", { class: "dek" }, top.dek),
-      h("blockquote", {}, top.thesis_sentence), chartHost,
-      h("div", { class: "meta" }, h("span", {}, confMeter(top.confidence), `${top.confidence} confidence`), h("span", {}, top.corroboration), freshness(top)),
-      h("p", {}, h("button", { class: "btn btn--ghost", type: "button", onclick: () => openSignal(top.id) }, "Read the full signal →")));
+    lead.append(h("p", { class: "lead__label" }, "Top thesis"), kicker(top), h("h2", {}, top.title),
+      h("p", { class: "lead__takeaway" }, top.takeaway || top.dek),
+      top.caveats?.length ? h("p", { class: "lead__caveat" }, h("strong", {}, "Keep in mind: "), top.caveats[0]) : null,
+      chartHost,
+      h("div", { class: "meta" }, confLine(top), h("span", {}, top.corroboration)),
+      h("p", {}, h("button", { class: "btn btn--ghost", type: "button", onclick: () => openSignal(top.id) }, "Read the full thesis →")));
     chart(top, chartHost);
   }
   function renderControls() {
-    const themes = [...new Set(state.edition.signals.flatMap((s) => [s.sector]))];
-    const mk = (label, val, key, host) => h("button", { class: "chip", type: "button", "aria-pressed": String(state[key] === val),
+    const sigs = state.edition.signals;
+    const sectors = [...new Set(sigs.map((s) => s.sector))];
+    const segs = [...new Set(sigs.flatMap((s) => audiences(s).map((a) => a.segment)))];
+    const mk = (label, val, key) => h("button", { class: "chip", type: "button", "aria-pressed": String(state[key] === val),
       onclick: () => { state[key] = state[key] === val ? null : val; renderControls(); renderFeed(); } }, label);
-    $("#themeChips").replaceChildren(mk("All sectors", null, "theme"), ...themes.map((t) => mk(t, t, "theme")));
-    $("#confFilter").replaceChildren(...["High", "Medium", "Low"].map((c) => mk(`${c} confidence`, c, "conf")));
+    $("#sectorChips").replaceChildren(mk("All", null, "sector"), ...sectors.map((t) => mk(t, t, "sector")));
+    $("#audChips").parentElement.hidden = !segs.length;
+    $("#audChips").replaceChildren(mk("Everyone", null, "aud"), ...segs.map((t) => mk(t, t, "aud")));
+    $("#confFilter").replaceChildren(mk("Any", null, "conf"), ...["High", "Medium", "Low"].map((c) => mk(c, c, "conf")));
+  }
+  function quiet(s) {
+    const c = { primary: 0, corroborated: 0, reported: 0 }, ch = s.evidence.filter((e) => e.stance === "challenges").length;
+    s.evidence.forEach((e) => c[e.claim_type]++);
+    return h("p", { class: "quiet" }, `${c.primary} primary · ${c.corroborated} corroborated · ${c.reported} reported · ${ch} counter · `,
+      h("span", { title: "Editorial prioritization points, not a probability" }, `priority ${s.scores.composite.toFixed(2)}`));
   }
   function renderFeed() {
     const list = $("#feedList"), items = filtered(); list.replaceChildren();
@@ -165,50 +190,49 @@
     items.forEach((s, i) => {
       const feature = i < 2 && items.length > 2;
       const open = h("button", { class: "item__open", type: "button", "data-id": s.id, onclick: () => openSignal(s.id),
-        "aria-label": `Rank ${s.rank}: ${s.title}. Open detail.` }, kicker(s), h("h3", {}, s.title));
-      const meta = h("div", { class: "meta" }, h("span", {}, confMeter(s.confidence), `${s.confidence} confidence`), freshness(s));
-      let li;
-      if (feature) {
-        li = h("li", { class: "item item--feature" }, h("span", { class: "item__rank", "aria-hidden": "true" }, String(s.rank).padStart(2, "0")),
-          open, h("p", { class: "dek" }, s.dek), h("p", { class: "changed" }, s.what_changed.split(". ").slice(0, 2).join(". ") + "."),
-          meta, h("div", { class: "meta" }, evCounts(s), scoreBar(s.scores, state.edition.ranking.weights)));
-      } else {
-        li = h("li", { class: "item item--row" }, h("span", { class: "item__rank", "aria-hidden": "true" }, String(s.rank).padStart(2, "0")),
-          h("div", {}, open, h("p", { class: "dek" }, s.dek), meta),
-          h("div", { class: "item__side" },
-            h("div", { class: "row" }, h("span", {}, "Corroboration"), h("span", {}, s.corroboration)),
-            h("div", { class: "row" }, h("span", {}, "Evidence"), evCounts(s)),
-            h("div", { class: "row" }, h("span", {}, "Rank"), scoreBar(s.scores, state.edition.ranking.weights))));
-      }
+        "aria-label": `${s.title}. Open thesis.` }, kicker(s), h("h3", {}, s.title));
+      const impl = s.card_implication ? h("p", { class: "impl" }, h("span", { class: "impl__label" }, "Practical implication"), s.card_implication) : null;
+      const body = [open, h("p", { class: "dek" }, s.dek), impl];
+      const side = [audList(s), h("div", { class: "meta" }, confLine(s), h("span", {}, s.corroboration)), quiet(s)];
+      const rank = h("span", { class: "item__rank", "aria-hidden": "true" }, String(s.rank).padStart(2, "0"));
+      const li = feature ? h("li", { class: "item item--feature" }, rank, ...body, ...side)
+        : h("li", { class: "item item--row" }, rank, h("div", {}, ...body), h("div", { class: "item__side" }, ...side));
       li.style.animationDelay = `${Math.min(i, 8) * 45}ms`;
       list.append(li);
     });
     state.active = Math.min(state.active, Math.max(0, items.length - 1));
   }
+  function whyMatch(m) {
+    const t = m.terms;
+    if (t && !Array.isArray(t) && t.why) return t.why;
+    return Array.isArray(t) && t.length ? `Shared terms: ${t.join(", ")}` : "Matched on shared terms";
+  }
   function renderWire() {
     const host = $("#wireList"); host.replaceChildren();
-    if (!state.leads.length) { host.append(h("p", { class: "wire__empty" }, "No ingested leads in the last three days yet. Leads appear after a scheduled or manual ingestion run succeeds.")); return; }
+    $("#wireCount").textContent = state.leads.length ? `${state.leads.length} leads, last 3 days` : "";
+    if (!state.leads.length) { host.append(h("p", { class: "wire__empty" }, "No ingested leads in the last three days yet. Leads appear after a scheduled ingestion run succeeds.")); return; }
     const groups = new Map();
     state.leads.forEach((l) => { const k = l.cluster_id ?? `d${l.id}`; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(l); });
     const titles = Object.fromEntries(state.edition.signals.map((s) => [s.id, s.title]));
-    const MARKET = /\b(ai|gpu|gpus|chip|chips|semiconductor|nvidia|intel|amd|data.?center|cloud|compute|software|saas|pricing|token|tokens|model|models|agent|agents|energy|power|grid|5g|network|telecom|enterprise|earnings|ipo|filing|sec|memory|supply|tariff|robot|automation|stablecoin|defi|crypto|fintech|bank|startup|venture|funding|anthropic|openai|spacex|tesla|microsoft|google|amazon|meta|apple)\b/i;
+    const MARKET = /\b(ai|gpu|gpus|chip|chips|semiconductor|nvidia|intel|amd|data.?center|cloud|compute|software|saas|pricing|token|tokens|model|models|agent|agents|energy|power|grid|5g|network|telecom|enterprise|earnings|ipo|filing|sec|memory|supply|tariff|robot|automation|fintech|bank|startup|venture|funding|anthropic|openai|spacex|microsoft|google|amazon|meta|apple)\b/i;
     const clusterCard = (g) => {
-      const matched = [...new Set(g.flatMap((l) => (l.matched_signals || "").split(",").filter(Boolean)))];
+      const matches = g.flatMap((l) => l.matches || []).filter((m) => m && m.signal);
+      const bySig = new Map(); matches.forEach((m) => { if (!bySig.has(m.signal)) bySig.set(m.signal, m); });
       return h("article", { class: "cluster" },
-        h("div", {}, h("span", { class: "tag tag--muted" }, TYPE[g[0].source_type] || g[0].source_type), g.length > 1 ? [" ", h("span", { class: "tag" }, `${g.length} related`)] : null,
-          matched.length ? [" ", h("span", { class: "tag tag--new" }, "Matches a signal")] : null),
+        h("div", {}, h("span", { class: "tag tag--muted" }, TYPE[g[0].source_type] || g[0].source_type), g.length > 1 ? [" ", h("span", { class: "tag" }, `${g.length} related`)] : null),
         h("h3", {}, g[0].title),
         h("ul", {}, g.slice(0, 4).map((l) => h("li", {}, h("span", { class: "src" }, l.source_name || "Source"), " — ",
           h("a", { href: l.url, target: "_blank", rel: "noopener noreferrer" }, l.title),
           h("div", { class: "when" }, `published ${fmtDT(l.published_at)} · first seen ${fmtDT(l.first_seen_at)}`)))),
-        matched.length ? h("div", { class: "match" }, "May bear on: ", matched.map((m) => titles[m] || m).join("; ")) : null);
+        bySig.size ? h("div", { class: "match" }, [...bySig.values()].map((m) => h("p", {}, h("strong", {}, "Why this matches: "),
+          `${whyMatch(m)} Related thesis: ${titles[m.signal] || m.signal}.`))) : null);
     };
-    const score = (g) => (g.some((l) => l.matched_signals) ? 4 : 0) + (g.length > 1 ? 2 : 0) + (g.some((l) => MARKET.test(l.title + " " + (l.excerpt || ""))) ? 1 : 0);
+    const matched = (g) => g.some((l) => (l.matches || []).length);
+    const score = (g) => (matched(g) ? 4 : 0) + (g.length > 1 ? 2 : 0) + (g.some((l) => MARKET.test(l.title + " " + (l.excerpt || ""))) ? 1 : 0);
     const all = [...groups.values()].sort((a, b) => score(b) - score(a));
     const relevant = all.filter((g) => score(g) > 0), other = all.filter((g) => score(g) === 0);
-    const grid = h("div", { class: "wire__grid" }, relevant.slice(0, 24).map(clusterCard));
-    host.append(h("p", { class: "wire__sub" }, `Market-relevant leads (${relevant.length})`), grid);
-    if (other.length) host.append(h("details", { class: "wire__more" }, h("summary", {}, `Other headlines captured (${other.length}) — likely off-topic`),
+    host.append(h("p", { class: "wire__sub" }, `Possibly market-relevant (${relevant.length})`), h("div", { class: "wire__grid" }, relevant.slice(0, 24).map(clusterCard)));
+    if (other.length) host.append(h("details", { class: "wire__more" }, h("summary", {}, `Other headlines captured (${other.length}), likely off-topic`),
       h("div", { class: "wire__grid" }, other.slice(0, 40).map(clusterCard))));
   }
   function renderMethod() {
@@ -220,31 +244,40 @@
   function renderStatus() {
     const s = state.status; if (!s) return;
     if (STATIC) s.stale = !!s.last_success_at && Date.now() > d(s.next_scheduled).getTime() + (s.stale_grace_minutes || 90) * 60000;
+    const rs = s.refresh_summary, partial = !!(rs && rs.issues.length);
     const pill = $("#statusPill"), never = !s.last_success_at;
-    pill.dataset.state = s.running ? "running" : never ? "never" : s.stale ? "stale" : "fresh";
-    $("#statusText").textContent = s.running ? "Ingestion running…" : never ? "Awaiting first ingestion"
-      : `${s.stale ? "Stale · " : ""}Updated ${rel(s.last_success_at)} · next ${fmtDT(s.next_scheduled).replace(/^\w+ \d+, /, "")}`;
+    pill.dataset.state = s.running ? "running" : never ? "never" : s.stale ? "stale" : partial ? "partial" : "fresh";
+    $("#statusText").textContent = s.running ? "Refreshing data…" : never ? "No data refresh yet"
+      : matchMedia("(max-width: 720px)").matches ? `${s.stale ? "Stale · " : ""}Fetched ${rel(s.last_success_at)}${partial ? " · partial" : ""}`
+      : `${s.stale ? "Stale · " : ""}Data fetched ${rel(s.last_success_at)}${partial ? ` · ${rs.ok} of ${rs.total} sources` : ""}`;
     const b = $("#staleBanner");
+    b.classList.toggle("banner--info", !(never || s.stale) && partial);
     if (never || s.stale) {
       b.hidden = false;
-      b.replaceChildren(h("div", { class: "wrap" }, h("strong", {}, never ? "No ingestion run has completed yet." : "Data may be stale."),
-        h("span", {}, never ? "Showing the verified first edition only." : `Last successful refresh ${fmtDT(s.last_success_at)}; the ${fmtDT(s.previous_slot)} scheduled refresh has not completed. Previously published signals are preserved.`)));
+      b.replaceChildren(h("div", { class: "wrap" }, h("strong", {}, never ? "No data refresh has completed yet." : "Data may be stale."),
+        h("span", {}, never ? "Showing the reviewed first edition only." : `Last successful data fetch ${fmtDT(s.last_success_at)}; the ${fmtDT(s.previous_slot)} scheduled refresh has not completed. Published theses are preserved.`)));
+    } else if (partial) {
+      b.hidden = false;
+      b.replaceChildren(h("div", { class: "wrap" }, h("strong", {}, "Latest data refresh was partial."),
+        h("span", {}, `${rs.ok} of ${rs.total} sources updated ${fmtDT(rs.finished_at)}. ${rs.issues.map((x) => `${x.source}: ${x.reason}`).join("; ")}. Theses are unchanged and were not re-reviewed by this refresh. `,
+          h("a", { href: "#pipeline" }, "Diagnostics"))));
     } else b.hidden = true;
     const sch = s.scheduler, lr = s.last_run;
     const kv = [["Schedule", s.schedule], ["Next scheduled", fmtDT(s.next_scheduled)],
-      ["Last successful refresh", s.last_success_at ? `${fmtDT(s.last_success_at)} (${rel(s.last_success_at)})` : "none yet"],
-      ["Last run", lr ? `${lr.status} · ${lr.trigger} · ${fmtDT(lr.finished_at || lr.started_at)}` : "none"],
+      ["Data last fetched", s.last_success_at ? `${fmtDT(s.last_success_at)} (${rel(s.last_success_at)})` : "none yet"],
+      ["Latest refresh", rs ? `${rs.status} · ${rs.ok} of ${rs.total} sources ok` : lr ? lr.status : "none"],
       ["Scheduler", STATIC ? "GitHub Actions workflow · 08:00 & 16:00 ET" : sch.alive ? `running · heartbeat ${rel(sch.heartbeat_at)}` : sch.heartbeat_at ? `not responding · last heartbeat ${rel(sch.heartbeat_at)}` : "not detected"],
       ["Freshness", s.stale ? "stale" : "current"],
       ["Archive", `${s.counts.snapshots} snapshots · ${s.counts.documents} documents · ${s.counts.clusters} story clusters`],
       ["Manual refresh", STATIC ? "maintainers only (workflow dispatch)" : s.manual_refresh_enabled ? "enabled (token required)" : "disabled on this server"]];
     $("#pipelineKv").replaceChildren(...kv.flatMap(([k, v]) => [h("dt", {}, k),
-      h("dd", { class: /stale|not |failed|none yet|disabled/.test(v) ? "warn" : /running|current|success/.test(v) ? "ok" : "" }, v)]));
+      h("dd", { class: /stale|not |failed|partial|none yet|disabled/.test(v) ? "warn" : /running|current|success/.test(v) ? "ok" : "" }, v)]));
     $("#sourceRows").replaceChildren(...s.sources.map((x) => h("tr", {},
       h("td", {}, h("a", { href: x.homepage, target: "_blank", rel: "noopener noreferrer" }, x.name)),
       h("td", {}, x.kind), h("td", {}, x.last_success_at ? rel(x.last_success_at) : "—"),
       h("td", {}, h("span", { class: `badge badge--${x.last_status || "none"}` }, x.last_status || "not run"),
-        x.last_status === "failed" || x.last_status === "degraded" ? h("span", { class: "err" }, x.last_error || "") : null))));
+        x.plain_error ? h("span", { class: "err" }, x.plain_error) : null,
+        x.plain_error && x.last_error ? h("details", { class: "diag" }, h("summary", {}, "Technical detail"), h("code", {}, x.last_error)) : null))));
     $("#refreshForm").querySelector("button").disabled = !s.manual_refresh_enabled || s.running;
     $("#refreshForm").hidden = STATIC;
   }
@@ -257,59 +290,100 @@
     $("#nextEdition").disabled = i <= 0;
   }
 
-  // ---------- detail drawer ----------
+  // ---------- thesis detail ----------
+  const ext = (href, text) => h("a", { href, target: "_blank", rel: "noopener noreferrer" }, text);
   function evItem(e) {
     return h("li", {}, h("div", {}, h("span", { class: `claim claim--${e.claim_type}` }, CLAIM[e.claim_type]), " ",
         e.stance === "context" ? h("span", { class: "tag tag--muted" }, "Context") : null),
       h("div", { class: "stmt" }, e.statement),
-      h("div", { class: "src" }, h("a", { href: e.url, target: "_blank", rel: "noopener noreferrer" }, `${e.source_name || "Source"} — ${e.title}`)),
+      h("div", { class: "src" }, ext(e.url, `${e.source_name || "Source"} — ${e.title}`)),
       h("div", { class: "prov" }, `${TYPE[e.source_type] || e.source_type} · published ${e.published_at ? fmtDay(e.published_at.slice(0, 10)) : "n/a"} · event ${e.event_date ? fmtDay(e.event_date) : "n/a"} · first seen ${fmtDT(e.first_seen_at)} · retrieved ${fmtDT(e.retrieved_at)}`));
   }
-  const sec = (title, body, opts = {}) => h("section", { class: "d-sec" + (opts.wide ? " d-sec--wide" : "") },
-    h("h3", {}, title, opts.inference ? h("span", { class: "claim claim--inference" }, "Analyst inference") : null), body);
+  const INF = () => h("span", { class: "claim claim--inference" }, "Analyst inference");
+  function part(n, id, title, kids, opts = {}) {
+    return h("section", { class: "part" + (opts.cls ? ` ${opts.cls}` : ""), "aria-labelledby": id },
+      h("h3", { class: "part__title", id }, n ? h("span", { class: "part__num", "aria-hidden": "true" }, n) : null, title, opts.inference ? INF() : null), ...kids);
+  }
+  const sub = (title, ...kids) => h("div", { class: "subsec" }, h("h4", {}, title), ...kids);
+  function sinceLast(s) {
+    const c = s.since_last; if (!c) return null;
+    const li = [];
+    (c.new_evidence || []).forEach((e) => li.push(h("li", {}, h("span", { class: `claim claim--${e.claim_type}` }, CLAIM[e.claim_type]), " New evidence: ", e.statement)));
+    (c.revised || []).forEach((r) => li.push(h("li", {}, `${r.what} revised. Previously: “${r.from}”`)));
+    if (c.confidence) li.push(h("li", {}, `Confidence changed from ${c.confidence.from} to ${c.confidence.to}.`));
+    (c.validation_outcomes || []).forEach((v) => li.push(h("li", {}, `Validation: ${v.outcome || v.step || JSON.stringify(v)}`)));
+    (c.open_questions || []).forEach((q) => li.push(h("li", { class: "muted" }, `Still open: ${q}`)));
+    return part(null, "pSince", `Since the last edition (${fmtDay(c.previous_edition)})`, [h("ul", { class: "bullets" }, li)], { cls: "part--since" });
+  }
   function openSignal(id, push = true) {
     const s = state.edition.signals.find((x) => x.id === id); if (!s) return;
     state.openId = id; state.lastFocus = document.activeElement;
     if (push) history.replaceState(null, "", `#/${state.edition.edition_date}/${id}`);
     const panel = $("#drawerPanel"), chartHost = h("div");
     const sup = s.evidence.filter((e) => e.stance !== "challenges"), ch = s.evidence.filter((e) => e.stance === "challenges");
+    const weight = { primary: 0, corroborated: 1, reported: 2 };
+    const key = sup.filter((e) => e.stance === "supports").sort((a, b) => weight[a.claim_type] - weight[b.claim_type]).slice(0, 3);
     const copy = async () => {
       try { await navigator.clipboard.writeText(s.thesis_sentence); toast("Thesis sentence copied"); }
       catch { const t = h("textarea", {}, s.thesis_sentence); document.body.append(t); t.select(); document.execCommand("copy"); t.remove(); toast("Thesis sentence copied"); }
     };
     const w = state.edition.ranking.weights;
+    const auds = audiences(s).slice().sort((a, b) => ROLE_ORDER[a.role] - ROLE_ORDER[b.role]);
+    const impls = s.implications || [];
     panel.replaceChildren(
       h("header", { class: "d-head" },
-        h("div", { class: "d-head__top" }, kicker(s), h("button", { class: "d-close", type: "button", "aria-label": "Close detail", "data-close": "" }, "✕")),
-        h("h2", { id: "dTitle" }, s.title), h("p", { class: "dek" }, s.dek),
-        h("div", { class: "meta" }, h("span", {}, confMeter(s.confidence), `${s.confidence} confidence`), h("span", {}, s.corroboration),
-          freshness(s), h("span", {}, `Rank ${s.rank} in edition ${fmtDay(state.edition.edition_date)}`))),
+        h("div", { class: "d-head__top" }, kicker(s), h("button", { class: "d-close", type: "button", "aria-label": "Close thesis", "data-close": "" }, "✕")),
+        h("h2", { id: "dTitle" }, s.title),
+        h("div", { class: "meta" }, confLine(s), h("span", {}, s.corroboration), h("span", {}, `Priority #${s.rank} in the ${fmtDay(state.edition.edition_date)} edition`))),
       h("div", { class: "d-body" },
-        h("div", { class: "thesis" }, h("div", { class: "thesis__row" }, h("span", { class: "thesis__label" }, "Slide-ready thesis · working hypothesis"),
-          h("button", { class: "btn btn--small", type: "button", onclick: copy }, "Copy sentence ", h("kbd", {}, "c"))), h("p", { id: "thesisText" }, s.thesis_sentence)),
-        h("div", { class: "d-grid" },
-          sec("What changed", h("p", {}, s.what_changed), { wide: true }),
-          s.chart ? h("section", { class: "d-sec d-sec--wide" }, h("h3", {}, "Sourced history"), chartHost) : null,
-          sec("Why now", h("p", {}, s.why_now), { inference: true }),
-          sec("Market indication", h("p", {}, s.market_indication), { inference: true }),
-          sec("Startup opportunity", h("p", {}, s.startup_opportunity), { inference: true }),
-          sec("Corporate buyer & use case", h("p", {}, s.corporate_buyer), { inference: true }),
-          sec("Affected value chain", h("div", { class: "chain" }, s.value_chain.flatMap((v, i) => [i ? h("i", { "aria-hidden": "true" }, "→") : null, h("span", {}, v)])), { wide: true }),
-          h("section", { class: "d-sec d-sec--wide" }, h("h3", {}, "Evidence & counterevidence"),
-            h("div", { class: "ev-cols" },
-              h("div", { class: "ev-col" }, h("h4", {}, `Supports the thesis (${sup.length})`), h("ul", { class: "ev" }, sup.map(evItem))),
-              h("div", { class: "ev-col ev-col--challenge" }, h("h4", {}, `Challenges the thesis (${ch.length})`), h("ul", { class: "ev" }, ch.map(evItem))))),
-          sec("Confidence rationale", h("p", {}, s.confidence_rationale)),
-          sec("Ranking breakdown", h("table", { class: "scores" }, h("tbody", {},
-            ["novelty", "evidence", "relevance", "impact"].map((k) => h("tr", {}, h("td", {}, `${k[0].toUpperCase() + k.slice(1)} × ${w[k]}`), h("td", {}, s.scores[k].toFixed(2)))),
-            h("tr", {}, h("td", {}, h("strong", {}, "Composite (ranking points, not a probability)")), h("td", {}, h("strong", {}, s.scores.composite.toFixed(2))))))),
-          sec("Next validation step", h("div", { class: "callout" }, s.next_validation)),
-          sec("What would prove it wrong", h("div", { class: "callout callout--falsify" }, s.falsifier)),
-          s.discovery ? sec("Discovery lead", h("p", {}, "First surfaced via ", h("a", { href: s.discovery.url, target: "_blank", rel: "noopener noreferrer" }, s.discovery.label), ". Discovery sources are treated as reported narratives until validated.")) : null,
-          sec("Unreviewed mentions since publication", s.unreviewed_mentions.length
-            ? h("ul", { class: "mentions" }, s.unreviewed_mentions.map((m) => h("li", {}, h("a", { href: m.url, target: "_blank", rel: "noopener noreferrer" }, m.title), ` — ${m.source_name || ""}, seen ${fmtDT(m.matched_at)}`)))
-            : h("p", {}, "None yet. New ingested items matching this signal's terms appear here for review; they are not evidence.")),
-          sec("Record", h("p", {}, `First published ${fmtDT(s.first_published_at)} · updated ${fmtDT(s.updated_at)} · ${s.revision_count} saved revision${s.revision_count === 1 ? "" : "s"}.`)))));
+        part("1", "pTake", "The takeaway", [
+          h("p", { class: "lede" }, s.takeaway || s.dek),
+          s.caveats?.length ? h("div", { class: "caveats" }, h("h4", {}, "Keep in mind"), h("ul", {}, s.caveats.map((c) => h("li", {}, c)))) : null,
+          stamps(s),
+          h("div", { class: "thesis" }, h("div", { class: "thesis__row" }, h("span", { class: "thesis__label" }, "Slide-ready sentence · working hypothesis"),
+            h("button", { class: "btn btn--small", type: "button", onclick: copy }, "Copy ", h("kbd", {}, "c"))), h("p", { id: "thesisText" }, s.thesis_sentence))]),
+        sinceLast(s),
+        auds.length ? part("2", "pWho", "Who this matters to", [
+          h("p", { class: "note" }, "Who benefits, who faces pressure and who might buy a solution can be different businesses."),
+          h("div", { class: "aud-grid" }, auds.map((a) => h("article", { class: `aud-card aud-card--${a.role}` },
+            h("header", {}, h("h4", {}, a.segment), h("span", { class: `role role--${a.role}` }, ROLE[a.role])),
+            h("dl", {}, h("dt", {}, "Who"), h("dd", {}, a.who), h("dt", {}, "Impact"), h("dd", {}, a.impact),
+              h("dt", {}, "Possible action"), h("dd", {}, a.action), h("dt", {}, "Trigger to watch"), h("dd", {}, a.trigger)))))], { inference: true }) : null,
+        part(auds.length ? "3" : "2", "pWhat", "What changed", [
+          s.changed_points?.length ? h("ul", { class: "bullets" }, s.changed_points.map((p) => h("li", {}, p))) : h("p", {}, s.what_changed),
+          s.chart ? h("div", { class: "chart-wrap" }, chartHost) : null,
+          sub(h("span", {}, "Why now ", INF()), h("p", {}, s.why_now)),
+          key.length ? sub("Key supporting evidence", h("ul", { class: "ev ev--compact" }, key.map(evItem)), h("p", { class: "note" }, "Full evidence, with timestamps, is under Sources and methodology.")) : null]),
+        part(auds.length ? "4" : "3", "pImpl", "Business implications", [
+          impls.length ? h("ol", { class: "chains" }, impls.map((i) => h("li", { class: "chain-row" },
+            [["Trend", i.trend], ["Business problem", i.problem], ["Buyer", i.buyer], ["Potential solution", i.solution], ["Investigate", i.investigate]]
+              .map(([k, v]) => h("div", { class: "chain-step" }, h("span", {}, k), h("p", {}, v))))))
+            : h("div", {}, s.startup_opportunity ? sub("Startup opportunity", h("p", {}, s.startup_opportunity)) : null,
+              s.corporate_buyer ? sub("Corporate buyer & use case", h("p", {}, s.corporate_buyer)) : null),
+          sub("Market indication", h("p", {}, s.market_indication)),
+          sub("Next validation step", h("div", { class: "callout" },
+            s.customer_validation ? h("p", {}, h("strong", {}, "Customer validation: "), s.customer_validation) : null,
+            h("p", {}, h("strong", {}, "Evidence to check: "), s.next_validation)))], { inference: true }),
+        part(auds.length ? "5" : "4", "pView", "What could change our view", [
+          sub(`Counterevidence (${ch.length})`, h("ul", { class: "ev" }, ch.map(evItem))),
+          sub("This would weaken the thesis", h("div", { class: "callout callout--falsify" }, s.falsifier)),
+          s.view_triggers?.length ? sub("Validation triggers to watch", h("ul", { class: "bullets" }, s.view_triggers.map((t) => h("li", {}, t)))) : null]),
+        part(auds.length ? "6" : "5", "pSrc", "Sources and methodology", [
+          h("details", { class: "more" }, h("summary", {}, `Supporting and context evidence (${sup.length})`), h("ul", { class: "ev" }, sup.map(evItem))),
+          h("details", { class: "more" }, h("summary", {}, "Confidence rationale"), h("p", {}, s.confidence_rationale)),
+          h("details", { class: "more" }, h("summary", {}, "Ranking breakdown"),
+            h("p", { class: "note" }, "Editorial prioritization only: these points order the feed and are not probabilities."),
+            h("table", { class: "scores" }, h("tbody", {},
+              ["novelty", "evidence", "relevance", "impact"].map((k) => h("tr", {}, h("td", {}, `${k[0].toUpperCase() + k.slice(1)} × ${w[k]}`), h("td", {}, s.scores[k].toFixed(2)))),
+              h("tr", {}, h("td", {}, h("strong", {}, "Composite priority points")), h("td", {}, h("strong", {}, s.scores.composite.toFixed(2))))))),
+          s.value_chain?.length ? h("details", { class: "more" }, h("summary", {}, "Affected value chain"),
+            h("div", { class: "chain" }, s.value_chain.flatMap((v, i) => [i ? h("i", { "aria-hidden": "true" }, "→") : null, h("span", {}, v)]))) : null,
+          h("details", { class: "more" }, h("summary", {}, `Unreviewed mentions (${s.unreviewed_mentions.length}) — not evidence`),
+            s.unreviewed_mentions.length
+              ? h("ul", { class: "mentions" }, s.unreviewed_mentions.map((m) => h("li", {}, ext(m.url, m.title), ` — ${m.source_name || ""}, seen ${fmtDT(m.matched_at)}`, h("div", { class: "note" }, whyMatch(m)))))
+              : h("p", {}, "None. New leads that name a thesis-specific term appear here for review; they never count as evidence.")),
+          s.discovery ? h("p", { class: "note" }, "First surfaced via ", ext(s.discovery.url, s.discovery.label), ". Discovery sources are treated as reported narratives until validated.") : null,
+          h("p", { class: "note" }, `First published ${fmtDT(s.first_published_at)} · revised ${fmtDT(s.updated_at)} · ${s.revision_count} saved revision${s.revision_count === 1 ? "" : "s"}.`)])));
     $("#drawer").hidden = false; document.body.style.overflow = "hidden";
     panel.scrollTop = 0; panel.focus();
     chart(s, chartHost);
@@ -325,6 +399,8 @@
   async function loadStatus() { try { state.status = await api("/api/status"); renderStatus(); } catch { $("#statusText").textContent = "Status unavailable"; } }
   async function loadEdition(date) {
     state.edition = await api("/api/edition" + (date ? `?date=${encodeURIComponent(date)}` : ""));
+    if (!state.edition.signals.some((s) => s.sector === state.sector)) state.sector = null;
+    if (!state.edition.signals.some((s) => audiences(s).some((a) => a.segment === state.aud))) state.aud = null;
     renderHero(); renderControls(); renderFeed(); renderEditionNav(); renderMethod(); renderWire();
   }
   async function route() {
@@ -337,8 +413,12 @@
   function goEdition(date) { closeSignal(); location.hash = `#/${date}`; }
 
   // ---------- events ----------
-  document.addEventListener("click", (e) => { if (e.target.closest("[data-close]")) closeSignal(); });
+  document.addEventListener("click", (e) => {
+    if (e.target.closest("[data-close]")) closeSignal();
+    if (e.target.closest('a[href="#wire"]')) $("#wireDetails").open = true;
+  });
   $("#statusPill").addEventListener("click", () => $("#pipeline").scrollIntoView());
+  $("#clearFilters").addEventListener("click", () => { state.sector = state.aud = state.conf = null; state.q = ""; $("#search").value = ""; renderControls(); renderFeed(); });
   $("#editionSelect").addEventListener("change", (e) => goEdition(e.target.value));
   $("#prevEdition").addEventListener("click", () => { const i = state.editions.findIndex((x) => x.edition_date === state.edition.edition_date); if (state.editions[i + 1]) goEdition(state.editions[i + 1].edition_date); });
   $("#nextEdition").addEventListener("click", () => { const i = state.editions.findIndex((x) => x.edition_date === state.edition.edition_date); if (i > 0) goEdition(state.editions[i - 1].edition_date); });
@@ -351,7 +431,7 @@
     if (drawerOpen) {
       if (e.key === "c" && !typing && !e.metaKey && !e.ctrlKey) { e.preventDefault(); $("#drawerPanel .thesis button").click(); }
       if (e.key === "Tab") { // focus trap
-        const f = [...$("#drawerPanel").querySelectorAll("a[href],button,[tabindex='0']")]; if (!f.length) return;
+        const f = [...$("#drawerPanel").querySelectorAll("a[href],button,summary,[tabindex='0']")].filter((x) => x.offsetParent !== null); if (!f.length) return;
         if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f.at(-1).focus(); }
         else if (!e.shiftKey && document.activeElement === f.at(-1)) { e.preventDefault(); f[0].focus(); }
       }

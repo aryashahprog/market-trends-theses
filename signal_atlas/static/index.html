@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Market Trends → Theses — Emerging market signals, with evidence</title>
-<meta name="description" content="Market Trends → Theses: a dated feed of emerging market signals with why they matter, the market indication, evidence, counterevidence and next validation step.">
+<meta name="description" content="Market Trends → Theses: dated, evidence-backed theses on emerging market shifts — who they matter to, what to do next, and what would change the view.">
 <meta name="color-scheme" content="light">
 <link rel="preload" href="/static/fonts/newsreader.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/static/styles.css">
@@ -12,7 +12,7 @@
 <script src="/static/app.js" defer></script>
 </head>
 <body>
-<a class="skip" href="#feed">Skip to signals</a>
+<a class="skip" href="#feed">Skip to theses</a>
 <header class="masthead">
   <div class="wrap masthead__row">
     <a class="brand" href="#/" aria-label="Market Trends → Theses home">
@@ -20,7 +20,7 @@
       <span>Market Trends → Theses</span>
     </a>
     <nav class="nav" aria-label="Sections">
-      <a href="#feed">Signals</a>
+      <a href="#feed">Theses</a>
       <a href="#wire">Wire</a>
       <a href="#method">Method</a>
       <a href="#pipeline">Pipeline</a>
@@ -38,6 +38,8 @@
         <p class="eyebrow" id="editionLabel">Edition</p>
         <h1 id="heroHeadline" class="hero__headline">Loading edition…</h1>
         <p id="heroSummary" class="hero__summary"></p>
+        <p class="takeaways__label" id="takeawaysLabel" hidden>Three takeaways</p>
+        <ol class="takeaways" id="heroTakeaways" aria-labelledby="takeawaysLabel"></ol>
         <div class="edition-nav" role="group" aria-label="Edition date">
           <button type="button" class="btn-icon" id="prevEdition" aria-label="Previous edition">&#8592;</button>
           <label class="sr-only" for="editionSelect">Choose edition</label>
@@ -46,36 +48,37 @@
           <a class="link-quiet" id="exportLink" href="#">Export edition (.md)</a>
         </div>
       </div>
-      <article class="lead" id="leadSignal" aria-label="Top-ranked signal"></article>
+      <article class="lead" id="leadSignal" aria-label="Top-ranked thesis"></article>
     </div>
   </section>
 
-  <section class="wrap controls" aria-label="Filter signals">
+  <section class="wrap controls" aria-label="Filter theses">
     <div class="search">
-      <label for="search" class="sr-only">Search signals</label>
-      <input id="search" type="search" placeholder="Search signals, sources, companies" autocomplete="off">
+      <label for="search" class="sr-only">Search theses</label>
+      <input id="search" type="search" placeholder="Search theses, companies, sources" autocomplete="off">
       <kbd aria-hidden="true">/</kbd>
     </div>
-    <div class="chips" id="themeChips" role="group" aria-label="Theme filter"></div>
-    <div class="conf-filter" role="group" aria-label="Confidence filter" id="confFilter"></div>
+    <div class="filter-group"><span class="filter-label" id="lblSector">Sector</span><div class="chips" id="sectorChips" role="group" aria-labelledby="lblSector"></div></div>
+    <div class="filter-group"><span class="filter-label" id="lblAud">Matters to</span><div class="chips" id="audChips" role="group" aria-labelledby="lblAud"></div></div>
+    <div class="filter-group"><span class="filter-label" id="lblConf">Confidence</span><div class="chips conf-filter" id="confFilter" role="group" aria-labelledby="lblConf"></div></div>
   </section>
 
   <section id="feed" class="wrap feed" aria-label="Ranked signals" tabindex="-1">
     <div class="feed__head">
-      <h2 class="section-title">Ranked signals</h2>
-      <p class="hint">Ranked by novelty, evidence, relevance and impact — ranking points, not probabilities. <span class="keys"><kbd>j</kbd>/<kbd>k</kbd> move · <kbd>Enter</kbd> open · <kbd>Esc</kbd> close</span></p>
+      <h2 class="section-title">This edition's theses</h2>
+      <p class="hint">Ordered by editorial priority, not probability. <span class="keys"><kbd>j</kbd>/<kbd>k</kbd> move · <kbd>Enter</kbd> open · <kbd>Esc</kbd> close</span></p>
     </div>
     <ol class="feed__list" id="feedList"></ol>
-    <p class="empty" id="feedEmpty" hidden>No signals match these filters.</p>
+    <p class="empty" id="feedEmpty" hidden>No theses match these filters. <button type="button" class="link-btn" id="clearFilters">Clear filters</button></p>
   </section>
 
   <section id="wire" class="wire" aria-labelledby="wireTitle">
     <div class="wrap">
-      <div class="feed__head">
-        <h2 class="section-title" id="wireTitle">The wire <span class="tag tag--warn">Unreviewed</span></h2>
-        <p class="hint">Discovery leads captured by scheduled ingestion, clustered by story. Leads are not evidence until checked against primary sources.</p>
-      </div>
-      <div id="wireList"></div>
+      <details class="wire__details" id="wireDetails">
+        <summary class="wire__summary"><span class="section-title" id="wireTitle">Discovery wire</span> <span class="tag tag--warn">Unreviewed · not evidence</span> <span class="hint" id="wireCount"></span></summary>
+        <p class="hint wire__hint">Headlines captured by scheduled ingestion and grouped by story. A lead is linked to a thesis only when it names a thesis-specific term plus supporting context; it never counts as evidence until reviewed against primary sources.</p>
+        <div id="wireList"></div>
+      </details>
     </div>
   </section>
 
@@ -88,7 +91,13 @@
           <dt><span class="claim claim--primary">Primary</span></dt><dd>Issuer disclosure or first-party record: filings, company reports.</dd>
           <dt><span class="claim claim--corroborated">Corroborated</span></dt><dd>Independent dataset or source that confirms a claim made elsewhere.</dd>
           <dt><span class="claim claim--reported">Reported</span></dt><dd>A claim made by a newsletter, podcast or article that has not been independently verified.</dd>
-          <dt><span class="claim claim--inference">Analyst inference</span></dt><dd>Editorial reasoning: why now, market indication, opportunity. Labelled wherever it appears.</dd>
+          <dt><span class="claim claim--inference">Analyst inference</span></dt><dd>Editorial reasoning: why now, who it matters to, business implications. Labelled wherever it appears.</dd>
+        </dl>
+        <h3 class="method__sub">Three different timestamps</h3>
+        <dl class="defs">
+          <dt><strong>Data fetched</strong></dt><dd>When the pipeline last retrieved sources. Fetching never re-reviews a thesis.</dd>
+          <dt><strong>Evidence reviewed</strong></dt><dd>When an analyst last checked the thesis's evidence against its sources.</dd>
+          <dt><strong>Thesis revised</strong></dt><dd>When the thesis text, confidence or evidence list last changed.</dd>
         </dl>
       </div>
       <div>
@@ -104,7 +113,7 @@
 
   <section id="pipeline" class="pipeline" aria-labelledby="pipelineTitle">
     <div class="wrap">
-      <h2 class="section-title" id="pipelineTitle">Pipeline</h2>
+      <h2 class="section-title" id="pipelineTitle">Pipeline &amp; diagnostics</h2>
       <div class="pipeline__grid">
         <dl class="kv" id="pipelineKv"></dl>
         <div class="table-wrap"><table class="sources" aria-label="Source health">

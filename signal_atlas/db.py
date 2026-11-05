@@ -79,7 +79,14 @@ def connect(path: Path | str) -> sqlite3.Connection:
     conn.execute("PRAGMA foreign_keys=ON")
     conn.execute("PRAGMA busy_timeout=30000")
     conn.executescript(SCHEMA)
+    _migrate(conn)
     return conn
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    cols = {r[1] for r in conn.execute("PRAGMA table_info(edition_notes)")}
+    if "takeaways" not in cols:
+        conn.execute("ALTER TABLE edition_notes ADD COLUMN takeaways TEXT")
 
 
 @contextmanager
