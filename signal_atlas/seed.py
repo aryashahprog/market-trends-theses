@@ -15,8 +15,8 @@ from .urlnorm import canonicalize
 EDITION_DATE = "2026-11-05"
 PUBLISHED_AT = "2026-11-05T16:00:00Z"
 VERIFIED_AT = "2026-11-05T15:45:00Z"  # verification window for first-edition retrievals: 15:30–16:00 UTC
-REVISED_AT = "2026-11-05T17:52:15Z"  # editorial revision v2: business relevance, scoped headlines (no new evidence)
-CONTENT_VERSION = 2
+REVISED_AT = "2026-11-05T18:46:07Z"  # editorial revision v3: sourced key-figure charts (values verbatim from evidence)
+CONTENT_VERSION = 3
 
 SOURCES: list[tuple[str, str, str, str, str]] = [
     ("milkroad", "Milk Road", "discovery", "https://milkroad.com/",
@@ -206,7 +206,9 @@ SIGNALS: list[dict[str, Any]] = [
                               "capacity", "nvidia", "shortage"],
                   "exclude": CRYPTO, "min_terms": 2, "topic": "GPU rental or token pricing"},
         "chart": {"series": ["poc:composite", "poc:sku:A100-SXM-80GB", "poc:sku:H200-SXM", "poc:sku:B300"],
-                  "caption": "Daily on-demand GPU rental indices, rebased to 100 on 2026-08-10."},
+                  "caption": "Daily on-demand GPU rental indices, rebased to 100 on 2026-08-10.",
+                  "title": "GPU rental price indices since August 2026",
+                  "insight": "Older and mid-generation GPUs (A100, H200) rose most; the newest B300 fell below its August level."},
         "discovery": {"label": "Milk Road podcast, Nov 2, 2026", "url": MR_CHART},
         "evidence": [
             (MR_CHART, "reported", "supports",
@@ -785,6 +787,44 @@ SIGNALS: list[dict[str, Any]] = [
     },
 ]
 
+# Key figures: every value is copied verbatim from an evidence item above (no derived numbers).
+FIGURES: dict[str, list[dict[str, Any]]] = {
+    "gpu-rent-vs-token-deflation": [
+        {"id": "ramp-token-price", "title": "Blended price businesses paid per million tokens (OpenAI + Anthropic)",
+         "insight": "Down 26.8% in four weeks while token volume rose 37.1%.", "unit": "USD per million tokens",
+         "source_url": RAMP, "source_label": "Ramp AI Index", "as_of": "2026-10-23",
+         "bars": [{"label": "Week ending Sep 25, 2026", "value": 0.76}, {"label": "Week ending Oct 23, 2026", "value": 0.56}]},
+    ],
+    "enterprise-ai-spend-compounding": [
+        {"id": "anthropic-100k-customers", "title": "Anthropic customers paying $100k+ a year (trailing twelve months)",
+         "insight": "More than twelve times as many large customers in one year.", "unit": "customers",
+         "source_url": S1, "source_label": "Anthropic, PBC S-1", "as_of": "2026-09-30",
+         "bars": [{"label": "Sep 30, 2025", "value": 950, "note": "more than"},
+                  {"label": "Sep 30, 2026", "value": 11900, "note": "more than"}]},
+        {"id": "anthropic-h1-revenue", "title": "Anthropic revenue, six months ended June 30",
+         "insight": "$1.2B to $16.3B year over year, alongside a $693M H1 2026 operating loss.", "unit": "USD billions",
+         "source_url": S1, "source_label": "Anthropic, PBC S-1", "as_of": "2026-06-30",
+         "bars": [{"label": "H1 2025", "value": 1.2}, {"label": "H1 2026", "value": 16.3}]},
+    ],
+    "memory-substrate-reallocation": [
+        {"id": "intel-segments", "title": "Intel Q3 revenue by segment",
+         "insight": "Data-center revenue rose 78% while PC-chip revenue fell about 5%.", "unit": "USD millions",
+         "source_url": INTC, "source_label": "Intel Corp 10-Q (Q3 2026)", "as_of": "2026-09-26",
+         "bars": [{"label": "Data center (DCAI) Q3 2025", "value": 4117}, {"label": "Data center (DCAI) Q3 2026", "value": 7318},
+                  {"label": "PC chips (CCPG) Q3 2025", "value": 8535}, {"label": "PC chips (CCPG) Q3 2026", "value": 8097}]},
+    ],
+    "powered-compute-as-product": [
+        {"id": "spacex-capacity", "title": "SpaceX nameplate compute capacity",
+         "insight": "Nearly tripled in a year; installed capacity, not utilization.", "unit": "GW",
+         "source_url": SPCX, "source_label": "Space Exploration Technologies 10-Q", "as_of": "2026-09-30",
+         "bars": [{"label": "Sep 30, 2025", "value": 0.6}, {"label": "Sep 30, 2026", "value": 1.7}]},
+    ],
+}
+for _sig in SIGNALS:
+    if _sig["id"] in FIGURES:
+        _sig["figures"] = FIGURES[_sig["id"]]
+    _sig["content_version"] = CONTENT_VERSION
+
 NOTE = {
     "headline": "Older GPUs cost more to rent while AI output gets cheaper",
     "summary": "Six working theses on where AI spending, pricing and infrastructure are shifting. Each one says who "
@@ -824,6 +864,9 @@ def validate_signal(sig: dict[str, Any]) -> list[str]:
     segs = [a.get("segment") for a in sig.get("audiences") or []]
     if len(segs) != len(set(segs)):
         errs.append("duplicate audience segment")
+    for f in sig.get("figures") or []:
+        if f.get("source_url") not in DOCS or not f.get("bars") or not all(k in f for k in ("title", "unit", "as_of")):
+            errs.append(f"figure {f.get('id')}: needs a registered source, title, unit, as_of and bars")
     for i in sig.get("implications") or []:
         errs += [f"implication missing {k}" for k in IMPLICATION_KEYS if not i.get(k)]
     return errs
@@ -919,8 +962,7 @@ def sync_content(conn: sqlite3.Connection, now: datetime | None = None) -> int:
                 conn.execute("INSERT INTO signals(id, data, first_published_at, updated_at) VALUES (?,?,?,?)",
                              (sig["id"], dumps(data), REVISED_AT, REVISED_AT))
             conn.execute("INSERT INTO signal_revisions(signal_id, revised_at, reason, data) VALUES (?,?,?,?)",
-                         (sig["id"], REVISED_AT, f"editorial revision v{CONTENT_VERSION}: business relevance, "
-                          "evidence-scoped headline; evidence unchanged", dumps(data)))
+                         (sig["id"], REVISED_AT, f"editorial revision v{CONTENT_VERSION}; evidence unchanged", dumps(data)))
             _write_evidence(conn, sig, doc_ids)
             changed += 1
         if changed:

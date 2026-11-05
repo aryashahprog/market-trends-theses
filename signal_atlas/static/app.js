@@ -103,11 +103,81 @@
     ends.sort((a, b) => a.y - b.y).forEach((e, i, arr) => { if (i && e.y - arr[i - 1].y < 12) e.y = arr[i - 1].y + 12;
       const t = svg("text", { x: e.x, y: e.y }); t.textContent = e.v.toFixed(0); root.append(t); });
     const src = series[0];
-    host.append(h("figure", { class: "chart" }, root,
+    const spec = { svg: root, title: sig.chart.title || sig.chart.caption, insight: sig.chart.insight, source: src.attribution.replace(/^Data:\s*/, ""), sourceUrl: src.source_url, asof: days.at(-1),
+      legend: series.map((s, i) => ({ label: s.label, color: COLORS[i % COLORS.length] })),
+      csvHead: ["date", ...series.map((s) => s.label)], csv: days.map((dd) => [dd, ...series.map((s) => s.points.find((p) => p.day === dd)?.value ?? "")]) };
+    host.append(h("figure", { class: "chart" }, sig.chart.insight ? h("p", { class: "chart-insight" }, sig.chart.insight) : null, root,
       h("div", { class: "legend" }, series.map((s, i) => { const sw = h("i"); sw.style.background = COLORS[i % COLORS.length];
         return h("span", {}, sw, `${s.label} — ${s.points.at(-1).value.toFixed(1)} (${s.points.at(-1).day})`); })),
       h("figcaption", {}, `${sig.chart.caption} Unit: ${src.unit}. ${days.length} daily observations, ${days[0]} → ${days.at(-1)}; retrieved ${fmtDT(src.updated_at)}. `,
-        h("a", { href: src.source_url, target: "_blank", rel: "noopener noreferrer" }, src.attribution), ".")));
+        h("a", { href: src.source_url, target: "_blank", rel: "noopener noreferrer" }, src.attribution), "."), toolbar(spec)));
+  }
+
+  // ---------- chart export: attribution travels with every copied or downloaded chart ----------
+  const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const slug = (t) => t.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60) || "chart";
+  const SANS = "Arial, Helvetica, sans-serif";
+  function standaloneSvg(spec) {
+    const W = 1200, inner = spec.svg.cloneNode(true), vb = inner.getAttribute("viewBox").split(" ").map(Number);
+    const cw = W - 96, ch = (cw * vb[3]) / vb[2], legend = spec.legend || [], rows = Math.ceil(legend.length / 3);
+    const top = spec.insight ? 128 : 96, H = top + ch + 24 + rows * 26 + 56;
+    Object.entries({ x: 48, y: top, width: cw, height: ch }).forEach(([k, v]) => inner.setAttribute(k, v));
+    inner.removeAttribute("role"); inner.removeAttribute("aria-label");
+    inner.querySelectorAll(".line").forEach((p) => { p.removeAttribute("style"); p.setAttribute("fill", "none"); p.setAttribute("stroke-width", "2.5"); });
+    inner.querySelectorAll(".grid").forEach((l) => l.setAttribute("stroke", "#E4DECF"));
+    inner.querySelectorAll("text").forEach((t) => { t.setAttribute("fill", "#4A4D4B"); t.setAttribute("font-family", SANS); t.setAttribute("font-size", "11"); });
+    const lg = legend.map((l, i) => { const x = 48 + (i % 3) * 370, y = top + ch + 30 + Math.floor(i / 3) * 26;
+      return `<rect x="${x}" y="${y - 6}" width="18" height="4" fill="${l.color}"/><text x="${x + 26}" y="${y}" font-family="${SANS}" font-size="15" fill="#26282A">${esc(l.label)}</text>`; }).join("");
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${Math.round(H)}" viewBox="0 0 ${W} ${Math.round(H)}">`
+      + `<rect width="100%" height="100%" fill="#FBF9F3"/>`
+      + `<text x="48" y="62" font-family="Georgia, 'Times New Roman', serif" font-size="30" fill="#1B1C1E">${esc(spec.title)}</text>`
+      + (spec.insight ? `<text x="48" y="100" font-family="${SANS}" font-size="18" fill="#3D403F">${esc(spec.insight)}</text>` : "")
+      + new XMLSerializer().serializeToString(inner) + lg
+      + `<text x="48" y="${Math.round(H) - 24}" font-family="${SANS}" font-size="14" fill="#5B5E5C">${esc(`Source: ${spec.source} · data as of ${spec.asof} · Market Trends → Theses`)}</text></svg>`;
+  }
+  const svgData = (t) => "data:image/svg+xml;charset=utf-8," + encodeURIComponent(t);
+  async function toPng(spec) {
+    const img = new Image(); img.src = svgData(standaloneSvg(spec)); await img.decode();
+    const c = document.createElement("canvas"); c.width = img.width * 2; c.height = img.height * 2;
+    const g = c.getContext("2d"); g.scale(2, 2); g.drawImage(img, 0, 0);
+    return new Promise((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error("png"))), "image/png"));
+  }
+  const csvCell = (v) => (/[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v));
+  const toCsv = (spec) => [spec.csvHead, ...spec.csv].map((r) => r.map(csvCell).join(",")).join("\n")
+    + `\n\n${csvCell(`Source: ${spec.source} (${spec.sourceUrl}); data as of ${spec.asof}; via Market Trends → Theses`)}\n`;
+  function download(name, href) { const a = h("a", { href, download: name }); document.body.append(a); a.click(); a.remove(); }
+  function toolbar(spec) {
+    const name = slug(spec.title);
+    const act = async (kind) => {
+      try {
+        if (kind === "copy") {
+          if (!window.ClipboardItem || !navigator.clipboard?.write) throw new Error("clipboard");
+          await navigator.clipboard.write([new ClipboardItem({ "image/png": toPng(spec) })]);
+          toast("Chart copied — source attribution included");
+        } else if (kind === "png") { const u = URL.createObjectURL(await toPng(spec)); download(`${name}.png`, u); setTimeout(() => URL.revokeObjectURL(u), 5000); }
+        else if (kind === "svg") download(`${name}.svg`, svgData(standaloneSvg(spec)));
+        else download(`${name}.csv`, "data:text/csv;charset=utf-8," + encodeURIComponent(toCsv(spec)));
+      } catch { if (kind === "copy") { toast("Copying images isn't supported here — downloading PNG instead"); act("png"); } else toast("Export failed"); }
+    };
+    return h("div", { class: "chart-tools", role: "group", "aria-label": `Copy or download: ${spec.title}` },
+      h("button", { type: "button", class: "tool tool--primary", onclick: () => act("copy") }, "Copy chart"),
+      ...[["png", "PNG"], ["svg", "SVG"], ["csv", "CSV data"]].map(([k, l]) => h("button", { type: "button", class: "tool", "aria-label": `Download ${l}`, onclick: () => act(k) }, `↓ ${l}`)));
+  }
+  const fmtVal = (b) => `${b.note ? b.note + " " : ""}${Number(b.value).toLocaleString("en-US")}`;
+  function barFigure(f) {
+    const W = 640, rowH = 36, P = { l: 200, r: 96, t: 6, b: 6 }, H = P.t + P.b + f.bars.length * rowH;
+    const max = Math.max(...f.bars.map((b) => b.value)) || 1;
+    const root = svg("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": `${f.title}: ${f.bars.map((b) => `${b.label} ${fmtVal(b)}`).join("; ")} (${f.unit})` });
+    f.bars.forEach((b, i) => {
+      const y = P.t + i * rowH, w = Math.max(1, ((W - P.l - P.r) * b.value) / max);
+      const lab = svg("text", { x: P.l - 10, y: y + rowH / 2 + 4, "text-anchor": "end" }); lab.textContent = b.label; root.append(lab);
+      root.append(svg("rect", { class: "bar", x: P.l, y: y + 7, width: w.toFixed(1), height: rowH - 14, rx: 2, fill: /2026/.test(b.label) ? "#0E6862" : "#B4AC9A" }));
+      const v = svg("text", { x: P.l + w + 8, y: y + rowH / 2 + 4 }); v.textContent = fmtVal(b); root.append(v);
+    });
+    const spec = { svg: root, title: f.title, insight: f.insight, source: f.source_label, sourceUrl: f.source_url, asof: f.as_of,
+      csvHead: ["label", `value (${f.unit})`, "qualifier"], csv: f.bars.map((b) => [b.label, b.value, b.note || ""]) };
+    return h("figure", { class: "chart chart--bars" }, h("p", { class: "chart-title" }, f.title), f.insight ? h("p", { class: "chart-insight" }, f.insight) : null, root,
+      h("figcaption", {}, `Unit: ${f.unit}. Data as of ${f.as_of}; values as stated in the source. `, h("a", { href: f.source_url, target: "_blank", rel: "noopener noreferrer" }, f.source_label), "."), toolbar(spec));
   }
 
   // ---------- rendering ----------
@@ -352,6 +422,7 @@
         part(auds.length ? "3" : "2", "pWhat", "What changed", [
           s.changed_points?.length ? h("ul", { class: "bullets" }, s.changed_points.map((p) => h("li", {}, p))) : h("p", {}, s.what_changed),
           s.chart ? h("div", { class: "chart-wrap" }, chartHost) : null,
+          s.figures?.length ? sub("Key figures from the sources", ...s.figures.map(barFigure)) : null,
           sub(h("span", {}, "Why now ", INF()), h("p", {}, s.why_now)),
           key.length ? sub("Key supporting evidence", h("ul", { class: "ev ev--compact" }, key.map(evItem)), h("p", { class: "note" }, "Full evidence, with timestamps, is under Sources and methodology.")) : null]),
         part(auds.length ? "4" : "3", "pImpl", "Business implications", [

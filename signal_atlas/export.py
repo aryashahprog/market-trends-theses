@@ -42,6 +42,10 @@ def signal_markdown(s: dict[str, Any]) -> list[str]:
                     f"- Trigger to watch: {a['trigger']}", ""]
     out += ["### What changed", ""]
     out += [f"- {p}" for p in s["changed_points"]] if s.get("changed_points") else [s["what_changed"]]
+    for f in s.get("figures") or []:
+        vals = "; ".join(f"{b['label']}: {b.get('note', '') + ' ' if b.get('note') else ''}{b['value']:,}" for b in f["bars"])
+        out += [f"- **Figure — {f['title']}** ({f['unit']}): {vals}. Source: [{f['source_label']}]({f['source_url']}), "
+                f"as of {f['as_of']}."]
     out += ["", f"**Why now (analyst inference).** {s['why_now']}", ""]
     out += ["### Business implications (analyst inference)", ""]
     for i in s.get("implications") or []:

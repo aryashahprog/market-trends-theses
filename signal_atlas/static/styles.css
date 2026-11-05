@@ -383,3 +383,19 @@ kbd{font:500 11px/1 var(--mono);border:1px solid var(--rule);border-bottom-width
   .status-pill{max-width:52vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #statusText{overflow:hidden;text-overflow:ellipsis}
 }
+
+/* ---------- chart copy / export ---------- */
+.chart-tools{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.tool{font:500 12.5px/1 var(--sans);padding:8px 11px;border:1px solid var(--rule);background:#fff;color:var(--ink);border-radius:var(--radius);cursor:pointer;transition:background .15s}
+.tool:hover{background:#F1EDE3}
+.tool--primary{background:var(--teal);border-color:var(--teal);color:#fff}
+.tool--primary:hover{background:var(--teal-ink)}
+.tool:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+.lead .tool{background:transparent;color:#EDE9DF;border-color:var(--rule-dark)}
+.lead .tool:hover{background:var(--charcoal-2)}
+.lead .tool--primary{background:var(--teal);border-color:var(--teal);color:#fff}
+.chart-title{font:500 17px/1.3 var(--serif)!important;margin:0 0 2px!important;color:var(--ink)}
+.chart-insight{font:500 14.5px/1.45 var(--sans)!important;color:#3D403F!important;margin:0 0 10px!important}
+.lead .chart-insight{color:#E4E0D6!important}
+.chart--bars{margin:12px 0 18px;padding:16px;border:1px solid var(--rule);border-radius:var(--radius);background:#fff}
+.chart--bars text{font-size:12px}
