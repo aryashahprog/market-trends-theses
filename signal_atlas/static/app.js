@@ -103,10 +103,13 @@
     ends.sort((a, b) => a.y - b.y).forEach((e, i, arr) => { if (i && e.y - arr[i - 1].y < 12) e.y = arr[i - 1].y + 12;
       const t = svg("text", { x: e.x, y: e.y }); t.textContent = e.v.toFixed(0); root.append(t); });
     const src = series[0];
-    const spec = { svg: root, title: sig.chart.title || sig.chart.caption, insight: sig.chart.insight, source: src.attribution.replace(/^Data:\s*/, ""), sourceUrl: src.source_url, asof: days.at(-1),
+    const short = (l) => (l.match(/\b[A-Z]{1,2}\d{2,4}\b/) || [/composite/i.test(l) ? "composite index" : l])[0];
+    const pct = (s) => { const a = s.points[0].value, b = s.points.at(-1).value, c = ((b - a) / a) * 100; return `${short(s.label)} ${c >= 0 ? "+" : "−"}${Math.abs(c).toFixed(1)}%`; };
+    const insight = `Change since ${fmtDay(days[0]).replace(/, \d{4}$/, "")}: ${series.map(pct).join(", ")}.`;
+    const spec = { svg: root, title: sig.chart.title || sig.chart.caption, insight, source: src.attribution.replace(/^Data:\s*/, ""), sourceUrl: src.source_url, asof: days.at(-1),
       legend: series.map((s, i) => ({ label: s.label, color: COLORS[i % COLORS.length] })),
       csvHead: ["date", ...series.map((s) => s.label)], csv: days.map((dd) => [dd, ...series.map((s) => s.points.find((p) => p.day === dd)?.value ?? "")]) };
-    host.append(h("figure", { class: "chart" }, sig.chart.insight ? h("p", { class: "chart-insight" }, sig.chart.insight) : null, root,
+    host.append(h("figure", { class: "chart" }, h("p", { class: "chart-insight" }, insight), root,
       h("div", { class: "legend" }, series.map((s, i) => { const sw = h("i"); sw.style.background = COLORS[i % COLORS.length];
         return h("span", {}, sw, `${s.label} — ${s.points.at(-1).value.toFixed(1)} (${s.points.at(-1).day})`); })),
       h("figcaption", {}, `${sig.chart.caption} Unit: ${src.unit}. ${days.length} daily observations, ${days[0]} → ${days.at(-1)}; retrieved ${fmtDT(src.updated_at)}. `,
@@ -165,7 +168,8 @@
   }
   const fmtVal = (b) => `${b.note ? b.note + " " : ""}${Number(b.value).toLocaleString("en-US")}`;
   function barFigure(f) {
-    const W = 640, rowH = 36, P = { l: 200, r: 96, t: 6, b: 6 }, H = P.t + P.b + f.bars.length * rowH;
+    const longest = Math.max(...f.bars.map((b) => fmtVal(b).length));
+    const W = 640, rowH = 36, P = { l: 200, r: Math.max(96, Math.ceil(longest * 7.4) + 16), t: 6, b: 6 }, H = P.t + P.b + f.bars.length * rowH;
     const max = Math.max(...f.bars.map((b) => b.value)) || 1;
     const root = svg("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": `${f.title}: ${f.bars.map((b) => `${b.label} ${fmtVal(b)}`).join("; ")} (${f.unit})` });
     f.bars.forEach((b, i) => {
