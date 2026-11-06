@@ -112,8 +112,8 @@
       csvHead: ["date", ...series.map((s) => s.label)], csv: days.map((dd) => [dd, ...series.map((s) => s.points.find((p) => p.day === dd)?.value ?? "")]) };
     host.append(h("figure", { class: "chart" }, h("p", { class: "chart-insight" }, insight), root,
       h("div", { class: "legend" }, series.map((s, i) => { const sw = h("i"); sw.style.background = COLORS[i % COLORS.length];
-        return h("span", {}, sw, `${s.label} — ${s.points.at(-1).value.toFixed(1)} (${s.points.at(-1).day})`); })),
-      h("figcaption", {}, `${sig.chart.caption} Unit: ${src.unit}. ${days.length} daily observations, ${days[0]} → ${days.at(-1)}; retrieved ${fmtDT(src.updated_at)}. `,
+        return h("span", {}, sw, `${s.label.replace(/ on-demand index$| GPU index \(composite\)$/, "").replace(/^Price of Compute$/, "Composite")} ${s.points.at(-1).value.toFixed(1)}`); })),
+      h("figcaption", {}, `Index, ${fmtDay(days[0])} = 100 · daily to ${fmtDay(days.at(-1))} · Source: `,
         h("a", { href: src.source_url, target: "_blank", rel: "noopener noreferrer" }, src.attribution), "."), toolbar(spec)));
   }
 
@@ -247,7 +247,7 @@
     if (state.status?.last_success_at) rows.push(["Data fetched", rel(state.status.last_success_at), fmtDT(state.status.last_success_at)]);
     if (s.evidence_reviewed_at) rows.push(["Evidence reviewed", fmtDT(s.evidence_reviewed_at), fmtDT(s.evidence_reviewed_at)]);
     if (s.updated_at) rows.push(["Thesis revised", fmtDT(s.updated_at), fmtDT(s.updated_at)]);
-    return h("dl", { class: "stamps" + (compact ? " stamps--compact" : ""), title: "Fetching data does not re-review a thesis." },
+    return h("dl", { class: "stamps" + (compact ? " stamps--compact" : "") },
       rows.map(([k, v, t]) => h("div", {}, h("dt", {}, k), h("dd", { title: t }, v))));
   }
 
@@ -257,7 +257,7 @@
     $("#editionLabel").textContent = ed.edition_date !== latest ? "Archived edition" : ed.edition_date === today ? "Today's edition" : "Latest edition";
     $("#dateline").textContent = fmtLong(ed.edition_date) + (ed.edition_date !== latest ? " · archive" : "");
     $("#heroHeadline").textContent = note.headline;
-    $("#heroSummary").textContent = note.auto ? "Theses unchanged today; the data behind them refreshes twice a day." : note.summary;
+    $("#heroSummary").textContent = note.summary || ""; $("#heroSummary").hidden = !note.summary;
     $("#exportLink").href = `${STATIC ? "" : "/"}api/export/${ed.edition_date}.md`;
     document.title = `Market Trends → Theses — Edition ${fmtDay(ed.edition_date)}`;
     const top = ed.signals[0], lead = $("#leadSignal"); lead.replaceChildren();
@@ -392,13 +392,13 @@
   function renderStatus() {
     const s = state.status; if (!s) return;
     if (STATIC) s.stale = !!s.last_success_at && Date.now() > d(s.next_scheduled).getTime() + (s.stale_grace_minutes || 90) * 60000;
-    const rs = s.refresh_summary, partial = !!(rs && rs.issues.length);
+    const rs = s.refresh_summary, issues = (rs?.issues || []).filter((x) => !/^not configured/.test(x.reason || "")), partial = issues.length > 0;
     const pill = $("#statusPill"), never = !s.last_success_at;
     pill.dataset.state = s.running ? "running" : never ? "never" : s.stale ? "stale" : partial ? "partial" : "fresh";
     $("#statusText").textContent = s.running ? "Refreshing data…" : never ? "No data refresh yet"
-      : `${s.stale ? "Stale · " : ""}Updated ${rel(s.last_success_at)}${partial ? ` · ${rs.ok} of ${rs.total} sources` : ""}`;
-    pill.title = partial ? `Latest data refresh was partial: ${rs.issues.map((x) => `${x.source}: ${x.reason}`).join("; ")}. Theses were not re-reviewed by this refresh. Click for diagnostics.` : "Data fetching never re-reviews a thesis. Click for diagnostics.";
-    $("#pipelineSummary").textContent = partial ? `Latest data refresh was partial: ${rs.ok} of ${rs.total} sources updated ${fmtDT(rs.finished_at)}. ${rs.issues.map((x) => `${x.source}: ${x.reason}`).join("; ")}. Theses are unchanged and were not re-reviewed by this refresh.` : "";
+      : `${s.stale ? "Stale · " : ""}Updated ${rel(s.last_success_at)}`;
+    pill.title = partial ? `Some sources didn't update: ${issues.map((x) => x.source).join(", ")}` : "Data sources";
+    $("#pipelineSummary").textContent = partial ? `Some sources didn't update on ${fmtDT(rs.finished_at)}: ${issues.map((x) => x.source).join(", ")}.` : "";
     const b = $("#staleBanner");
     b.classList.toggle("banner--info", !(never || s.stale) && partial);
     if (never || s.stale) {
@@ -409,7 +409,7 @@
     const sch = s.scheduler, lr = s.last_run;
     const kv = [["Schedule", s.schedule], ["Next scheduled", fmtDT(s.next_scheduled)],
       ["Data last fetched", s.last_success_at ? `${fmtDT(s.last_success_at)} (${rel(s.last_success_at)})` : "none yet"],
-      ["Latest refresh", rs ? `${rs.status} · ${rs.ok} of ${rs.total} sources ok` : lr ? lr.status : "none"],
+      ["Latest refresh", rs ? `${partial ? "partial" : "complete"} · ${rs.ok} of ${rs.total - ((rs.issues || []).length - issues.length)} sources updated` : lr ? lr.status : "none"],
       ["Scheduler", STATIC ? "GitHub Actions workflow · 08:00 & 16:00 ET" : sch.alive ? `running · heartbeat ${rel(sch.heartbeat_at)}` : sch.heartbeat_at ? `not responding · last heartbeat ${rel(sch.heartbeat_at)}` : "not detected"],
       ["Freshness", s.stale ? "stale" : "current"],
       ["Archive", `${s.counts.snapshots} snapshots · ${s.counts.documents} documents · ${s.counts.clusters} story clusters`],
@@ -419,6 +419,7 @@
     $("#sourceRows").replaceChildren(...s.sources.map((x) => h("tr", {},
       h("td", {}, h("a", { href: x.homepage, target: "_blank", rel: "noopener noreferrer" }, x.name)),
       h("td", {}, x.kind), h("td", {}, x.last_success_at ? rel(x.last_success_at) : "—"),
+      /^not configured/.test(x.plain_error || "") ? h("td", {}, h("span", { class: "badge badge--none" }, "off"), h("span", { class: "err err--quiet" }, "Not set up yet")) :
       h("td", {}, h("span", { class: `badge badge--${x.last_status || "none"}` }, x.last_status || "not run"),
         x.plain_error ? h("span", { class: "err" }, x.plain_error) : null,
         x.plain_error && x.last_error ? h("details", { class: "diag" }, h("summary", {}, "Technical detail"), h("code", {}, x.last_error)) : null))));
@@ -428,7 +429,7 @@
   function renderEditionNav() {
     const sel = $("#editionSelect"), cur = state.edition.edition_date;
     sel.replaceChildren(...state.editions.map((e) => h("option", { value: e.edition_date, selected: e.edition_date === cur },
-      `${fmtDay(e.edition_date)} · ${e.snapshots} snapshot${e.snapshots > 1 ? "s" : ""}`)));
+      fmtDay(e.edition_date))));
     const i = state.editions.findIndex((e) => e.edition_date === cur);
     $("#prevEdition").disabled = i < 0 || i >= state.editions.length - 1;
     $("#nextEdition").disabled = i <= 0;
