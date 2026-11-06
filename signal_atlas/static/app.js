@@ -221,7 +221,8 @@
 
   function renderHero() {
     const ed = state.edition, latest = state.editions[0]?.edition_date, note = ed.note;
-    $("#editionLabel").textContent = ed.edition_date !== latest ? "Archived edition" : "Today's edition";
+    const today = new Intl.DateTimeFormat("en-CA", { timeZone: TZ }).format(new Date());
+    $("#editionLabel").textContent = ed.edition_date !== latest ? "Archived edition" : ed.edition_date === today ? "Today's edition" : "Latest edition";
     $("#dateline").textContent = fmtLong(ed.edition_date) + (ed.edition_date !== latest ? " · archive" : "");
     $("#heroHeadline").textContent = note.headline;
     $("#heroSummary").textContent = note.summary;
