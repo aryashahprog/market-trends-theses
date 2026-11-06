@@ -212,13 +212,16 @@ def build_edition(conn: sqlite3.Connection, edition_date: str, now: datetime, ru
                 "takeaways": loads(note_row["takeaways"]) or [], "auto": False}
     else:
         new = [s for s in signals if s["is_new_in_edition"]]
+        last = conn.execute("SELECT headline, takeaways FROM edition_notes WHERE edition_date<? "
+                            "ORDER BY edition_date DESC LIMIT 1",
+                            (edition_date,)).fetchone()
         note = {
             "headline": f"{len(new)} new analyst-reviewed thesis{'es' if len(new) != 1 else ''} in this edition"
-            if new else "Published theses carried forward; no new analyst-reviewed theses today",
+            if new else (last["headline"] if last else signals[0]["title"] if signals else "No theses published yet"),
             "summary": f"Automated ingestion recorded {leads_new} new unreviewed leads from {sources_ok} sources. "
                        "Theses are unchanged unless marked revised; fetching data does not re-review them.",
-            "takeaways": [s["dek"] for s in signals[:3]],
-            "auto": True,
+            "takeaways": (loads(last["takeaways"]) or []) if last and not new else [s["title"] for s in signals[:3]],
+            "auto": not (last and not new),
         }
     prev = conn.execute("SELECT edition_date, payload FROM edition_snapshots WHERE edition_date<? "
                         "ORDER BY edition_date DESC, created_at DESC, id DESC LIMIT 1", (edition_date,)).fetchone()

@@ -15,8 +15,8 @@ from .urlnorm import canonicalize
 EDITION_DATE = "2026-11-05"
 PUBLISHED_AT = "2026-11-05T16:00:00Z"
 VERIFIED_AT = "2026-11-05T15:45:00Z"  # verification window for first-edition retrievals: 15:30–16:00 UTC
-REVISED_AT = "2026-11-05T18:46:07Z"  # editorial revision v3: sourced key-figure charts (values verbatim from evidence)
-CONTENT_VERSION = 3
+REVISED_AT = "2026-11-06T19:40:00Z"  # editorial revision v4: every headline states the thesis as a takeaway
+CONTENT_VERSION = 4
 
 SOURCES: list[tuple[str, str, str, str, str]] = [
     ("milkroad", "Milk Road", "discovery", "https://milkroad.com/",
@@ -96,7 +96,7 @@ SIGNALS: list[dict[str, Any]] = [
     {
         "id": "gpu-rent-vs-token-deflation",
         "content_version": CONTENT_VERSION,
-        "title": "Rental prices for older and mid-generation GPUs are rising while blended token prices fall",
+        "title": "Output per GPU-hour, not list price, increasingly decides AI costs as older and mid-generation GPU rents rise",
         "dek": "Renting A100, H100 and H200 GPUs has become more expensive since August, while the average price "
                "businesses paid per AI token fell. The newest GPUs got cheaper.",
         "takeaway": "Since mid-August, on-demand rental prices for A100, H100 and H200 GPUs have risen on Price of "
@@ -241,7 +241,7 @@ SIGNALS: list[dict[str, Any]] = [
     {
         "id": "enterprise-ai-spend-compounding",
         "content_version": CONTENT_VERSION,
-        "title": "Enterprise AI spend is deepening inside existing customers, not only adding new ones",
+        "title": "Enterprise AI spend compounds inside existing customers, creating a budget line that needs governance",
         "dek": "An AI vendor's filing and a card-spend panel both show usage growing within accounts, with spend "
                "concentrated in a few model vendors.",
         "takeaway": "Anthropic's S-1 reports about 900% net revenue retention (revenue this year from last year's "
@@ -364,7 +364,7 @@ SIGNALS: list[dict[str, Any]] = [
     {
         "id": "seats-to-outcome-pricing",
         "content_version": CONTENT_VERSION,
-        "title": "Two filers describe a shift from per-seat to credit and outcome pricing, and the friction it causes",
+        "title": "Credit and outcome pricing will need trusted metering before buyers accept it",
         "dek": "HubSpot says credit and outcome pricing has lengthened sales cycles; ExlService describes moving "
                "clients off headcount-based fees.",
         "takeaway": "HubSpot's and ExlService's latest quarterly filings both describe moving from pricing per user or "
@@ -481,7 +481,7 @@ SIGNALS: list[dict[str, Any]] = [
     {
         "id": "memory-substrate-reallocation",
         "content_version": CONTENT_VERSION,
-        "title": "Intel's data-center chips are growing fast while it flags industry-wide memory and substrate shortages",
+        "title": "Scarce memory and substrates are flowing to AI servers, favoring data-center chips over PCs",
         "dek": "Constrained components appear to be flowing to higher-margin AI servers; the PC-side impact on Intel "
                "is so far modest.",
         "takeaway": "Intel's Q3 filing shows data-center revenue up 78% year over year, with that segment's operating "
@@ -585,7 +585,7 @@ SIGNALS: list[dict[str, Any]] = [
     {
         "id": "powered-compute-as-product",
         "content_version": CONTENT_VERSION,
-        "title": "Owners of powered sites outside the hyperscalers are adding compute capacity and renting it out",
+        "title": "Power-ready sites are becoming a sellable compute product outside the hyperscalers",
         "dek": "SpaceX reports 1.7 GW of compute capacity; Galaxy reportedly leased a Texas campus to CoreWeave. "
                "Financing and contract length are the risks.",
         "takeaway": "SpaceX's Q3 filing reports 1.7 GW of nameplate compute capacity (installed power capacity, not "
@@ -693,7 +693,7 @@ SIGNALS: list[dict[str, Any]] = [
     {
         "id": "mission-critical-private-5g",
         "content_version": CONTENT_VERSION,
-        "title": "Mission-critical private 5G won a rail contract, but Ericsson's enterprise revenue is flat",
+        "title": "Private 5G for critical infrastructure is real but early, and integrators may capture more value than radio vendors",
         "dek": "Operators are testing cellular networks for operational systems; value may go to integrators and "
                "managed operators rather than radio vendors.",
         "takeaway": "Ericsson's Q3 report says it was selected for the first stage of Queensland's next-generation "
@@ -826,16 +826,16 @@ for _sig in SIGNALS:
     _sig["content_version"] = CONTENT_VERSION
 
 NOTE = {
-    "headline": "Older GPUs cost more to rent while AI output gets cheaper",
-    "summary": "Six working theses on where AI spending, pricing and infrastructure are shifting. Each one says who "
-               "it affects, what to check next and what would change the view.",
+    "headline": "AI costs, budgets and bottlenecks are shifting: six theses and the evidence behind them",
+    "summary": "Each headline is a working thesis; everything under it is the evidence for and against. Each one says "
+               "who it affects, what to check next and what would change the view.",
     "takeaways": [
-        "Rental prices for A100, H100 and H200 GPUs rose since August while blended token prices fell; the newest "
-        "GPUs got cheaper.",
-        "Enterprise AI spend is deepening inside existing customers, and two filers say pricing is moving from seats "
-        "to credits and outcomes, with longer sales cycles.",
-        "Memory, substrates and powered sites look like binding constraints; private 5G is winning operational "
-        "contracts, but vendor revenue is flat.",
+        "Output per GPU-hour, not list price, increasingly decides AI costs: older-GPU rents rose since August while "
+        "blended token prices fell.",
+        "Enterprise AI is a compounding budget line, and credit or outcome pricing will need trusted metering before "
+        "buyers accept it.",
+        "Memory, substrates and power-ready sites look like the binding constraints; in private 5G, integrators may "
+        "capture more value than radio vendors.",
     ],
 }
 

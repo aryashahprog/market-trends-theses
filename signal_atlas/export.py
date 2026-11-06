@@ -20,7 +20,7 @@ def signal_markdown(s: dict[str, Any]) -> list[str]:
               f"thesis revised {s['updated_at']}" if s.get("updated_at") else None]
     if any(stamps):
         out += ["_" + "; ".join(x for x in stamps if x) + " (UTC)_", ""]
-    out += ["### The takeaway", "", s.get("takeaway") or s["dek"], ""]
+    out += ["### The evidence in brief", "", s.get("takeaway") or s["dek"], ""]
     if s.get("caveats"):
         out += ["**Keep in mind**", ""] + [f"- {c}" for c in s["caveats"]] + [""]
     out += [f"> {s['thesis_sentence']}", ""]

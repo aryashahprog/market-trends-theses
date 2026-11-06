@@ -410,10 +410,10 @@
       h("header", { class: "d-head" },
         h("div", { class: "d-head__top" }, h("button", { class: "d-back", type: "button", "data-close": "" }, "← All theses")),
         kicker(s),
-        h("h2", { id: "dTitle" }, s.title),
+        h("p", { class: "d-label" }, "The thesis"), h("h2", { id: "dTitle" }, s.title),
         h("div", { class: "meta" }, confLine(s), h("span", {}, s.corroboration), h("span", {}, `Priority #${s.rank} in the ${fmtDay(state.edition.edition_date)} edition`))),
       h("div", { class: "d-body" },
-        part(null, "pTake", "The takeaway", [
+        part(null, "pTake", "The evidence in brief", [
           h("p", { class: "lede" }, s.takeaway || s.dek),
           s.caveats?.length ? h("div", { class: "caveats" }, h("h4", {}, "Keep in mind"), h("ul", {}, s.caveats.map((c) => h("li", {}, c)))) : null,
           stamps(s),

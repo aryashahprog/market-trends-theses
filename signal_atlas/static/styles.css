@@ -498,3 +498,4 @@ html{scroll-padding-top:132px}
 .drawer .chain-step + .chain-step::before{content:none}
 .drawer .chain-step span{margin:2px 0 0}
 @media (max-width:720px){.drawer .chain-step{grid-template-columns:1fr;gap:2px}}
+.d-label{font:600 12px/1.2 var(--sans,system-ui);letter-spacing:.08em;text-transform:uppercase;color:var(--accent,#0E6862);margin:14px 0 4px}
