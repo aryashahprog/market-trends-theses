@@ -15,8 +15,8 @@ from .urlnorm import canonicalize
 EDITION_DATE = "2026-11-05"
 PUBLISHED_AT = "2026-11-05T16:00:00Z"
 VERIFIED_AT = "2026-11-05T15:45:00Z"  # verification window for first-edition retrievals: 15:30–16:00 UTC
-REVISED_AT = "2026-11-06T19:40:00Z"  # editorial revision v4: every headline states the thesis as a takeaway
-CONTENT_VERSION = 4
+REVISED_AT = "2026-11-06T21:00:00Z"  # editorial revision v5: three-point briefs for skimming
+CONTENT_VERSION = 5
 
 SOURCES: list[tuple[str, str, str, str, str]] = [
     ("milkroad", "Milk Road", "discovery", "https://milkroad.com/",
@@ -97,6 +97,7 @@ SIGNALS: list[dict[str, Any]] = [
         "id": "gpu-rent-vs-token-deflation",
         "content_version": CONTENT_VERSION,
         "title": "Output per GPU-hour, not list price, increasingly decides AI costs as older and mid-generation GPU rents rise",
+        "brief": ["A100 and H200 rents are up 40–55% since August (Price of Compute)", "Token prices businesses paid fell 27% in four weeks (Ramp)", "Cost per useful task now matters more than a GPU's list price"],
         "dek": "Renting A100, H100 and H200 GPUs has become more expensive since August, while the average price "
                "businesses paid per AI token fell. The newest GPUs got cheaper.",
         "takeaway": "Since mid-August, on-demand rental prices for A100, H100 and H200 GPUs have risen on Price of "
@@ -242,6 +243,7 @@ SIGNALS: list[dict[str, Any]] = [
         "id": "enterprise-ai-spend-compounding",
         "content_version": CONTENT_VERSION,
         "title": "Enterprise AI spend compounds inside existing customers, creating a budget line that needs governance",
+        "brief": ["Anthropic: 950 → 11,900+ customers paying $100k+ a year", "~900% net revenue retention: existing customers drive growth", "56% of sampled US businesses pay for AI (Ramp), up 12 pts in a year"],
         "dek": "An AI vendor's filing and a card-spend panel both show usage growing within accounts, with spend "
                "concentrated in a few model vendors.",
         "takeaway": "Anthropic's S-1 reports about 900% net revenue retention (revenue this year from last year's "
@@ -365,6 +367,7 @@ SIGNALS: list[dict[str, Any]] = [
         "id": "seats-to-outcome-pricing",
         "content_version": CONTENT_VERSION,
         "title": "Credit and outcome pricing will need trusted metering before buyers accept it",
+        "brief": ["HubSpot: credit and outcome pricing lengthened sales cycles", "ExlService: moving clients off per-person fees", "Neither discloses how much revenue is priced this way yet"],
         "dek": "HubSpot says credit and outcome pricing has lengthened sales cycles; ExlService describes moving "
                "clients off headcount-based fees.",
         "takeaway": "HubSpot's and ExlService's latest quarterly filings both describe moving from pricing per user or "
@@ -482,6 +485,7 @@ SIGNALS: list[dict[str, Any]] = [
         "id": "memory-substrate-reallocation",
         "content_version": CONTENT_VERSION,
         "title": "Scarce memory and substrates are flowing to AI servers, favoring data-center chips over PCs",
+        "brief": ["Intel data-center revenue +78% while PC chips fell ~5%", "Data-center operating margin rose from 23% to 42%", "Intel flags industry-wide memory and substrate shortages"],
         "dek": "Constrained components appear to be flowing to higher-margin AI servers; the PC-side impact on Intel "
                "is so far modest.",
         "takeaway": "Intel's Q3 filing shows data-center revenue up 78% year over year, with that segment's operating "
@@ -586,6 +590,7 @@ SIGNALS: list[dict[str, Any]] = [
         "id": "powered-compute-as-product",
         "content_version": CONTENT_VERSION,
         "title": "Power-ready sites are becoming a sellable compute product outside the hyperscalers",
+        "brief": ["SpaceX compute capacity grew from 0.6 to 1.7 GW in a year", "Galaxy leased its West Texas campus to CoreWeave (reported)", "Utilization and outside revenue are not disclosed yet"],
         "dek": "SpaceX reports 1.7 GW of compute capacity; Galaxy reportedly leased a Texas campus to CoreWeave. "
                "Financing and contract length are the risks.",
         "takeaway": "SpaceX's Q3 filing reports 1.7 GW of nameplate compute capacity (installed power capacity, not "
@@ -694,6 +699,7 @@ SIGNALS: list[dict[str, Any]] = [
         "id": "mission-critical-private-5g",
         "content_version": CONTENT_VERSION,
         "title": "Private 5G for critical infrastructure is real but early, and integrators may capture more value than radio vendors",
+        "brief": ["Ericsson won the first stage of Queensland's rail private 5G network", "Ericsson Enterprise sales fell 10% (about +1% organically)", "Real deployments, but vendor revenue is not accelerating yet"],
         "dek": "Operators are testing cellular networks for operational systems; value may go to integrators and "
                "managed operators rather than radio vendors.",
         "takeaway": "Ericsson's Q3 report says it was selected for the first stage of Queensland's next-generation "
@@ -827,8 +833,7 @@ for _sig in SIGNALS:
 
 NOTE = {
     "headline": "AI costs, budgets and bottlenecks are shifting: six theses and the evidence behind them",
-    "summary": "Each headline is a working thesis; everything under it is the evidence for and against. Each one says "
-               "who it affects, what to check next and what would change the view.",
+    "summary": "Each headline is the takeaway. Open one for the evidence, the counter-case and what to check next.",
     "takeaways": [
         "Output per GPU-hour, not list price, increasingly decides AI costs: older-GPU rents rose since August while "
         "blended token prices fell.",
@@ -839,7 +844,7 @@ NOTE = {
     ],
 }
 
-REQUIRED = ("title", "dek", "takeaway", "caveats", "sector", "themes", "direction", "what_changed", "why_now",
+REQUIRED = ("title", "brief", "dek", "takeaway", "caveats", "sector", "themes", "direction", "what_changed", "why_now",
             "market_indication", "audiences", "implications", "card_implication", "customer_validation",
             "value_chain", "confidence", "corroboration", "confidence_rationale", "next_validation", "falsifier",
             "thesis_sentence", "evidence_reviewed_at", "evidence")
@@ -869,6 +874,9 @@ def validate_signal(sig: dict[str, Any]) -> list[str]:
             errs.append(f"figure {f.get('id')}: needs a registered source, title, unit, as_of and bars")
     for i in sig.get("implications") or []:
         errs += [f"implication missing {k}" for k in IMPLICATION_KEYS if not i.get(k)]
+    brief = sig.get("brief") or []
+    if len(brief) != 3 or any(len(b) > 80 for b in brief):
+        errs.append("brief needs exactly three points of at most 80 characters")
     return errs
 
 
