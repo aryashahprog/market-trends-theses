@@ -24,6 +24,7 @@
       if (v == null || v === false) continue;
       if (k === "class") el.className = v;
       else if (k === "text") el.textContent = v;
+      else if (k === "style") el.style.cssText = v;
       else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
       else el.setAttribute(k, v === true ? "" : v);
     }
@@ -140,10 +141,41 @@
   }
   const svgData = (t) => "data:image/svg+xml;charset=utf-8," + encodeURIComponent(t);
   async function toPng(spec) {
-    const img = new Image(); img.src = svgData(standaloneSvg(spec)); await img.decode();
+    const img = new Image(); img.src = svgData(spec.raw || standaloneSvg(spec)); await img.decode();
     const c = document.createElement("canvas"); c.width = img.width * 2; c.height = img.height * 2;
     const g = c.getContext("2d"); g.scale(2, 2); g.drawImage(img, 0, 0);
     return new Promise((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error("png"))), "image/png"));
+  }
+  function wrapText(text, max) {
+    const out = []; let line = "";
+    for (const w of String(text).split(/\s+/)) { if ((line + " " + w).trim().length > max && line) { out.push(line); line = w; } else line = (line + " " + w).trim(); }
+    if (line) out.push(line); return out;
+  }
+  function slideSvg(s) {
+    const W = 1600, H = 900, SERIF = "Georgia, 'Times New Roman', serif";
+    const head = wrapText(s.title, 46).slice(0, 4), c = evCounts(s);
+    let y = 150 + head.length * 66 + 40, body = "";
+    head.forEach((l, i) => { body += `<text x="96" y="${200 + i * 66}" font-family="${SERIF}" font-size="56" fill="#1B1C1E">${esc(l)}</text>`; });
+    (s.brief?.length ? s.brief : [s.dek]).forEach((b) => {
+      y += 30; body += `<rect x="96" y="${y + 6}" width="12" height="12" fill="#0E6862"/>`;
+      wrapText(b, 72).forEach((l, i) => { body += `<text x="132" y="${y + 18 + i * 42}" font-family="${SANS}" font-size="32" fill="#26282A">${esc(l)}</text>`; y += 42; });
+    });
+    const srcs = [...new Set(s.evidence.filter((e) => e.stance === "supports").map((e) => e.source_name).filter(Boolean))].slice(0, 4).join(", ");
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><rect width="100%" height="100%" fill="#FBF9F3"/>`
+      + `<rect x="0" y="0" width="${W}" height="10" fill="#0E6862"/>`
+      + `<text x="96" y="104" font-family="${SANS}" font-size="22" font-weight="600" letter-spacing="3" fill="#0E6862">${esc(`THE THESIS · ${s.sector.toUpperCase()}`)}</text>` + body
+      + `<line x1="96" x2="${W - 96}" y1="${H - 120}" y2="${H - 120}" stroke="#DCD5C6"/>`
+      + `<text x="96" y="${H - 78}" font-family="${SANS}" font-size="20" fill="#5B5E5C">${esc(`${s.confidence} confidence · ${c.supports} supporting, ${c.challenges} challenging evidence · Sources: ${srcs}`)}</text>`
+      + `<text x="96" y="${H - 46}" font-family="${SANS}" font-size="20" fill="#5B5E5C">${esc(`Market Trends → Theses · ${fmtDay(state.edition.edition_date)} edition · research, not investment advice`)}</text></svg>`;
+  }
+  async function slideAct(s, kind) {
+    const spec = { raw: slideSvg(s) };
+    try {
+      if (kind === "copy") {
+        if (!window.ClipboardItem || !navigator.clipboard?.write) throw new Error("clipboard");
+        await navigator.clipboard.write([new ClipboardItem({ "image/png": toPng(spec) })]); toast("Slide copied — paste it into your deck");
+      } else { const u = URL.createObjectURL(await toPng(spec)); download(`${slug(s.title)}.png`, u); setTimeout(() => URL.revokeObjectURL(u), 5000); }
+    } catch { if (kind === "copy") { toast("Copying images isn't supported here — downloading PNG instead"); slideAct(s, "png"); } else toast("Export failed"); }
   }
   const csvCell = (v) => (/[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v));
   const toCsv = (spec) => [spec.csvHead, ...spec.csv].map((r) => r.map(csvCell).join(",")).join("\n")
@@ -225,25 +257,62 @@
     $("#editionLabel").textContent = ed.edition_date !== latest ? "Archived edition" : ed.edition_date === today ? "Today's edition" : "Latest edition";
     $("#dateline").textContent = fmtLong(ed.edition_date) + (ed.edition_date !== latest ? " · archive" : "");
     $("#heroHeadline").textContent = note.headline;
-    $("#heroSummary").textContent = note.summary;
-    const tk = note.takeaways || [];
-    $("#takeawaysLabel").hidden = !tk.length;
-    $("#takeawaysLabel").textContent = note.auto ? "Top theses" : `${tk.length} things to know`;
-    $("#heroTakeaways").replaceChildren(...tk.map((t) => h("li", {}, t)));
+    $("#heroSummary").textContent = note.auto ? "Theses unchanged today; the data behind them refreshes twice a day." : note.summary;
     $("#exportLink").href = `${STATIC ? "" : "/"}api/export/${ed.edition_date}.md`;
     document.title = `Market Trends → Theses — Edition ${fmtDay(ed.edition_date)}`;
     const top = ed.signals[0], lead = $("#leadSignal"); lead.replaceChildren();
     if (!top) return;
-    const chartHost = h("div");
-    lead.append(kicker(top), h("h2", {}, h("button", { type: "button", onclick: () => openSignal(top.id) }, top.title)),
-      h("p", { class: "lead__dek" }, top.dek || top.takeaway),
-      chartHost,
-      top.caveats?.length ? h("p", { class: "lead__caveat" }, h("strong", {}, "Keep in mind: "), top.caveats[0]) : null,
-      h("p", { class: "lead__more" }, h("button", { class: "link-btn", type: "button", onclick: () => openSignal(top.id) }, "Read the full thesis →")));
-    $("#moreList").replaceChildren(...ed.signals.slice(1, 5).map((x) => h("li", {}, kicker(x),
-      h("button", { type: "button", onclick: () => openSignal(x.id) }, x.title), h("p", {}, x.card_implication || x.dek))));
-    $("#moreList").parentElement.hidden = ed.signals.length < 2;
-    chart(top, chartHost);
+    const vis = h("div", { class: "lead__visual" });
+    lead.append(h("div", { class: "lead__text" }, kicker(top),
+      h("h2", {}, h("button", { type: "button", onclick: () => openSignal(top.id) }, top.title)),
+      briefList(top), where(top),
+      h("p", { class: "lead__more" }, h("button", { class: "link-btn", type: "button", onclick: () => openSignal(top.id) }, "See the evidence →"))), vis);
+    primaryVisual(top, vis);
+  }
+  const briefList = (s, cls = "brief") => h("ul", { class: cls }, (s.brief?.length ? s.brief : [s.dek]).map((b) => h("li", {}, b)));
+  const investigate = (s) => (s.implications?.[0]?.investigate || "").replace(/\s*\((categories|category)\)$/, "");
+  const where = (s) => investigate(s) ? h("p", { class: "where" }, h("span", {}, "Where to look"), investigate(s)) : null;
+  function evCounts(s) {
+    const c = { supports: 0, context: 0, challenges: 0, primary: 0 };
+    s.evidence.forEach((e) => { c[e.stance] = (c[e.stance] || 0) + 1; if (e.claim_type === "primary") c.primary++; });
+    return c;
+  }
+  function evBalance(s, big) {
+    const c = evCounts(s), n = s.evidence.length || 1;
+    const seg = (k, label) => c[k] ? h("i", { class: `evb__${k}`, style: `flex:${c[k]}`, title: `${c[k]} ${label}` }) : null;
+    return h("figure", { class: "evb" + (big ? " evb--big" : "") },
+      big ? h("p", { class: "chart-title" }, "Evidence balance") : null,
+      h("div", { class: "evb__bar", role: "img", "aria-label": `${c.supports} supporting, ${c.context} context, ${c.challenges} challenging; ${c.primary} of ${n} from primary sources` },
+        seg("supports", "supporting"), seg("context", "context"), seg("challenges", "challenging")),
+      h("figcaption", {}, h("span", { class: "k k--s" }, `${c.supports} for`), h("span", { class: "k k--c" }, `${c.context} context`),
+        h("span", { class: "k k--x" }, `${c.challenges} against`), h("span", {}, `${c.primary} of ${n} primary sources`)));
+  }
+  const figNum = (b) => `${Number(b.value).toLocaleString("en-US")}${b.note === "more than" ? "+" : ""}`;
+  function miniFigure(f) {
+    const [a, b] = f.bars, max = Math.max(a.value, b.value) || 1;
+    return h("figure", { class: "mini" }, h("p", { class: "mini__num" }, figNum(a), h("span", { class: "mini__arrow" }, " → "), figNum(b), h("span", { class: "mini__unit" }, ` ${f.unit}`)),
+      h("div", { class: "mini__bars", "aria-hidden": "true" }, [a, b].map((x, i) => h("i", { class: i ? "on" : "", style: `width:${Math.max(4, (100 * x.value) / max).toFixed(1)}%` }))),
+      h("figcaption", {}, `${f.title} · ${a.label} → ${b.label}`));
+  }
+  async function miniSeries(s, host) {
+    const [ser] = await loadSeries(s.chart.series.slice(0, 1)); if (!ser) { host.append(evBalance(s)); return; }
+    const pts = ser.points, W = 300, H = 56, vs = pts.map((p) => p.value), lo = Math.min(...vs), hi = Math.max(...vs);
+    const x = (i) => (i / (pts.length - 1)) * W, y = (v) => H - 4 - ((v - lo) / (hi - lo || 1)) * (H - 8);
+    const root = svg("svg", { viewBox: `0 0 ${W} ${H}`, class: "spark", "aria-hidden": "true" });
+    root.append(svg("path", { d: pts.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(p.value).toFixed(1)}`).join(" ") }));
+    const pct = ((pts.at(-1).value / pts[0].value - 1) * 100);
+    host.append(h("figure", { class: "mini" }, h("p", { class: "mini__num" }, `${pct >= 0 ? "+" : ""}${pct.toFixed(0)}%`, h("span", { class: "mini__unit" }, ` since ${fmtDay(pts[0].day).replace(/, \d{4}$/, "")}`)),
+      root, h("figcaption", {}, `${ser.label} · daily, to ${fmtDay(pts.at(-1).day)}`)));
+  }
+  function miniVisual(s) {
+    const host = h("div", { class: "card__visual" });
+    if (s.chart) miniSeries(s, host); else if (s.figures?.length) host.append(miniFigure(s.figures[0])); else host.append(evBalance(s));
+    return host;
+  }
+  function primaryVisual(s, host) {
+    if (s.chart) { const c = h("div", { class: "chart-wrap" }); host.append(c); chart(s, c); }
+    else if (s.figures?.length) host.append(barFigure(s.figures[0]));
+    else host.append(evBalance(s, true));
   }
   function renderControls() {
     const sigs = state.edition.signals;
@@ -256,7 +325,6 @@
     $("#sectorChips").replaceChildren(tab("All sectors", null), ...sectors.map((t) => tab(t, t)));
     const n = (state.aud ? 1 : 0) + (state.conf ? 1 : 0);
     $("#filterToggle").textContent = n ? `Filter · ${n}` : "Filter";
-    $("#allTitle").textContent = state.sector || "All theses";
     $("#audChips").parentElement.hidden = !segs.length;
     $("#audChips").replaceChildren(mk("Everyone", null, "aud"), ...segs.map((t) => mk(t, t, "aud")));
     $("#confFilter").replaceChildren(mk("Any", null, "conf"), ...["High", "Medium", "Low"].map((c) => mk(c, c, "conf")));
@@ -268,15 +336,15 @@
       h("span", { title: "Editorial prioritization points, not a probability" }, `priority ${s.scores.composite.toFixed(2)}`));
   }
   function renderFeed() {
-    const list = $("#feedList"), items = filtered(); list.replaceChildren();
+    const list = $("#feedList"), browsing = !state.q.trim() && !state.sector && !state.aud && !state.conf;
+    const items = filtered().filter((s) => !browsing || s.rank !== 1); list.replaceChildren();
+    $("#allTitle").textContent = browsing ? "More theses" : `${items.length} thes${items.length === 1 ? "is" : "es"}${state.sector ? ` · ${state.sector}` : ""}`;
     $("#feedEmpty").hidden = items.length > 0;
     items.forEach((s, i) => {
       const open = h("button", { class: "item__open", type: "button", "data-id": s.id, onclick: () => openSignal(s.id),
         "aria-label": `${s.title}. Open thesis.` }, kicker(s), h("h3", {}, s.title));
-      const who = audiences(s).map((a) => a.segment);
-      const li = h("li", { class: "item item--news" }, h("span", { class: "item__rank", "aria-hidden": "true" }, String(s.rank)),
-        h("div", {}, open, h("p", { class: "dek" }, s.dek),
-          h("p", { class: "item__meta" }, confLine(s), who.length ? h("span", {}, `Matters to ${who.join(", ")}`) : null)));
+      const li = h("li", { class: "item card" }, open, miniVisual(s), where(s),
+        h("p", { class: "card__meta" }, confLine(s), h("span", {}, `${s.evidence.length} sources`)));
       li.style.animationDelay = `${Math.min(i, 8) * 40}ms`;
       list.append(li);
     });
@@ -395,7 +463,7 @@
     const s = state.edition.signals.find((x) => x.id === id); if (!s) return;
     state.openId = id; state.lastFocus = document.activeElement;
     if (push) history.replaceState(null, "", `#/${state.edition.edition_date}/${id}`);
-    const panel = $("#drawerPanel"), chartHost = h("div");
+    const panel = $("#drawerPanel");
     const sup = s.evidence.filter((e) => e.stance !== "challenges"), ch = s.evidence.filter((e) => e.stance === "challenges");
     const weight = { primary: 0, corroborated: 1, reported: 2 };
     const key = sup.filter((e) => e.stance === "supports").sort((a, b) => weight[a.claim_type] - weight[b.claim_type]).slice(0, 3);
@@ -406,48 +474,51 @@
     const w = state.edition.ranking.weights;
     const auds = audiences(s).slice().sort((a, b) => ROLE_ORDER[a.role] - ROLE_ORDER[b.role]);
     const impls = s.implications || [];
+    const vis = h("div", { class: "d-visual" });
+    const deep = (title, kids) => h("details", { class: "deep" }, h("summary", {}, title), h("div", { class: "deep__body" }, ...kids));
     panel.replaceChildren(
       h("header", { class: "d-head" },
         h("div", { class: "d-head__top" }, h("button", { class: "d-back", type: "button", "data-close": "" }, "← All theses")),
         kicker(s),
-        h("h2", { id: "dTitle" }, s.title),
-        h("div", { class: "meta" }, confLine(s), h("span", {}, s.corroboration), h("span", {}, `Priority #${s.rank} in the ${fmtDay(state.edition.edition_date)} edition`))),
+        h("p", { class: "d-label" }, "The thesis"), h("h2", { id: "dTitle" }, s.title),
+        h("div", { class: "meta" }, confLine(s), h("span", {}, `Updated ${fmtDay(s.updated_at)}`))),
       h("div", { class: "d-body" },
-        part(null, "pTake", "The takeaway", [
-          h("p", { class: "lede" }, s.takeaway || s.dek),
-          s.caveats?.length ? h("div", { class: "caveats" }, h("h4", {}, "Keep in mind"), h("ul", {}, s.caveats.map((c) => h("li", {}, c)))) : null,
-          stamps(s),
-          h("div", { class: "thesis" }, h("div", { class: "thesis__row" }, h("span", { class: "thesis__label" }, "Slide-ready sentence · working hypothesis"),
-            h("button", { class: "btn btn--small", type: "button", onclick: copy }, "Copy ", h("kbd", {}, "c"))), h("p", { id: "thesisText" }, s.thesis_sentence))]),
+        h("section", { class: "d-brief", "aria-labelledby": "pBrief" }, h("h3", { id: "pBrief" }, "Why we think so"), briefList(s, "brief brief--big")),
+        vis,
+        h("div", { class: "d-cards" },
+          investigate(s) ? h("div", { class: "d-card" }, h("h4", {}, "Where to look"), h("p", {}, investigate(s))) : null,
+          h("div", { class: "d-card d-card--warn" }, h("h4", {}, "What would change the view"), h("p", {}, s.falsifier))),
+        s.chart || s.figures?.length ? evBalance(s, true) : null,
+        h("div", { class: "d-actions" },
+          h("button", { class: "tool tool--primary", type: "button", onclick: () => slideAct(s, "copy") }, "Copy as slide"),
+          h("button", { class: "tool", type: "button", onclick: () => slideAct(s, "png") }, "↓ Slide PNG"),
+          h("button", { class: "tool thesis-copy", type: "button", onclick: copy }, "Copy sentence ", h("kbd", {}, "c"))),
         sinceLast(s),
-        part(null, "pWhy", "Why it matters", [h("p", {}, s.why_now), sub("Market indication", h("p", {}, s.market_indication))], { inference: true }),
-        part(null, "pWhat", "By the numbers", [
+        h("h3", { class: "deep__title" }, "Go deeper"),
+        deep("The evidence", [
+          h("p", { class: "lede" }, s.takeaway || s.dek),
           s.changed_points?.length ? h("ul", { class: "bullets" }, s.changed_points.map((p) => h("li", {}, p))) : h("p", {}, s.what_changed),
-          s.chart ? h("div", { class: "chart-wrap" }, chartHost) : null,
-          ...(s.figures || []).map(barFigure),
-          key.length ? sub("Key supporting evidence", h("ul", { class: "ev ev--compact" }, key.map(evItem)), h("p", { class: "note" }, "Full evidence, with timestamps, is under Sources and method.")) : null]),
-        auds.length ? part(null, "pWho", "Who it matters to", [
-          h("p", { class: "note" }, "Who benefits, who faces pressure and who might buy a solution can be different businesses."),
-          h("div", { class: "aud-grid" }, auds.map((a) => h("article", { class: `aud-card aud-card--${a.role}` },
-            h("header", {}, h("h4", {}, a.segment), h("span", { class: `role role--${a.role}` }, ROLE[a.role])),
-            h("dl", {}, h("dt", {}, "Who"), h("dd", {}, a.who), h("dt", {}, "Impact"), h("dd", {}, a.impact),
-              h("dt", {}, "Possible action"), h("dd", {}, a.action), h("dt", {}, "Trigger to watch"), h("dd", {}, a.trigger)))))], { inference: true }) : null,
-        part(null, "pImpl", "What's next", [
-          impls.length ? h("ol", { class: "chains" }, impls.map((i) => h("li", { class: "chain-row" },
-            [["Trend", i.trend], ["Business problem", i.problem], ["Buyer", i.buyer], ["Potential solution", i.solution], ["Investigate", i.investigate]]
-              .map(([k, v]) => h("div", { class: "chain-step" }, h("span", {}, k), h("p", {}, v))))))
-            : h("div", {}, s.startup_opportunity ? sub("Startup opportunity", h("p", {}, s.startup_opportunity)) : null,
-              s.corporate_buyer ? sub("Corporate buyer & use case", h("p", {}, s.corporate_buyer)) : null),
-          sub("Next validation step", h("div", { class: "callout" },
-            s.customer_validation ? h("p", {}, h("strong", {}, "Customer validation: "), s.customer_validation) : null,
-            h("p", {}, h("strong", {}, "Evidence to check: "), s.next_validation)))], { inference: true }),
-        part(null, "pView", "The other side", [
-          sub(`Counterevidence (${ch.length})`, h("ul", { class: "ev" }, ch.map(evItem))),
-          sub("This would weaken the thesis", h("div", { class: "callout callout--falsify" }, s.falsifier)),
-          s.view_triggers?.length ? sub("Validation triggers to watch", h("ul", { class: "bullets" }, s.view_triggers.map((t) => h("li", {}, t)))) : null]),
-        part(null, "pSrc", "Sources and method", [
-          h("details", { class: "more" }, h("summary", {}, `Supporting and context evidence (${sup.length})`), h("ul", { class: "ev" }, sup.map(evItem))),
+          ...(s.chart ? s.figures || [] : (s.figures || []).slice(1)).map(barFigure),
+          key.length ? sub("Key supporting evidence", h("ul", { class: "ev ev--compact" }, key.map(evItem))) : null,
+          s.caveats?.length ? h("div", { class: "caveats" }, h("h4", {}, "Keep in mind"), h("ul", {}, s.caveats.map((c) => h("li", {}, c)))) : null,
+          h("p", { class: "note" }, h("strong", {}, "Slide-ready sentence: "), h("span", { id: "thesisText" }, s.thesis_sentence))]),
+        auds.length ? deep("Who it matters to", [
+          h("ul", { class: "aud-lines" }, auds.map((a) => h("li", {}, h("span", { class: `role role--${a.role}` }, ROLE[a.role]), h("strong", {}, a.segment), h("span", {}, a.action)))),
+          h("p", { class: "note" }, "Analyst inference.")]) : null,
+        deep("What to check next", [
+          ...impls.map((i) => h("ol", { class: "flow", "aria-label": "From trend to opportunity" },
+            [["Trend", i.trend], ["Problem", i.problem], ["Buyer", i.buyer], ["Solution", i.solution]].map(([k, v]) => h("li", {}, h("span", {}, k), v)))),
+          s.customer_validation ? h("p", {}, h("strong", {}, "Ask customers: "), s.customer_validation) : null,
+          h("p", {}, h("strong", {}, "Evidence to check: "), s.next_validation),
+          h("p", { class: "note" }, "Analyst inference.")]),
+        deep(`The other side (${ch.length})`, [
+          h("ul", { class: "ev" }, ch.map(evItem)),
+          s.view_triggers?.length ? sub("Signals that would weaken it", h("ul", { class: "bullets" }, s.view_triggers.map((t) => h("li", {}, t)))) : null]),
+        deep("Sources and method", [
+          stamps(s),
+          h("details", { class: "more" }, h("summary", {}, `All supporting and context evidence (${sup.length})`), h("ul", { class: "ev" }, sup.map(evItem))),
           h("details", { class: "more" }, h("summary", {}, "Confidence rationale"), h("p", {}, s.confidence_rationale)),
+          h("details", { class: "more" }, h("summary", {}, "Why it matters now · market indication"), h("p", {}, s.why_now), h("p", {}, s.market_indication)),
           h("details", { class: "more" }, h("summary", {}, "Ranking breakdown"),
             h("p", { class: "note" }, "Editorial prioritization only: these points order the feed and are not probabilities."),
             h("table", { class: "scores" }, h("tbody", {},
@@ -460,15 +531,15 @@
               ? h("ul", { class: "mentions" }, s.unreviewed_mentions.map((m) => h("li", {}, ext(m.url, m.title), ` — ${m.source_name || ""}, seen ${fmtDT(m.matched_at)}`, h("div", { class: "note" }, whyMatch(m)))))
               : h("p", {}, "None. New leads that name a thesis-specific term appear here for review; they never count as evidence.")),
           s.discovery ? h("p", { class: "note" }, "First surfaced via ", ext(s.discovery.url, s.discovery.label), ". Discovery sources are treated as reported narratives until validated.") : null,
-          h("p", { class: "note" }, `First published ${fmtDT(s.first_published_at)} · revised ${fmtDT(s.updated_at)} · ${s.revision_count} saved revision${s.revision_count === 1 ? "" : "s"}.`)])));
+          h("p", { class: "note" }, `${s.corroboration}. Priority #${s.rank} in the ${fmtDay(state.edition.edition_date)} edition. First published ${fmtDT(s.first_published_at)} · revised ${fmtDT(s.updated_at)} · ${s.revision_count} saved revision${s.revision_count === 1 ? "" : "s"}.`)])));
     $("#drawer").hidden = false; document.body.style.overflow = "hidden";
     panel.scrollTop = 0; panel.focus(); document.title = `${s.title} — Market Trends → Theses`;
-    chart(s, chartHost);
+    primaryVisual(s, vis);
   }
-  function closeSignal() {
+  function closeSignal(keepHash) {
     if ($("#drawer").hidden) return;
     $("#drawer").hidden = true; document.body.style.overflow = ""; state.openId = null;
-    history.replaceState(null, "", `#/${state.edition.edition_date}`);
+    if (!keepHash) history.replaceState(null, "", `#/${state.edition.edition_date}`);
     document.title = `Market Trends → Theses — Edition ${fmtDay(state.edition.edition_date)}`;
     if (state.lastFocus && document.contains(state.lastFocus)) state.lastFocus.focus();
   }
@@ -482,6 +553,9 @@
     renderHero(); renderControls(); renderFeed(); renderEditionNav(); renderMethod(); renderWire();
   }
   async function route() {
+    const about = location.hash === "#/about";
+    document.body.classList.toggle("is-about", about); $("#about").hidden = !about;
+    if (about) { closeSignal(true); if (!state.edition) await loadEdition(); window.scrollTo(0, 0); return; }
     const [, date, id] = (location.hash.match(/^#\/(\d{4}-\d{2}-\d{2})?\/?([\w-]+)?/) || []);
     if (!state.edition || (date && date !== state.edition.edition_date)) {
       try { await loadEdition(date); } catch { await loadEdition(); }
@@ -495,7 +569,7 @@
     if (e.target.closest("[data-close]")) closeSignal();
     if (e.target.closest('a[href="#wire"]')) $("#wireDetails").open = true;
   });
-  $("#statusPill").addEventListener("click", () => $("#pipeline").scrollIntoView());
+  $("#statusPill").addEventListener("click", () => { location.hash = "#/about"; setTimeout(() => $("#pipeline").scrollIntoView(), 50); });
   $("#filterToggle").addEventListener("click", (e) => { const p = $("#filterPanel"); p.hidden = !p.hidden; e.currentTarget.setAttribute("aria-expanded", String(!p.hidden)); });
   $("#clearFilters").addEventListener("click", () => { state.sector = state.aud = state.conf = null; state.q = ""; $("#search").value = ""; renderControls(); renderFeed(); });
   $("#editionSelect").addEventListener("change", (e) => goEdition(e.target.value));
@@ -508,7 +582,7 @@
     const drawerOpen = !$("#drawer").hidden;
     if (e.key === "Escape") { if (drawerOpen) closeSignal(); else if (typing) document.activeElement.blur(); return; }
     if (drawerOpen) {
-      if (e.key === "c" && !typing && !e.metaKey && !e.ctrlKey) { e.preventDefault(); $("#drawerPanel .thesis button").click(); }
+      if (e.key === "c" && !typing && !e.metaKey && !e.ctrlKey) { e.preventDefault(); $("#drawerPanel .thesis-copy").click(); }
       if (e.key === "Tab") { // focus trap
         const f = [...$("#drawerPanel").querySelectorAll("a[href],button,summary,[tabindex='0']")].filter((x) => x.offsetParent !== null); if (!f.length) return;
         const panel = $("#drawerPanel"), cur = document.activeElement;

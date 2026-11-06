@@ -88,7 +88,8 @@ workflow's "Run workflow" button; set the optional `SEC_USER_AGENT` repository s
 
 ### Thesis structure
 
-Each thesis carries a takeaway with visible caveats, structured audiences (segment, role — likely buyer, benefits or
+Each thesis headline states the thesis itself as a takeaway; everything under it is evidence for or against it. Each
+thesis carries an evidence summary with visible caveats, structured audiences (segment, role — likely buyer, benefits or
 faces pressure — who, impact, possible action, trigger to watch), business implications (trend → problem → buyer →
 solution → what to investigate), a customer-validation step, counterevidence and validation triggers. Audiences and
 implications are analyst inference and are labelled as such. Editorial revisions are applied by `cli seed`

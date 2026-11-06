@@ -26,7 +26,7 @@
   </div>
   <nav class="wrap tabs" aria-label="Sections">
     <div class="tabs__list" id="sectorChips" role="group" aria-label="Show theses by sector"></div>
-    <span class="tabs__links"><a href="#wire">Wire</a><a href="#method">Method</a></span>
+    <span class="tabs__links"><a href="#wire">Wire</a><a href="#/about">Method</a></span>
   </nav>
 </header>
 <div id="staleBanner" class="banner" role="status" hidden></div>
@@ -37,29 +37,12 @@
       <h1 id="heroHeadline" class="front__headline">Loading edition…</h1>
       <p id="heroSummary" class="front__summary"></p>
     </header>
-    <div class="front__grid">
-      <aside class="front__brief" aria-labelledby="takeawaysLabel">
-        <h2 class="col-title" id="takeawaysLabel" hidden>3 things to know</h2>
-        <ol class="takeaways" id="heroTakeaways"></ol>
-        <div class="edition-nav" role="group" aria-label="Edition date">
-          <button type="button" class="btn-icon" id="prevEdition" aria-label="Previous edition">&#8592;</button>
-          <label class="sr-only" for="editionSelect">Choose edition</label>
-          <select id="editionSelect"></select>
-          <button type="button" class="btn-icon" id="nextEdition" aria-label="Next edition">&#8594;</button>
-          <a class="link-quiet" id="exportLink" href="#">Export edition (.md)</a>
-        </div>
-      </aside>
-      <article class="lead" id="leadSignal" aria-label="Top-ranked thesis"></article>
-      <aside class="front__more" aria-labelledby="moreTitle">
-        <h2 class="col-title" id="moreTitle">More theses</h2>
-        <ol class="more-list" id="moreList"></ol>
-      </aside>
-    </div>
+    <article class="lead" id="leadSignal" aria-label="Top-ranked thesis"></article>
   </section>
 
   <section class="wrap controls" aria-label="Search and filter theses">
     <div class="controls__row">
-      <h2 class="section-title" id="allTitle">All theses</h2>
+      <h2 class="section-title" id="allTitle">More theses</h2>
       <div class="search">
       <label for="search" class="sr-only">Search theses</label>
       <input id="search" type="search" placeholder="Search theses, companies, sources" autocomplete="off">
@@ -74,11 +57,16 @@
   </section>
 
   <section id="feed" class="wrap feed" aria-label="Ranked signals" tabindex="-1">
-    <div class="feed__head">
-            <p class="hint">Ordered by editorial priority, not probability. <span class="keys"><kbd>j</kbd>/<kbd>k</kbd> move · <kbd>Enter</kbd> open · <kbd>Esc</kbd> close</span></p>
-    </div>
-    <ol class="feed__list" id="feedList"></ol>
+    <ol class="cards" id="feedList"></ol>
     <p class="empty" id="feedEmpty" hidden>No theses match these filters. <button type="button" class="link-btn" id="clearFilters">Clear filters</button></p>
+    <div class="edition-nav" role="group" aria-label="Edition date">
+      <span class="hint">Edition</span>
+      <button type="button" class="btn-icon" id="prevEdition" aria-label="Previous edition">&#8592;</button>
+      <label class="sr-only" for="editionSelect">Choose edition</label>
+      <select id="editionSelect"></select>
+      <button type="button" class="btn-icon" id="nextEdition" aria-label="Next edition">&#8594;</button>
+      <a class="link-quiet" id="exportLink" href="#">Export edition (.md)</a>
+    </div>
   </section>
 
   <section id="wire" class="wire" aria-labelledby="wireTitle">
@@ -91,6 +79,8 @@
     </div>
   </section>
 
+  <div id="about" hidden>
+  <p class="wrap about__back"><a href="#/">← Back to theses</a></p>
   <section id="method" class="wrap method" aria-labelledby="methodTitle">
     <h2 class="section-title" id="methodTitle">Method</h2>
     <div class="method__grid">
@@ -141,6 +131,7 @@
       </div>
     </div>
   </section>
+  </div>
 </main>
 
 <div class="drawer" id="drawer" hidden>

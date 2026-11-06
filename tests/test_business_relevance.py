@@ -76,13 +76,13 @@ def test_sync_content_revises_without_rewriting_archived_snapshots(tmp_path):
     old = SIGNALS[0]
     conn.execute("UPDATE signals SET data=? WHERE id=?",
                  (dumps({**{k: v for k, v in old.items() if k not in ("id", "evidence")}, "title": "Old headline"}), old["id"]))
-    write_snapshot(conn, None, datetime(2026, 11, 5, 20, tzinfo=timezone.utc))  # archived Nov 5 edition, old headline
+    write_snapshot(conn, None, datetime(2026, 11, 6, 20, tzinfo=timezone.utc))  # archived Nov 6 edition, old headline
     archived = conn.execute("SELECT id, payload FROM edition_snapshots").fetchall()
-    n = sync_content(conn, datetime(2026, 11, 6, 14, tzinfo=timezone.utc))
+    n = sync_content(conn, datetime(2026, 11, 7, 14, tzinfo=timezone.utc))  # the day after REVISED_AT
     assert n == 1
     for r in archived:  # untouched
         assert conn.execute("SELECT payload FROM edition_snapshots WHERE id=?", (r["id"],)).fetchone()[0] == r["payload"]
-    new = latest_snapshot(conn, "2026-11-06")
+    new = latest_snapshot(conn, "2026-11-07")
     gpu = next(x for x in new["signals"] if x["id"] == old["id"])
     assert gpu["title"] == old["title"] and gpu["evidence_reviewed_at"] == "2026-11-05T15:45:00Z"
     assert gpu["since_last"]["revised"][0]["from"] == "Old headline"
@@ -109,7 +109,7 @@ def test_export_includes_business_sections(tmp_path):
     conn = connect(tmp_path / "e.db")
     seed(conn)
     md = edition_markdown(latest_snapshot(conn))
-    for heading in ("### The takeaway", "### Who this matters to", "### What changed", "### Business implications",
+    for heading in ("### The evidence in brief", "### Who this matters to", "### What changed", "### Business implications",
                     "### What could change our view", "### Sources and methodology", "Trigger to watch"):
         assert heading in md
     assert md.count("### Who this matters to") == len(SIGNALS)
@@ -137,3 +137,12 @@ def test_key_figures_cite_registered_sources_and_reach_exports(tmp_path):
     seed(conn)
     md = edition_markdown(latest_snapshot(conn))
     assert "**Figure — Intel Q3 revenue by segment**" in md and "7,318" in md
+
+
+def test_days_without_an_analyst_note_carry_forward_the_latest_takeaways(tmp_path):
+    from signal_atlas.seed import NOTE
+    conn = connect(tmp_path / "n.db")
+    seed(conn)
+    snap = write_snapshot(conn, None, datetime(2026, 11, 9, 14, tzinfo=timezone.utc))
+    assert snap["note"]["headline"] == NOTE["headline"] and snap["note"]["takeaways"] == NOTE["takeaways"]
+    assert snap["note"]["auto"] is False
