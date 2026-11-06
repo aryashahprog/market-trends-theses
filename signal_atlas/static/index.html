@@ -14,32 +14,33 @@
 <body>
 <a class="skip" href="#feed">Skip to theses</a>
 <header class="masthead">
-  <div class="wrap masthead__row">
+  <div class="wrap masthead__top">
+    <p class="dateline" id="dateline"></p>
     <a class="brand" href="#/" aria-label="Market Trends → Theses home">
       <svg class="brand__mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M5 23 12 14l6 6 9-12" /></svg>
       <span>Market Trends → Theses</span>
     </a>
-    <nav class="nav" aria-label="Sections">
-      <a href="#feed">Theses</a>
-      <a href="#wire">Wire</a>
-      <a href="#method">Method</a>
-      <a href="#pipeline">Pipeline</a>
-    </nav>
     <button class="status-pill" id="statusPill" type="button" aria-describedby="statusText">
       <span class="dot" aria-hidden="true"></span><span id="statusText">Loading status…</span>
     </button>
   </div>
+  <nav class="wrap tabs" aria-label="Sections">
+    <div class="tabs__list" id="sectorChips" role="group" aria-label="Show theses by sector"></div>
+    <span class="tabs__links"><a href="#wire">Wire</a><a href="#method">Method</a></span>
+  </nav>
 </header>
 <div id="staleBanner" class="banner" role="status" hidden></div>
 <main id="main">
-  <section class="hero" aria-labelledby="heroHeadline">
-    <div class="wrap hero__grid">
-      <div class="hero__copy">
-        <p class="eyebrow" id="editionLabel">Edition</p>
-        <h1 id="heroHeadline" class="hero__headline">Loading edition…</h1>
-        <p id="heroSummary" class="hero__summary"></p>
-        <p class="takeaways__label" id="takeawaysLabel" hidden>Three takeaways</p>
-        <ol class="takeaways" id="heroTakeaways" aria-labelledby="takeawaysLabel"></ol>
+  <section class="wrap front" aria-labelledby="heroHeadline">
+    <header class="front__head">
+      <p class="eyebrow" id="editionLabel">Edition</p>
+      <h1 id="heroHeadline" class="front__headline">Loading edition…</h1>
+      <p id="heroSummary" class="front__summary"></p>
+    </header>
+    <div class="front__grid">
+      <aside class="front__brief" aria-labelledby="takeawaysLabel">
+        <h2 class="col-title" id="takeawaysLabel" hidden>3 things to know</h2>
+        <ol class="takeaways" id="heroTakeaways"></ol>
         <div class="edition-nav" role="group" aria-label="Edition date">
           <button type="button" class="btn-icon" id="prevEdition" aria-label="Previous edition">&#8592;</button>
           <label class="sr-only" for="editionSelect">Choose edition</label>
@@ -47,26 +48,34 @@
           <button type="button" class="btn-icon" id="nextEdition" aria-label="Next edition">&#8594;</button>
           <a class="link-quiet" id="exportLink" href="#">Export edition (.md)</a>
         </div>
-      </div>
+      </aside>
       <article class="lead" id="leadSignal" aria-label="Top-ranked thesis"></article>
+      <aside class="front__more" aria-labelledby="moreTitle">
+        <h2 class="col-title" id="moreTitle">More theses</h2>
+        <ol class="more-list" id="moreList"></ol>
+      </aside>
     </div>
   </section>
 
-  <section class="wrap controls" aria-label="Filter theses">
-    <div class="search">
+  <section class="wrap controls" aria-label="Search and filter theses">
+    <div class="controls__row">
+      <h2 class="section-title" id="allTitle">All theses</h2>
+      <div class="search">
       <label for="search" class="sr-only">Search theses</label>
       <input id="search" type="search" placeholder="Search theses, companies, sources" autocomplete="off">
       <kbd aria-hidden="true">/</kbd>
     </div>
-    <div class="filter-group"><span class="filter-label" id="lblSector">Sector</span><div class="chips" id="sectorChips" role="group" aria-labelledby="lblSector"></div></div>
-    <div class="filter-group"><span class="filter-label" id="lblAud">Matters to</span><div class="chips" id="audChips" role="group" aria-labelledby="lblAud"></div></div>
-    <div class="filter-group"><span class="filter-label" id="lblConf">Confidence</span><div class="chips conf-filter" id="confFilter" role="group" aria-labelledby="lblConf"></div></div>
+      <button type="button" class="filter-toggle" id="filterToggle" aria-expanded="false" aria-controls="filterPanel">Filter</button>
+    </div>
+    <div class="filter-panel" id="filterPanel" hidden>
+      <div class="filter-group"><span class="filter-label" id="lblAud">Matters to</span><div class="chips" id="audChips" role="group" aria-labelledby="lblAud"></div></div>
+      <div class="filter-group"><span class="filter-label" id="lblConf">Confidence</span><div class="chips conf-filter" id="confFilter" role="group" aria-labelledby="lblConf"></div></div>
+    </div>
   </section>
 
   <section id="feed" class="wrap feed" aria-label="Ranked signals" tabindex="-1">
     <div class="feed__head">
-      <h2 class="section-title">This edition's theses</h2>
-      <p class="hint">Ordered by editorial priority, not probability. <span class="keys"><kbd>j</kbd>/<kbd>k</kbd> move · <kbd>Enter</kbd> open · <kbd>Esc</kbd> close</span></p>
+            <p class="hint">Ordered by editorial priority, not probability. <span class="keys"><kbd>j</kbd>/<kbd>k</kbd> move · <kbd>Enter</kbd> open · <kbd>Esc</kbd> close</span></p>
     </div>
     <ol class="feed__list" id="feedList"></ol>
     <p class="empty" id="feedEmpty" hidden>No theses match these filters. <button type="button" class="link-btn" id="clearFilters">Clear filters</button></p>
@@ -114,6 +123,7 @@
   <section id="pipeline" class="pipeline" aria-labelledby="pipelineTitle">
     <div class="wrap">
       <h2 class="section-title" id="pipelineTitle">Pipeline &amp; diagnostics</h2>
+      <p class="pipeline__summary" id="pipelineSummary" role="status"></p>
       <div class="pipeline__grid">
         <dl class="kv" id="pipelineKv"></dl>
         <div class="table-wrap"><table class="sources" aria-label="Source health">
