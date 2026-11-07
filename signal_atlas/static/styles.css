@@ -595,3 +595,4 @@ body.is-about .front,body.is-about .controls,body.is-about .feed,body.is-about .
 .card .evb__bar{height:8px}
 @media (max-width:720px){.dateline{display:none}}
 .err--quiet{color:var(--muted-dark)!important}
+@media (hover:none){.thesis-copy kbd,.search kbd{display:none}}

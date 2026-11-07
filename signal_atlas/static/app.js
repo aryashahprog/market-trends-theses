@@ -259,6 +259,7 @@
     $("#heroHeadline").textContent = note.headline;
     $("#heroSummary").textContent = note.summary || ""; $("#heroSummary").hidden = !note.summary;
     $("#exportLink").href = `${STATIC ? "" : "/"}api/export/${ed.edition_date}.md`;
+    $("#exportLink").download = `market-trends-theses-${ed.edition_date}.md`;
     document.title = `Market Trends → Theses — Edition ${fmtDay(ed.edition_date)}`;
     const top = ed.signals[0], lead = $("#leadSignal"); lead.replaceChildren();
     if (!top) return;
@@ -321,7 +322,11 @@
     const mk = (label, val, key) => h("button", { class: "chip", type: "button", "aria-pressed": String(state[key] === val),
       onclick: () => { state[key] = state[key] === val ? null : val; renderControls(); renderFeed(); } }, label);
     const tab = (label, val) => h("button", { class: "tab", type: "button", "aria-pressed": String(state.sector === val),
-      onclick: () => { state.sector = val; renderControls(); renderFeed(); if (val) $("#allTitle").scrollIntoView({ behavior: "smooth" }); } }, label);
+      onclick: () => {
+        state.sector = val; renderControls(); renderFeed();
+        if (location.hash === "#/about") location.hash = `#/${state.edition.edition_date}`;
+        if (val) setTimeout(() => $("#allTitle").scrollIntoView({ behavior: "smooth" }), 60);
+      } }, label);
     $("#sectorChips").replaceChildren(tab("All sectors", null), ...sectors.map((t) => tab(t, t)));
     const n = (state.aud ? 1 : 0) + (state.conf ? 1 : 0);
     $("#filterToggle").textContent = n ? `Filter · ${n}` : "Filter";
@@ -472,7 +477,6 @@
       try { await navigator.clipboard.writeText(s.thesis_sentence); toast("Thesis sentence copied"); }
       catch { const t = h("textarea", {}, s.thesis_sentence); document.body.append(t); t.select(); document.execCommand("copy"); t.remove(); toast("Thesis sentence copied"); }
     };
-    const w = state.edition.ranking.weights;
     const auds = audiences(s).slice().sort((a, b) => ROLE_ORDER[a.role] - ROLE_ORDER[b.role]);
     const impls = s.implications || [];
     const vis = h("div", { class: "d-visual" });
@@ -520,19 +524,12 @@
           h("details", { class: "more" }, h("summary", {}, `All supporting and context evidence (${sup.length})`), h("ul", { class: "ev" }, sup.map(evItem))),
           h("details", { class: "more" }, h("summary", {}, "Confidence rationale"), h("p", {}, s.confidence_rationale)),
           h("details", { class: "more" }, h("summary", {}, "Why it matters now · market indication"), h("p", {}, s.why_now), h("p", {}, s.market_indication)),
-          h("details", { class: "more" }, h("summary", {}, "Ranking breakdown"),
-            h("p", { class: "note" }, "Editorial prioritization only: these points order the feed and are not probabilities."),
-            h("table", { class: "scores" }, h("tbody", {},
-              ["novelty", "evidence", "relevance", "impact"].map((k) => h("tr", {}, h("td", {}, `${k[0].toUpperCase() + k.slice(1)} × ${w[k]}`), h("td", {}, s.scores[k].toFixed(2)))),
-              h("tr", {}, h("td", {}, h("strong", {}, "Composite priority points")), h("td", {}, h("strong", {}, s.scores.composite.toFixed(2))))))),
           s.value_chain?.length ? h("details", { class: "more" }, h("summary", {}, "Affected value chain"),
             h("div", { class: "chain" }, s.value_chain.flatMap((v, i) => [i ? h("i", { "aria-hidden": "true" }, "→") : null, h("span", {}, v)]))) : null,
-          h("details", { class: "more" }, h("summary", {}, `Unreviewed mentions (${s.unreviewed_mentions.length}) — not evidence`),
-            s.unreviewed_mentions.length
-              ? h("ul", { class: "mentions" }, s.unreviewed_mentions.map((m) => h("li", {}, ext(m.url, m.title), ` — ${m.source_name || ""}, seen ${fmtDT(m.matched_at)}`, h("div", { class: "note" }, whyMatch(m)))))
-              : h("p", {}, "None. New leads that name a thesis-specific term appear here for review; they never count as evidence.")),
+          s.unreviewed_mentions.length ? h("details", { class: "more" }, h("summary", {}, `Recent headlines that mention this (${s.unreviewed_mentions.length}) — not evidence`),
+            h("ul", { class: "mentions" }, s.unreviewed_mentions.map((m) => h("li", {}, ext(m.url, m.title), ` — ${m.source_name || ""}, seen ${fmtDT(m.matched_at)}`, h("div", { class: "note" }, whyMatch(m)))))) : null,
           s.discovery ? h("p", { class: "note" }, "First surfaced via ", ext(s.discovery.url, s.discovery.label), ". Discovery sources are treated as reported narratives until validated.") : null,
-          h("p", { class: "note" }, `${s.corroboration}. Priority #${s.rank} in the ${fmtDay(state.edition.edition_date)} edition. First published ${fmtDT(s.first_published_at)} · revised ${fmtDT(s.updated_at)} · ${s.revision_count} saved revision${s.revision_count === 1 ? "" : "s"}.`)])));
+          h("p", { class: "note" }, `${s.corroboration}. First published ${fmtDay(s.first_published_at)} · last revised ${fmtDay(s.updated_at)}.`)])));
     $("#drawer").hidden = false; document.body.style.overflow = "hidden";
     panel.scrollTop = 0; panel.focus(); document.title = `${s.title} — Market Trends → Theses`;
     primaryVisual(s, vis);
