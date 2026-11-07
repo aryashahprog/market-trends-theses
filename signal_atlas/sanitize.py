@@ -38,12 +38,12 @@ def content_hash(*parts: str | None) -> str:
 def meta_content(page: str, *names: str) -> str | None:
     for name in names:
         for pat in (
-            rf'<meta[^>]+(?:name|property)=["\']{re.escape(name)}["\'][^>]*content=["\']([^"\']*)["\']',
-            rf'<meta[^>]+content=["\']([^"\']*)["\'][^>]*(?:name|property)=["\']{re.escape(name)}["\']',
+            rf'<meta[^>]+(?:name|property)=["\']{re.escape(name)}["\'][^>]*content=(["\'])(?P<v>.*?)\1',
+            rf'<meta[^>]+content=(["\'])(?P<v>.*?)\1[^>]*(?:name|property)=["\']{re.escape(name)}["\']',
         ):
-            m = re.search(pat, page, flags=re.I)
-            if m and m.group(1).strip():
-                return html.unescape(m.group(1)).strip()
+            m = re.search(pat, page, flags=re.I | re.S)
+            if m and m.group("v").strip():
+                return html.unescape(m.group("v")).strip()
     return None
 
 
