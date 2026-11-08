@@ -15,8 +15,9 @@ from .urlnorm import canonicalize
 EDITION_DATE = "2026-11-05"
 PUBLISHED_AT = "2026-11-05T16:00:00Z"
 VERIFIED_AT = "2026-11-05T15:45:00Z"  # verification window for first-edition retrievals: 15:30–16:00 UTC
-REVISED_AT = "2026-11-06T21:00:00Z"  # editorial revision v5: three-point briefs for skimming
-CONTENT_VERSION = 5
+EVIDENCE_UPDATED_AT = "2026-11-08T13:40:00Z"  # primary filings retrieved and read for theses re-reviewed in v6
+REVISED_AT = "2026-11-08T14:00:00Z"  # editorial revision v6: powered compute re-reviewed against Galaxy and IREN filings
+CONTENT_VERSION = 6
 
 SOURCES: list[tuple[str, str, str, str, str]] = [
     ("milkroad", "Milk Road", "discovery", "https://milkroad.com/",
@@ -72,6 +73,12 @@ DOCS: dict[str, tuple[str, str, str, str | None, str | None]] = {
     "https://www.sec.gov/Archives/edgar/data/717826/000162828026065962/a2026q3forfiling.htm":
         ("sec_edgar", "Ericsson — Q3 2026 report (6-K) filed 2026-10-15", "regulatory_filing",
          "2026-10-15", "2026-09-30"),
+    "https://www.sec.gov/Archives/edgar/data/1859392/000185939226000108/glxy-20260930xpressrelease.htm":
+        ("sec_edgar", "Galaxy Digital Inc. — Q3 2026 results (8-K, Ex. 99.1) filed 2026-10-27", "regulatory_filing",
+         "2026-10-27", "2026-09-30"),
+    "https://www.sec.gov/Archives/edgar/data/1878848/000187884826000065/irenreportsq1-fy27result.htm":
+        ("sec_edgar", "IREN Ltd — Q1 FY27 results (8-K, Ex. 99.1) filed 2026-11-05", "regulatory_filing",
+         "2026-11-05", "2026-09-30"),
 }
 
 MR_CHART = "https://milkroad.com/podcast/the-most-important-chart-in-ai-just-exposed-a-massive-contradiction-naWi9gIsWVE/"
@@ -85,6 +92,8 @@ EXLS = "https://www.sec.gov/Archives/edgar/data/1297989/000129798926000031/exls-
 INTC = "https://www.sec.gov/Archives/edgar/data/50863/000005086326000191/intc-20260926.htm"
 SPCX = "https://www.sec.gov/Archives/edgar/data/1181412/000162828026066880/spcx-20260930.htm"
 ERIC = "https://www.sec.gov/Archives/edgar/data/717826/000162828026065962/a2026q3forfiling.htm"
+GLXY = "https://www.sec.gov/Archives/edgar/data/1859392/000185939226000108/glxy-20260930xpressrelease.htm"
+IREN = "https://www.sec.gov/Archives/edgar/data/1878848/000187884826000065/irenreportsq1-fy27result.htm"
 
 # (url, claim_type, stance, statement)
 Ev = tuple[str, str, str, str]
@@ -590,31 +599,38 @@ SIGNALS: list[dict[str, Any]] = [
         "id": "powered-compute-as-product",
         "content_version": CONTENT_VERSION,
         "title": "Power-ready sites are becoming a sellable compute product outside the hyperscalers",
-        "brief": ["SpaceX compute capacity grew from 0.6 to 1.7 GW in a year", "Galaxy leased its West Texas campus to CoreWeave (reported)", "Utilization and outside revenue are not disclosed yet"],
-        "dek": "SpaceX reports 1.7 GW of compute capacity; Galaxy reportedly leased a Texas campus to CoreWeave. "
-               "Financing and contract length are the risks.",
-        "takeaway": "SpaceX's Q3 filing reports 1.7 GW of nameplate compute capacity (installed power capacity, not "
-                    "how much is used), up from 0.6 GW a year earlier. Milk Road reports that Galaxy leased its Helios "
-                    "campus in West Texas to CoreWeave and that SpaceX rents capacity on short-term contracts. "
-                    "Power-ready sites look sellable, but utilization and external revenue are not disclosed.",
+        "brief": ["Galaxy has delivered all 133 MW at its Texas Helios campus to CoreWeave", "IREN's contract prices rose 11–12%; a new five-year deal is ~$22M per MW", "Delivery timing and unleased capacity are the risks"],
+        "dek": "Galaxy and IREN filings show leased, revenue-earning AI capacity at rising contract prices. "
+               "Delivery delays and capacity still without a tenant are the risks.",
+        "takeaway": "Galaxy's Q3 results report all 133 MW of critical IT load at its Helios campus in West Texas "
+                    "delivered to CoreWeave under a lease. IREN's Q1 FY27 results report contracted prices up 11% on "
+                    "3-year and 12% on 5-year deals, and a new five-year contract at about $22 million of annual "
+                    "revenue per IT megawatt. SpaceX reports 1.7 GW of nameplate compute capacity, up from 0.6 GW. "
+                    "Power-ready sites are selling as compute capacity; delivery timing and financing are the risks.",
         "caveats": [
-            "Nameplate capacity is not utilization or external revenue.",
-            "The Galaxy lease and SpaceX rental terms are reported by a newsletter, not yet matched to filings.",
+            "Nameplate capacity is not utilization or external revenue; SpaceX does not disclose outside rental revenue.",
+            "IREN's revenue-per-megawatt figures are company estimates based on its own power-consumption assumptions.",
+            "IREN's $4B ARR target slipped from year-end 2026 to January 2027 and may extend to February; Galaxy has "
+            "830 MW at Helios II not yet under lease.",
         ],
         "sector": "AI infrastructure",
         "themes": ["Compute markets", "Power & sites", "Infrastructure finance"],
-        "direction": "Emerging",
-        "what_changed": "SpaceX's Q3 10-Q (filed Oct 22, 2026) reports 1.7 GW of nameplate compute capacity at Sep 30, "
-                        "2026, up from 0.6 GW a year earlier, alongside a new 'Super Intelligence' segment. Milk Road "
-                        "reported that Galaxy leased its Helios West Texas campus to CoreWeave and that SpaceX rents "
-                        "capacity on short-term contracts that reprice as GPU rents rise.",
+        "direction": "Strengthening",
+        "what_changed": "Galaxy's Q3 results (8-K, Oct 27, 2026) report all 133 MW of Helios I, Phase I critical IT "
+                        "load delivered to CoreWeave and $69M of data-center adjusted EBITDA in the first full quarter "
+                        "of operations. IREN's Q1 FY27 results (8-K, Nov 5, 2026) report AI Cloud revenue of $200M, up "
+                        "from $71M the prior quarter, and contracted pricing up 11% (3-year) and 12% (5-year). SpaceX's "
+                        "Q3 10-Q reports 1.7 GW of nameplate compute capacity, up from 0.6 GW a year earlier.",
         "changed_points": [
-            "SpaceX 10-Q: 1.7 GW nameplate compute capacity at Sep 30, 2026 vs 0.6 GW a year earlier; segments now "
-            "include Super Intelligence.",
-            "Reported (Milk Road): Galaxy's Helios campus in West Texas is leased to CoreWeave.",
-            "Reported (Milk Road): SpaceX rents compute on short-term contracts that reprice as GPU rents rise.",
+            "Galaxy 8-K: all 133 MW of Helios I, Phase I critical IT load delivered to CoreWeave; Q3 data-center "
+            "adjusted EBITDA $69M.",
+            "IREN 8-K: AI Cloud revenue $200M vs $71M the prior quarter; contracted pricing +11% on 3-year and +12% on "
+            "5-year deals.",
+            "IREN 8-K, after quarter-end: about $22M per IT-MW on a five-year contract with 90% of GPU capex prepaid, "
+            "and a short-term contract at $40M per IT-MW.",
+            "SpaceX 10-Q: 1.7 GW nameplate compute capacity at Sep 30, 2026 vs 0.6 GW a year earlier.",
         ],
-        "why_now": "Rising rents for many GPUs make short-term capacity leasing attractive, and energized, permitted "
+        "why_now": "Rising GPU rents and customer prepayments make leasing capacity attractive, and energized, permitted "
                    "sites are scarce, so companies that already have power, land and capital can monetize them.",
         "market_indication": "Capacity with energized power is pricing like a scarce asset and pulling in "
                              "non-traditional owners. Contract length and financing terms will separate durable "
@@ -650,40 +666,52 @@ SIGNALS: list[dict[str, Any]] = [
              "investigate": "Compute-finance risk and monitoring tools (category)"},
         ],
         "card_implication": "Capacity buyers should weigh contract length and repricing terms, not just price.",
-        "customer_validation": "Verify the Helios lease in Galaxy's Q3 filing; ask 3–5 capacity buyers whether they "
-                               "have contracted with non-hyperscaler providers and on what term length.",
+        "customer_validation": "Ask 3–5 capacity buyers whether they have contracted with non-hyperscaler providers, on "
+                               "what term length, and whether they prepaid any GPU capex.",
         "view_triggers": [
             "GPU rents fall as short-term contracts roll off.",
             "SpaceX segment disclosures show capacity is mostly for internal use.",
             "Financing for smaller AI-infrastructure firms tightens further.",
+            "IREN's $4B ARR is not operational by the end of February 2027.",
         ],
         "value_chain": ["Power & sites", "Neoclouds", "Hyperscalers", "GPU finance"],
-        "confidence": "Low",
-        "corroboration": "Partially corroborated",
-        "confidence_rationale": "Capacity growth is a primary disclosure, but nameplate capacity is not utilization, "
-                                "and rental terms and revenue attribution come from secondary reporting not yet "
-                                "matched to filings.",
-        "next_validation": "Verify the Helios lease in Galaxy's Q3 filing; check SpaceX segment disclosures for "
-                           "external compute rental revenue versus internal use.",
+        "confidence": "Medium",
+        "corroboration": "Primary sources (multiple issuers)",
+        "confidence_rationale": "Leased, revenue-earning capacity and rising contract prices are primary disclosures "
+                                "from two operators, but per-megawatt figures are company estimates, IREN's delivery "
+                                "has slipped, and SpaceX does not disclose external rental revenue.",
+        "next_validation": "Check whether Galaxy signs a tenant for Helios II's 830 MW and whether IREN's $4B ARR is "
+                           "operational by February 2027; check SpaceX segment disclosures for external compute "
+                           "rental revenue versus internal use.",
         "falsifier": "GPU rents fall back as short-term contracts roll off, leaving non-traditional owners with "
                      "under-used sites.",
         "thesis_sentence": "Powered compute is becoming a sellable product for owners outside the hyperscalers, making "
                            "power-ready sites and capacity financing key constraints.",
-        "evidence_reviewed_at": VERIFIED_AT,
+        "evidence_reviewed_at": EVIDENCE_UPDATED_AT,
         "analyst_scores": {"relevance": 4, "impact": 3},
         "match": {"anchors": ["gigawatt", "gigawatts", "megawatt", "megawatts", "data center", "data centers",
                               "data centre", "coreweave", "helios", "neocloud", "colocation"],
                   "context": ["power", "lease", "leased", "capacity", "compute", "gpu", "gpus", "ai", "financing",
-                              "site", "campus", "spacex", "galaxy"],
+                              "site", "campus", "spacex", "galaxy", "iren"],
                   "exclude": CRYPTO, "min_terms": 2, "topic": "powered compute capacity"},
         "discovery": {"label": "Milk Road, Nov 4, 2026", "url": "https://milkroad.com/ideas/why-our-team-keeps-buying-spacex/"},
         "evidence": [
             (SPCX, "primary", "supports",
              "Nameplate compute capacity of 1.7 GW at Sep 30, 2026 vs 0.6 GW at Sep 30, 2025; segments include "
              "Space, Connectivity and Super Intelligence."),
-            ("https://milkroad.com/news/glxy-made-323m-now-for-the-hard-part/", "reported", "supports",
-             "Milk Road reports Galaxy's Q3 net income of $323M and that its Helios West Texas campus is leased to "
-             "CoreWeave."),
+            (GLXY, "primary", "supports",
+             "All 133 MW of Helios I, Phase I critical IT load delivered to CoreWeave under a lease; Q3 data-center "
+             "adjusted EBITDA of $69M in the first full quarter of revenue-generating operations."),
+            (GLXY, "primary", "challenges",
+             "830 MW of approved capacity at Helios II is not yet under lease; Helios I, Phase II construction is "
+             "funded by a $3.5B senior secured notes offering."),
+            (IREN, "primary", "supports",
+             "AI Cloud revenue $200M in the quarter ended Sep 30, 2026 vs $71M the prior quarter; contracted pricing "
+             "+11% on 3-year and +12% on 5-year deals; after quarter-end, about $22M per IT-MW on a five-year "
+             "contract with customer prepayment covering 90% of GPU capex."),
+            (IREN, "primary", "challenges",
+             "The more than $4B ARR target moved from year-end 2026 to January 2027 after a customer-requested change "
+             "and supplier timing, and may extend to February 2027; per-MW revenue rests on internal assumptions."),
             ("https://milkroad.com/ideas/why-our-team-keeps-buying-spacex/", "reported", "supports",
              "Milk Road reports SpaceX rents compute on short-term contracts and cites commentary that GPU rents rose "
              "through October."),
@@ -953,7 +981,8 @@ def seed(conn: sqlite3.Connection) -> None:
 def sync_content(conn: sqlite3.Connection, now: datetime | None = None) -> int:
     """Apply editorial revisions to existing theses. Records a revision, keeps first-publication dates, re-checks
     unreviewed discovery matches under the current rules and writes a new snapshot for *today's* edition only;
-    archived snapshots are never rewritten. Evidence review timestamps are not changed by a revision."""
+    archived snapshots are never rewritten. Evidence review timestamps change only when a thesis's evidence was
+    re-reviewed against its sources."""
     _check()
     now = now or utcnow()
     changed = 0
@@ -964,13 +993,16 @@ def sync_content(conn: sqlite3.Connection, now: datetime | None = None) -> int:
             row = conn.execute("SELECT data FROM signals WHERE id=?", (sig["id"],)).fetchone()
             if row and loads(row["data"]) == data:
                 continue
+            reviewed_before = loads(row["data"]).get("evidence_reviewed_at") if row else None
+            evidence = "evidence re-reviewed" if reviewed_before != sig["evidence_reviewed_at"] else "evidence unchanged"
+            reason = f"editorial revision v{CONTENT_VERSION}; {evidence}"
             if row:
                 conn.execute("UPDATE signals SET data=?, updated_at=? WHERE id=?", (dumps(data), REVISED_AT, sig["id"]))
             else:
                 conn.execute("INSERT INTO signals(id, data, first_published_at, updated_at) VALUES (?,?,?,?)",
                              (sig["id"], dumps(data), REVISED_AT, REVISED_AT))
             conn.execute("INSERT INTO signal_revisions(signal_id, revised_at, reason, data) VALUES (?,?,?,?)",
-                         (sig["id"], REVISED_AT, f"editorial revision v{CONTENT_VERSION}; evidence unchanged", dumps(data)))
+                         (sig["id"], REVISED_AT, reason, dumps(data)))
             _write_evidence(conn, sig, doc_ids)
             changed += 1
         if changed:

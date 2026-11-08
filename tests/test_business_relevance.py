@@ -146,3 +146,19 @@ def test_days_without_an_analyst_note_carry_forward_the_latest_takeaways(tmp_pat
     snap = write_snapshot(conn, None, datetime(2026, 11, 9, 14, tzinfo=timezone.utc))
     assert snap["note"]["headline"] == NOTE["headline"] and snap["note"]["takeaways"] == NOTE["takeaways"]
     assert snap["note"]["auto"] is False
+
+
+def test_sync_content_records_when_evidence_was_re_reviewed(tmp_path):
+    conn = connect(tmp_path / "r.db")
+    seed(conn)
+    sig = next(s for s in SIGNALS if s["id"] == "powered-compute-as-product")
+    stale = {**{k: v for k, v in sig.items() if k not in ("id", "evidence")}, "evidence_reviewed_at": "2026-11-05T15:45:00Z"}
+    conn.execute("UPDATE signals SET data=? WHERE id=?", (dumps(stale), sig["id"]))
+    unchanged = SIGNALS[0]
+    conn.execute("UPDATE signals SET data=? WHERE id=?",
+                 (dumps({**{k: v for k, v in unchanged.items() if k not in ("id", "evidence")}, "title": "Old"}),
+                  unchanged["id"]))
+    assert sync_content(conn, datetime(2026, 11, 8, 15, tzinfo=timezone.utc)) == 2
+    reasons = dict(conn.execute("SELECT signal_id, reason FROM signal_revisions ORDER BY id DESC LIMIT 2").fetchall())
+    assert reasons[sig["id"]].endswith("evidence re-reviewed")
+    assert reasons[unchanged["id"]].endswith("evidence unchanged")
