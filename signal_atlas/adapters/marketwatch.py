@@ -3,11 +3,10 @@ from __future__ import annotations
 
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
-from email.utils import parsedate_to_datetime
 
 from ..fetcher import Fetcher, FetchError
 from ..sanitize import clean_text
-from ..timeutil import iso
+from ..timeutil import iso, parse_iso
 from .base import AdapterResult, ParseError, RawItem
 
 FEEDS = (
@@ -40,14 +39,9 @@ class MarketWatchAdapter:
             for item in root.iter("item"):
                 link = (item.findtext("link") or "").strip()
                 title = clean_text(item.findtext("title"), 200)
-                if not link or not title:
+                if not link.startswith(("https://", "http://")) or not title:
                     continue
-                pub = None
-                try:
-                    pd = parsedate_to_datetime(item.findtext("pubDate") or "")
-                    pub = pd
-                except (TypeError, ValueError):
-                    pass
+                pub = parse_iso(item.findtext("pubDate"))
                 if pub and pub < now - timedelta(days=self.lookback_days):
                     continue
                 res.items.append(RawItem(
