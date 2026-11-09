@@ -16,8 +16,9 @@ EDITION_DATE = "2026-11-05"
 PUBLISHED_AT = "2026-11-05T16:00:00Z"
 VERIFIED_AT = "2026-11-05T15:45:00Z"  # verification window for first-edition retrievals: 15:30–16:00 UTC
 EVIDENCE_UPDATED_AT = "2026-11-08T13:40:00Z"  # primary filings retrieved and read for theses re-reviewed in v6
-REVISED_AT = "2026-11-08T14:00:00Z"  # editorial revision v6: powered compute re-reviewed against Galaxy and IREN filings
-CONTENT_VERSION = 6
+EVIDENCE_V7_AT = "2026-11-09T13:30:00Z"  # Intel and Corning earnings exhibits retrieved and read for the v7 re-review
+REVISED_AT = "2026-11-09T14:00:00Z"  # editorial revision v7: memory thesis re-reviewed against Intel and Corning 8-Ks
+CONTENT_VERSION = 7
 
 SOURCES: list[tuple[str, str, str, str, str]] = [
     ("milkroad", "Milk Road", "discovery", "https://milkroad.com/",
@@ -79,6 +80,12 @@ DOCS: dict[str, tuple[str, str, str, str | None, str | None]] = {
     "https://www.sec.gov/Archives/edgar/data/1878848/000187884826000065/irenreportsq1-fy27result.htm":
         ("sec_edgar", "IREN Ltd — Q1 FY27 results (8-K, Ex. 99.1) filed 2026-11-05", "regulatory_filing",
          "2026-11-05", "2026-09-30"),
+    "https://www.sec.gov/Archives/edgar/data/50863/000005086326000188/q326earningsrelease.htm":
+        ("sec_edgar", "Intel Corp — Q3 2026 results (8-K, Ex. 99.1) filed 2026-10-29", "regulatory_filing",
+         "2026-10-29", "2026-09-26"),
+    "https://www.sec.gov/Archives/edgar/data/24741/000002474126000273/glw-20261027xex99xq32026.htm":
+        ("sec_edgar", "Corning Inc. — Q3 2026 results (8-K, Ex. 99) filed 2026-10-27", "regulatory_filing",
+         "2026-10-27", "2026-09-30"),
 }
 
 MR_CHART = "https://milkroad.com/podcast/the-most-important-chart-in-ai-just-exposed-a-massive-contradiction-naWi9gIsWVE/"
@@ -94,6 +101,8 @@ SPCX = "https://www.sec.gov/Archives/edgar/data/1181412/000162828026066880/spcx-
 ERIC = "https://www.sec.gov/Archives/edgar/data/717826/000162828026065962/a2026q3forfiling.htm"
 GLXY = "https://www.sec.gov/Archives/edgar/data/1859392/000185939226000108/glxy-20260930xpressrelease.htm"
 IREN = "https://www.sec.gov/Archives/edgar/data/1878848/000187884826000065/irenreportsq1-fy27result.htm"
+INTC_PR = "https://www.sec.gov/Archives/edgar/data/50863/000005086326000188/q326earningsrelease.htm"
+GLW = "https://www.sec.gov/Archives/edgar/data/24741/000002474126000273/glw-20261027xex99xq32026.htm"
 
 # (url, claim_type, stance, statement)
 Ev = tuple[str, str, str, str]
@@ -494,16 +503,19 @@ SIGNALS: list[dict[str, Any]] = [
         "id": "memory-substrate-reallocation",
         "content_version": CONTENT_VERSION,
         "title": "Scarce memory and substrates are flowing to AI servers, favoring data-center chips over PCs",
-        "brief": ["Intel data-center revenue +78% while PC chips fell ~5%", "Data-center operating margin rose from 23% to 42%", "Intel flags industry-wide memory and substrate shortages"],
-        "dek": "Constrained components appear to be flowing to higher-margin AI servers; the PC-side impact on Intel "
-               "is so far modest.",
+        "brief": ["Intel data-center revenue +78% while PC chips fell ~5%", "Intel expects the PC slowdown to last at least into mid-2027", "Corning also says memory pricing hit device markets"],
+        "dek": "Constrained components appear to be flowing to higher-margin AI servers. Intel expects a longer PC "
+               "slowdown and Corning ties device-market weakness to memory pricing, though Intel's PC revenue has so "
+               "far fallen only modestly.",
         "takeaway": "Intel's Q3 filing shows data-center revenue up 78% year over year, with that segment's operating "
-                    "margin rising from 23% to 42%, while PC-chip revenue fell about 5%. The filing names "
-                    "industry-wide memory and substrate (chip-packaging material) shortages as a risk. This is one "
-                    "company's data; an industry-wide shift needs memory makers' and hardware makers' figures.",
+                    "margin rising from 23% to 42%, while PC-chip revenue fell about 5%. Intel names industry-wide "
+                    "memory and substrate (chip-packaging material) shortages as a risk and expects the PC slowdown "
+                    "to continue at least through the first half of 2027. Corning separately says TV, notebook and "
+                    "smartphone markets have been hit by memory pricing. Memory makers' own figures are still needed "
+                    "to call this an industry-wide shift.",
         "caveats": [
-            "Single issuer; an industry-wide reallocation is an inference.",
-            "Q4 guidance and PC-market forecasts come from a newsletter and are not yet checked against Intel's 8-K.",
+            "Two issuers, neither a memory maker; an industry-wide reallocation is an inference.",
+            "Corning's statement is one line of market commentary, not a measured figure.",
         ],
         "sector": "Semiconductors & hardware",
         "themes": ["Supply-chain constraints", "Memory efficiency", "Data-center silicon"],
@@ -511,12 +523,17 @@ SIGNALS: list[dict[str, Any]] = [
         "what_changed": "Intel's Q3 10-Q (filed Oct 30, 2026) shows data-center (DCAI) revenue of $7.32B, up from "
                         "$4.12B a year earlier, with DCAI operating margin at 42% vs 23%, while client (CCPG) revenue "
                         "fell to $8.10B from $8.54B. The filing cites \u201ccurrent industry-wide substrate and memory "
-                        "shortages\u201d as a supply-chain risk.",
+                        "shortages\u201d as a supply-chain risk. Intel's Oct 29 earnings release guides Q4 revenue to "
+                        "$15.0\u2013$16.0B and expects the PC slowdown to continue \u201cat least through the first "
+                        "half of next year\u201d; Corning's Oct 27 release says TV, notebook and smartphone markets "
+                        "\u201chave been impacted by memory pricing\u201d.",
         "changed_points": [
             "Intel data-center (DCAI) revenue $7.32B in Q3 2026 vs $4.12B a year earlier (+78%); operating margin "
             "42% vs 23%.",
             "Intel PC-chip (CCPG) revenue $8.10B vs $8.54B (about −5%).",
-            "Risk language cites \u201ccurrent industry-wide substrate and memory shortages\u201d.",
+            "Intel guides Q4 revenue to $15.0\u2013$16.0B (Q3: $16.5B) and sees the PC slowdown lasting at least "
+            "through the first half of 2027.",
+            "Corning, a supplier to device makers, says TV, notebook and smartphone markets were hit by memory pricing.",
         ],
         "why_now": "AI servers are absorbing memory and advanced-packaging capacity, so scarce components may be "
                    "flowing to the highest-margin data-center products ahead of PCs.",
@@ -564,17 +581,18 @@ SIGNALS: list[dict[str, Any]] = [
         ],
         "value_chain": ["Memory & substrates", "Server OEMs", "PC OEMs", "Inference software"],
         "confidence": "Medium",
-        "corroboration": "Primary source; guidance claims reported only",
-        "confidence_rationale": "Segment figures and shortage language come directly from the issuer's 10-Q. "
-                                "Forward guidance and PC-market forecasts were reported by a secondary source and not "
-                                "yet checked against the earnings 8-K.",
-        "next_validation": "Verify Q4 guidance in Intel's Oct 29 earnings 8-K exhibit; read memory makers' next "
-                           "filings for pricing and allocation commentary; watch PC makers' guidance.",
+        "corroboration": "Primary sources from two issuers",
+        "confidence_rationale": "Segment figures, guidance and shortage language come directly from Intel's 10-Q and "
+                                "earnings release, and Corning's filed release independently ties device-market "
+                                "weakness to memory pricing. It stays Medium because no memory maker's filing has "
+                                "yet been checked for pricing or allocation to AI servers.",
+        "next_validation": "Read memory makers' next filings for contract-pricing and AI-server allocation "
+                           "commentary; watch PC makers' shipment guidance.",
         "falsifier": "Memory contract prices fall and Intel's client segment recovers within two quarters, "
                      "indicating a transient rather than structural reallocation.",
         "thesis_sentence": "AI servers are absorbing scarce memory and substrates, favoring data-center silicon and "
                            "raising the value of software that does more with less memory.",
-        "evidence_reviewed_at": VERIFIED_AT,
+        "evidence_reviewed_at": EVIDENCE_V7_AT,
         "analyst_scores": {"relevance": 4, "impact": 4},
         "match": {"anchors": ["dram", "hbm", "nand", "substrate", "substrates", "memory shortage", "memory prices",
                               "micron", "sk hynix", "intel"],
@@ -587,9 +605,12 @@ SIGNALS: list[dict[str, Any]] = [
              "DCAI revenue $7,318M in Q3 2026 vs $4,117M in Q3 2025 (+78%); DCAI operating margin 42% vs 23%."),
             (INTC, "primary", "supports",
              "Forward-looking risk language cites \u201ccurrent industry-wide substrate and memory shortages\u201d."),
-            ("https://milkroad.com/ideas/intel-s-worst-day-since-1974/", "reported", "context",
-             "Milk Road reports a weaker Q4 outlook ($15–16B revenue guide, ~38% gross margin), a ~29% one-day share "
-             "decline and forecasts of PC-market contraction; not yet checked against the 8-K."),
+            (INTC_PR, "primary", "supports",
+             "Q4 2026 guidance: revenue $15.0\u2013$16.0B vs $16.5B in Q3, non-GAAP gross margin 38.0% vs 44.1%; the "
+             "CFO sees \u201cthe PC slowdown continuing at least through the first half of next year\u201d."),
+            (GLW, "primary", "supports",
+             "Corning says TV unit, notebook and smartphone markets \u201chave been impacted by memory pricing\u201d "
+             "(Q3 2026 results, Glass Innovations)."),
             (INTC, "primary", "challenges",
              "Client (CCPG) revenue fell only ~5% year over year ($8,097M vs $8,535M) — the device-side impact is so "
              "far modest in reported results."),
