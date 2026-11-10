@@ -11,6 +11,7 @@ from ..timeutil import iso, parse_iso
 from .base import AdapterResult, ParseError, RawItem
 
 NS = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
+MAX_PAGE_FAILURES = 2
 SECTIONS = {"/podcast/": "podcast", "/ideas/": "newsletter_analysis", "/news/": "news_brief"}
 
 
@@ -51,21 +52,30 @@ class MilkRoadAdapter:
         if not entries and not root.findall("sm:url", NS):
             raise ParseError("Milk Road sitemap contained no URLs")
         entries.sort(reverse=True)
+        failures = skipped = 0
         for lastmod, loc, section in entries[: self.max_pages]:
             title, desc, published = _slug_title(loc), None, iso(lastmod)
-            try:
-                page = http.get(loc, ttl_s=24 * 3600, accept="text/html").decode("utf-8", "ignore")
-                title = page_title(page) or title
-                title = re.sub(r"\s*[|\-–]\s*Milk Road\s*$", "", title)
-                desc = meta_content(page, "description", "og:description")
-                pub = meta_content(page, "article:published_time")
-                if pub and parse_iso(pub):
-                    published = iso(parse_iso(pub))  # type: ignore[arg-type]
-            except FetchError as e:
-                res.warnings.append(f"page metadata unavailable: {e}")
+            if failures >= MAX_PAGE_FAILURES:
+                skipped += 1
+            else:
+                try:
+                    page = http.get(loc, ttl_s=24 * 3600, accept="text/html").decode("utf-8", "ignore")
+                    title = page_title(page) or title
+                    title = re.sub(r"\s*[|\-–]\s*Milk Road\s*$", "", title)
+                    desc = meta_content(page, "description", "og:description")
+                    pub = meta_content(page, "article:published_time")
+                    if pub and parse_iso(pub):
+                        published = iso(parse_iso(pub))  # type: ignore[arg-type]
+                    failures = 0
+                except FetchError as e:
+                    failures += 1
+                    res.warnings.append(f"page metadata unavailable: {e}")
             res.items.append(RawItem(
                 url=loc, title=clean_text(title, 200), source_type=section,
                 excerpt=clean_text(desc, 280) or None, published_at=published,
                 meta={"sitemap_lastmod": iso(lastmod), "claim_status": "reported"},
             ))
+        if skipped:
+            res.warnings.append(f"skipped page metadata for {skipped} pages after {MAX_PAGE_FAILURES} consecutive "
+                                "failures; sitemap titles used")
         return res
