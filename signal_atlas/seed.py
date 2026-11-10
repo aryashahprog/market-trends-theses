@@ -17,8 +17,9 @@ PUBLISHED_AT = "2026-11-05T16:00:00Z"
 VERIFIED_AT = "2026-11-05T15:45:00Z"  # verification window for first-edition retrievals: 15:30–16:00 UTC
 EVIDENCE_UPDATED_AT = "2026-11-08T13:40:00Z"  # primary filings retrieved and read for theses re-reviewed in v6
 EVIDENCE_V7_AT = "2026-11-09T13:30:00Z"  # Intel and Corning earnings exhibits retrieved and read for the v7 re-review
-REVISED_AT = "2026-11-09T14:00:00Z"  # editorial revision v7: memory thesis re-reviewed against Intel and Corning 8-Ks
-CONTENT_VERSION = 7
+EVIDENCE_V8_AT = "2026-11-10T13:30:00Z"  # TeraWulf Q3 results and Nov 4 financing exhibits retrieved and read for v8
+REVISED_AT = "2026-11-10T14:00:00Z"  # editorial revision v8: powered compute re-reviewed against TeraWulf 8-Ks
+CONTENT_VERSION = 8
 
 SOURCES: list[tuple[str, str, str, str, str]] = [
     ("milkroad", "Milk Road", "discovery", "https://milkroad.com/",
@@ -80,6 +81,12 @@ DOCS: dict[str, tuple[str, str, str, str | None, str | None]] = {
     "https://www.sec.gov/Archives/edgar/data/1878848/000187884826000065/irenreportsq1-fy27result.htm":
         ("sec_edgar", "IREN Ltd — Q1 FY27 results (8-K, Ex. 99.1) filed 2026-11-05", "regulatory_filing",
          "2026-11-05", "2026-09-30"),
+    "https://www.sec.gov/Archives/edgar/data/1083301/000162828026071306/a_wulfearningsreleaseq32026.htm":
+        ("sec_edgar", "TeraWulf Inc. — Q3 2026 results (8-K, Ex. 99.1) filed 2026-11-06", "regulatory_filing",
+         "2026-11-06", "2026-09-30"),
+    "https://www.sec.gov/Archives/edgar/data/1083301/000162828026069810/wulfhawesvillecsaandepcmpr.htm":
+        ("sec_edgar", "TeraWulf Inc. — Google credit support and Fluor EPC release (8-K, Ex. 99.1) filed 2026-11-04",
+         "regulatory_filing", "2026-11-04", "2026-11-04"),
     "https://www.sec.gov/Archives/edgar/data/50863/000005086326000188/q326earningsrelease.htm":
         ("sec_edgar", "Intel Corp — Q3 2026 results (8-K, Ex. 99.1) filed 2026-10-29", "regulatory_filing",
          "2026-10-29", "2026-09-26"),
@@ -103,6 +110,8 @@ GLXY = "https://www.sec.gov/Archives/edgar/data/1859392/000185939226000108/glxy-
 IREN = "https://www.sec.gov/Archives/edgar/data/1878848/000187884826000065/irenreportsq1-fy27result.htm"
 INTC_PR = "https://www.sec.gov/Archives/edgar/data/50863/000005086326000188/q326earningsrelease.htm"
 GLW = "https://www.sec.gov/Archives/edgar/data/24741/000002474126000273/glw-20261027xex99xq32026.htm"
+WULF = "https://www.sec.gov/Archives/edgar/data/1083301/000162828026071306/a_wulfearningsreleaseq32026.htm"
+WULF_FIN = "https://www.sec.gov/Archives/edgar/data/1083301/000162828026069810/wulfhawesvillecsaandepcmpr.htm"
 
 # (url, claim_type, stance, statement)
 Ev = tuple[str, str, str, str]
@@ -620,19 +629,23 @@ SIGNALS: list[dict[str, Any]] = [
         "id": "powered-compute-as-product",
         "content_version": CONTENT_VERSION,
         "title": "Power-ready sites are becoming a sellable compute product outside the hyperscalers",
-        "brief": ["Galaxy has delivered all 133 MW at its Texas Helios campus to CoreWeave", "IREN's contract prices rose 11–12%; a new five-year deal is ~$22M per MW", "Delivery timing and unleased capacity are the risks"],
-        "dek": "Galaxy and IREN filings show leased, revenue-earning AI capacity at rising contract prices. "
-               "Delivery delays and capacity still without a tenant are the risks.",
+        "brief": ["Galaxy has delivered all 133 MW at its Texas Helios campus to CoreWeave", "IREN's contract prices rose 11–12%; a new five-year deal is ~$22M per MW", "TeraWulf has a 20-year, ~$19B lease with Anthropic for ~401 MW"],
+        "dek": "Galaxy, IREN and TeraWulf filings show leased, revenue-earning AI capacity at rising contract prices "
+               "and on long leases. Delivery delays and capacity still without a tenant are the risks.",
         "takeaway": "Galaxy's Q3 results report all 133 MW of critical IT load at its Helios campus in West Texas "
                     "delivered to CoreWeave under a lease. IREN's Q1 FY27 results report contracted prices up 11% on "
                     "3-year and 12% on 5-year deals, and a new five-year contract at about $22 million of annual "
-                    "revenue per IT megawatt. SpaceX reports 1.7 GW of nameplate compute capacity, up from 0.6 GW. "
+                    "revenue per IT megawatt. TeraWulf has signed a 20-year lease with Anthropic for about 401 MW, worth "
+                    "about $19 billion, with Google credit support for the project debt. SpaceX reports 1.7 GW of "
+                    "nameplate compute capacity, up from 0.6 GW. "
                     "Power-ready sites are selling as compute capacity; delivery timing and financing are the risks.",
         "caveats": [
             "Nameplate capacity is not utilization or external revenue; SpaceX does not disclose outside rental revenue.",
             "IREN's revenue-per-megawatt figures are company estimates based on its own power-consumption assumptions.",
             "IREN's $4B ARR target slipped from year-end 2026 to January 2027 and may extend to February; Galaxy has "
             "830 MW at Helios II not yet under lease.",
+            "TeraWulf's Anthropic campus is not expected to start coming online until late 2027, and its Q3 "
+            "adjusted EBITDA was negative.",
         ],
         "sector": "AI infrastructure",
         "themes": ["Compute markets", "Power & sites", "Infrastructure finance"],
@@ -641,7 +654,9 @@ SIGNALS: list[dict[str, Any]] = [
                         "load delivered to CoreWeave and $69M of data-center adjusted EBITDA in the first full quarter "
                         "of operations. IREN's Q1 FY27 results (8-K, Nov 5, 2026) report AI Cloud revenue of $200M, up "
                         "from $71M the prior quarter, and contracted pricing up 11% (3-year) and 12% (5-year). SpaceX's "
-                        "Q3 10-Q reports 1.7 GW of nameplate compute capacity, up from 0.6 GW a year earlier.",
+                        "Q3 10-Q reports 1.7 GW of nameplate compute capacity, up from 0.6 GW a year earlier. TeraWulf's Q3 "
+                        "results (8-K, Nov 6, 2026) report HPC lease revenue of $63.0M, up from $7.2M a year earlier, "
+                        "and a 20-year Anthropic lease for about 401 MW worth about $19B.",
         "changed_points": [
             "Galaxy 8-K: all 133 MW of Helios I, Phase I critical IT load delivered to CoreWeave; Q3 data-center "
             "adjusted EBITDA $69M.",
@@ -650,6 +665,8 @@ SIGNALS: list[dict[str, Any]] = [
             "IREN 8-K, after quarter-end: about $22M per IT-MW on a five-year contract with 90% of GPU capex prepaid, "
             "and a short-term contract at $40M per IT-MW.",
             "SpaceX 10-Q: 1.7 GW nameplate compute capacity at Sep 30, 2026 vs 0.6 GW a year earlier.",
+            "TeraWulf 8-Ks: HPC lease revenue $63.0M vs $7.2M a year earlier (~83% of revenue); 20-year Anthropic "
+            "lease for ~401 MW (~$19B) with Google credit support for the project debt.",
         ],
         "why_now": "Rising GPU rents and customer prepayments make leasing capacity attractive, and energized, permitted "
                    "sites are scarce, so companies that already have power, land and capital can monetize them.",
@@ -694,26 +711,30 @@ SIGNALS: list[dict[str, Any]] = [
             "SpaceX segment disclosures show capacity is mostly for internal use.",
             "Financing for smaller AI-infrastructure firms tightens further.",
             "IREN's $4B ARR is not operational by the end of February 2027.",
+            "TeraWulf's project financing for the Anthropic campus does not close, or its delivery slips past "
+            "mid-2028.",
         ],
         "value_chain": ["Power & sites", "Neoclouds", "Hyperscalers", "GPU finance"],
         "confidence": "Medium",
         "corroboration": "Primary sources (multiple issuers)",
-        "confidence_rationale": "Leased, revenue-earning capacity and rising contract prices are primary disclosures "
-                                "from two operators, but per-megawatt figures are company estimates, IREN's delivery "
-                                "has slipped, and SpaceX does not disclose external rental revenue.",
+        "confidence_rationale": "Leased, revenue-earning capacity, rising contract prices and a long-term lease are "
+                                "primary disclosures from three operators, but per-megawatt figures are company "
+                                "estimates, IREN's delivery has slipped, TeraWulf's largest lease is not yet built or "
+                                "financed, and SpaceX does not disclose external rental revenue.",
         "next_validation": "Check whether Galaxy signs a tenant for Helios II's 830 MW and whether IREN's $4B ARR is "
-                           "operational by February 2027; check SpaceX segment disclosures for external compute "
-                           "rental revenue versus internal use.",
+                           "operational by February 2027; check whether TeraWulf closes the Anthropic campus "
+                           "financing and brings Lake Mariner CB-4 online in Q4; check SpaceX segment disclosures for "
+                           "external compute rental revenue versus internal use.",
         "falsifier": "GPU rents fall back as short-term contracts roll off, leaving non-traditional owners with "
                      "under-used sites.",
         "thesis_sentence": "Powered compute is becoming a sellable product for owners outside the hyperscalers, making "
                            "power-ready sites and capacity financing key constraints.",
-        "evidence_reviewed_at": EVIDENCE_UPDATED_AT,
+        "evidence_reviewed_at": EVIDENCE_V8_AT,
         "analyst_scores": {"relevance": 4, "impact": 3},
         "match": {"anchors": ["gigawatt", "gigawatts", "megawatt", "megawatts", "data center", "data centers",
                               "data centre", "coreweave", "helios", "neocloud", "colocation"],
                   "context": ["power", "lease", "leased", "capacity", "compute", "gpu", "gpus", "ai", "financing",
-                              "site", "campus", "spacex", "galaxy", "iren"],
+                              "site", "campus", "spacex", "galaxy", "iren", "terawulf", "anthropic"],
                   "exclude": CRYPTO, "min_terms": 2, "topic": "powered compute capacity"},
         "discovery": {"label": "Milk Road, Nov 4, 2026", "url": "https://milkroad.com/ideas/why-our-team-keeps-buying-spacex/"},
         "evidence": [
@@ -733,6 +754,16 @@ SIGNALS: list[dict[str, Any]] = [
             (IREN, "primary", "challenges",
              "The more than $4B ARR target moved from year-end 2026 to January 2027 after a customer-requested change "
              "and supplier timing, and may extend to February 2027; per-MW revenue rests on internal assumptions."),
+            (WULF, "primary", "supports",
+             "HPC lease revenue $63.0M in Q3 2026 vs $7.2M in Q3 2025, about 83% of $76.2M total revenue; 102 MW of "
+             "revenue-generating critical IT capacity at Lake Mariner with 336 MW more under construction."),
+            (WULF_FIN, "primary", "supports",
+             "20-year lease with Anthropic for about 401 MW of critical IT capacity, about $19B of contracted revenue; "
+             "Google provides credit support for the anticipated project debt."),
+            (WULF, "primary", "challenges",
+             "Q3 non-GAAP adjusted EBITDA was about $(12.8)M; the Anthropic campus is expected to reach "
+             "ready-for-service in phases from late 2027 through Q2 2028, and its project financing is still "
+             "anticipated rather than closed."),
             ("https://milkroad.com/ideas/why-our-team-keeps-buying-spacex/", "reported", "supports",
              "Milk Road reports SpaceX rents compute on short-term contracts and cites commentary that GPU rents rose "
              "through October."),
