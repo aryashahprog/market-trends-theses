@@ -22,6 +22,40 @@ QUERIES: tuple[tuple[str, str], ...] = (
 ENDPOINT = "https://efts.sec.gov/LATEST/search-index"
 
 
+def _first_str(v: object) -> str | None:
+    if isinstance(v, list):
+        v = v[0] if v else None
+    return (v.strip() or None) if isinstance(v, str) else None
+
+
+def _filing(hit: object, q: str) -> RawItem | None:
+    """One EDGAR hit as a RawItem, or None when the hit lacks an accession, file name or CIK."""
+    if not isinstance(hit, dict):
+        return None
+    src = hit.get("_source")
+    src = src if isinstance(src, dict) else {}
+    hid, ciks = hit.get("_id"), src.get("ciks")
+    cik = str(ciks[0]).strip().lstrip("0") if isinstance(ciks, list) and ciks and ciks[0] is not None else ""
+    if not isinstance(hid, str) or ":" not in hid or not cik:
+        return None
+    acc, fname = hid.split(":", 1)
+    name = re.sub(r"\s*\(CIK \d+\)\s*", "", _first_str(src.get("display_names")) or "Unknown filer").strip()
+    name = re.sub(r"\s{2,}", " ", name) or "Unknown filer"
+    form = _first_str(src.get("form")) or _first_str(src.get("root_forms")) or "filing"
+    filed = _first_str(src.get("file_date"))
+    filed_at = parse_iso(filed) if filed else None
+    period = _first_str(src.get("period_ending"))
+    return RawItem(
+        url=f"https://www.sec.gov/Archives/edgar/data/{cik}/{acc.replace('-', '')}/{fname}",
+        title=f"{name} — {form} filed {filed or 'date unknown'}",
+        source_type="regulatory_filing",
+        excerpt=f"EDGAR full-text match for {q}. Issuer disclosure; open the filing for context.",
+        published_at=iso(filed_at) if filed_at else None,
+        event_date=period,
+        meta={"query": q, "form": form, "cik": cik, "claim_status": "primary"},
+    )
+
+
 class SecEdgarAdapter:
     id = "sec_edgar"
     name = "SEC EDGAR full-text search"
@@ -52,28 +86,16 @@ class SecEdgarAdapter:
             except (FetchError, ValueError) as e:
                 res.warnings.append(f"{q}: {e}")
                 continue
+            hits = data.get("hits") if isinstance(data, dict) else None
+            hits = hits.get("hits") if isinstance(hits, dict) else None
+            if not isinstance(hits, list):
+                res.warnings.append(f"{q}: unexpected EDGAR response shape")
+                continue
             ok += 1
-            for hit in (data.get("hits", {}).get("hits") or [])[: self.per_query]:
-                src = hit.get("_source", {})
-                try:
-                    acc, fname = hit["_id"].split(":", 1)
-                    cik = str(src["ciks"][0]).lstrip("0")
-                except (KeyError, IndexError, ValueError):
-                    continue
-                name = re.sub(r"\s*\(CIK \d+\)\s*", "", (src.get("display_names") or ["Unknown filer"])[0]).strip()
-                name = re.sub(r"\s{2,}", " ", name)
-                form = src.get("form") or src.get("root_forms", ["filing"])[0]
-                filed = src.get("file_date")
-                period = src.get("period_ending")
-                res.items.append(RawItem(
-                    url=f"https://www.sec.gov/Archives/edgar/data/{cik}/{acc.replace('-', '')}/{fname}",
-                    title=f"{name} — {form} filed {filed}",
-                    source_type="regulatory_filing",
-                    excerpt=f"EDGAR full-text match for {q}. Issuer disclosure; open the filing for context.",
-                    published_at=iso(parse_iso(filed)) if parse_iso(filed) else None,  # type: ignore[arg-type]
-                    event_date=period,
-                    meta={"query": q, "form": form, "cik": cik, "claim_status": "primary"},
-                ))
+            for hit in hits[: self.per_query]:
+                item = _filing(hit, q)
+                if item:
+                    res.items.append(item)
         if ok == 0:
             raise ParseError("all EDGAR queries failed: " + "; ".join(res.warnings[:3]))
         return res
