@@ -17,9 +17,9 @@ PUBLISHED_AT = "2026-11-05T16:00:00Z"
 VERIFIED_AT = "2026-11-05T15:45:00Z"  # verification window for first-edition retrievals: 15:30–16:00 UTC
 EVIDENCE_UPDATED_AT = "2026-11-08T13:40:00Z"  # primary filings retrieved and read for theses re-reviewed in v6
 EVIDENCE_V7_AT = "2026-11-09T13:30:00Z"  # Intel and Corning earnings exhibits retrieved and read for the v7 re-review
-EVIDENCE_V8_AT = "2026-11-10T13:30:00Z"  # TeraWulf Q3 results and Nov 4 financing exhibits retrieved and read for v8
-REVISED_AT = "2026-11-10T14:00:00Z"  # editorial revision v8: powered compute re-reviewed against TeraWulf 8-Ks
-CONTENT_VERSION = 8
+EVIDENCE_V9_AT = "2026-11-11T13:40:00Z"  # TeraWulf (Nov 10) and CoreWeave Q3 exhibits retrieved and read for v9
+REVISED_AT = "2026-11-11T14:00:00Z"  # editorial revision v9: powered compute re-reviewed against CoreWeave's Q3 8-K
+CONTENT_VERSION = 9
 
 SOURCES: list[tuple[str, str, str, str, str]] = [
     ("milkroad", "Milk Road", "discovery", "https://milkroad.com/",
@@ -84,6 +84,9 @@ DOCS: dict[str, tuple[str, str, str, str | None, str | None]] = {
     "https://www.sec.gov/Archives/edgar/data/1083301/000162828026071306/a_wulfearningsreleaseq32026.htm":
         ("sec_edgar", "TeraWulf Inc. — Q3 2026 results (8-K, Ex. 99.1) filed 2026-11-06", "regulatory_filing",
          "2026-11-06", "2026-09-30"),
+    "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000461/coreweave3q26earningspress.htm":
+        ("sec_edgar", "CoreWeave, Inc. — Q3 2026 results (8-K, Ex. 99.1) filed 2026-11-10",
+         "regulatory_filing", "2026-11-10", "2026-09-30"),
     "https://www.sec.gov/Archives/edgar/data/1083301/000162828026069810/wulfhawesvillecsaandepcmpr.htm":
         ("sec_edgar", "TeraWulf Inc. — Google credit support and Fluor EPC release (8-K, Ex. 99.1) filed 2026-11-04",
          "regulatory_filing", "2026-11-04", "2026-11-04"),
@@ -112,6 +115,7 @@ INTC_PR = "https://www.sec.gov/Archives/edgar/data/50863/000005086326000188/q326
 GLW = "https://www.sec.gov/Archives/edgar/data/24741/000002474126000273/glw-20261027xex99xq32026.htm"
 WULF = "https://www.sec.gov/Archives/edgar/data/1083301/000162828026071306/a_wulfearningsreleaseq32026.htm"
 WULF_FIN = "https://www.sec.gov/Archives/edgar/data/1083301/000162828026069810/wulfhawesvillecsaandepcmpr.htm"
+CRWV = "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000461/coreweave3q26earningspress.htm"
 
 # (url, claim_type, stance, statement)
 Ev = tuple[str, str, str, str]
@@ -636,7 +640,9 @@ SIGNALS: list[dict[str, Any]] = [
                     "delivered to CoreWeave under a lease. IREN's Q1 FY27 results report contracted prices up 11% on "
                     "3-year and 12% on 5-year deals, and a new five-year contract at about $22 million of annual "
                     "revenue per IT megawatt. TeraWulf has signed a 20-year lease with Anthropic for about 401 MW, worth "
-                    "about $19 billion, with Google credit support for the project debt. SpaceX reports 1.7 GW of "
+                    "about $19 billion, with Google credit support for the project debt. On the tenant side, CoreWeave grew "
+                    "contracted power by more than 900 MW in the quarter to over 4.6 GW, with a $132.5 billion revenue "
+                    "backlog. SpaceX reports 1.7 GW of "
                     "nameplate compute capacity, up from 0.6 GW. "
                     "Power-ready sites are selling as compute capacity; delivery timing and financing are the risks.",
         "caveats": [
@@ -646,6 +652,8 @@ SIGNALS: list[dict[str, Any]] = [
             "830 MW at Helios II not yet under lease.",
             "TeraWulf's Anthropic campus is not expected to start coming online until late 2027, and its Q3 "
             "adjusted EBITDA was negative.",
+            "CoreWeave, a major tenant of these sites, lost $709M in Q3 on $846M of net interest expense, so the "
+            "demand side is itself debt-funded.",
         ],
         "sector": "AI infrastructure",
         "themes": ["Compute markets", "Power & sites", "Infrastructure finance"],
@@ -656,7 +664,9 @@ SIGNALS: list[dict[str, Any]] = [
                         "from $71M the prior quarter, and contracted pricing up 11% (3-year) and 12% (5-year). SpaceX's "
                         "Q3 10-Q reports 1.7 GW of nameplate compute capacity, up from 0.6 GW a year earlier. TeraWulf's Q3 "
                         "results (8-K, Nov 6, 2026) report HPC lease revenue of $63.0M, up from $7.2M a year earlier, "
-                        "and a 20-year Anthropic lease for about 401 MW worth about $19B.",
+                        "and a 20-year Anthropic lease for about 401 MW worth about $19B. CoreWeave's Q3 results (8-K, "
+                        "Nov 10, 2026) report contracted power up more than 900 MW to over 4.6 GW and a $132.5B "
+                        "revenue backlog.",
         "changed_points": [
             "Galaxy 8-K: all 133 MW of Helios I, Phase I critical IT load delivered to CoreWeave; Q3 data-center "
             "adjusted EBITDA $69M.",
@@ -667,6 +677,8 @@ SIGNALS: list[dict[str, Any]] = [
             "SpaceX 10-Q: 1.7 GW nameplate compute capacity at Sep 30, 2026 vs 0.6 GW a year earlier.",
             "TeraWulf 8-Ks: HPC lease revenue $63.0M vs $7.2M a year earlier (~83% of revenue); 20-year Anthropic "
             "lease for ~401 MW (~$19B) with Google credit support for the project debt.",
+            "CoreWeave 8-K: contracted power up 900+ MW in Q3 to over 4.6 GW, 1.7+ GW active; revenue $3.66B vs "
+            "$1.37B a year earlier; backlog ~$132.5B.",
         ],
         "why_now": "Rising GPU rents and customer prepayments make leasing capacity attractive, and energized, permitted "
                    "sites are scarce, so companies that already have power, land and capital can monetize them.",
@@ -713,23 +725,26 @@ SIGNALS: list[dict[str, Any]] = [
             "IREN's $4B ARR is not operational by the end of February 2027.",
             "TeraWulf's project financing for the Anthropic campus does not close, or its delivery slips past "
             "mid-2028.",
+            "CoreWeave stops adding contracted power, or its interest costs force it to slow leasing.",
         ],
         "value_chain": ["Power & sites", "Neoclouds", "Hyperscalers", "GPU finance"],
         "confidence": "Medium",
         "corroboration": "Primary sources (multiple issuers)",
         "confidence_rationale": "Leased, revenue-earning capacity, rising contract prices and a long-term lease are "
-                                "primary disclosures from three operators, but per-megawatt figures are company "
+                                "primary disclosures from three operators, and CoreWeave's filing shows tenant demand "
+                                "still growing, but per-megawatt figures are company "
                                 "estimates, IREN's delivery has slipped, TeraWulf's largest lease is not yet built or "
                                 "financed, and SpaceX does not disclose external rental revenue.",
         "next_validation": "Check whether Galaxy signs a tenant for Helios II's 830 MW and whether IREN's $4B ARR is "
                            "operational by February 2027; check whether TeraWulf closes the Anthropic campus "
-                           "financing and brings Lake Mariner CB-4 online in Q4; check SpaceX segment disclosures for "
+                           "financing and brings Lake Mariner CB-4 online in Q4; check whether CoreWeave reaches "
+                           "1.85 GW of active power at year-end as guided; check SpaceX segment disclosures for "
                            "external compute rental revenue versus internal use.",
         "falsifier": "GPU rents fall back as short-term contracts roll off, leaving non-traditional owners with "
                      "under-used sites.",
         "thesis_sentence": "Powered compute is becoming a sellable product for owners outside the hyperscalers, making "
                            "power-ready sites and capacity financing key constraints.",
-        "evidence_reviewed_at": EVIDENCE_V8_AT,
+        "evidence_reviewed_at": EVIDENCE_V9_AT,
         "analyst_scores": {"relevance": 4, "impact": 3},
         "match": {"anchors": ["gigawatt", "gigawatts", "megawatt", "megawatts", "data center", "data centers",
                               "data centre", "coreweave", "helios", "neocloud", "colocation"],
@@ -744,6 +759,12 @@ SIGNALS: list[dict[str, Any]] = [
             (GLXY, "primary", "supports",
              "All 133 MW of Helios I, Phase I critical IT load delivered to CoreWeave under a lease; Q3 data-center "
              "adjusted EBITDA of $69M in the first full quarter of revenue-generating operations."),
+            (CRWV, "primary", "supports",
+             "Added more than 200 MW of active power to over 1.7 GW and grew contracted power by more than 900 MW to "
+             "over 4.6 GW in Q3 2026; revenue $3,661M vs $1,365M a year earlier; revenue backlog about $132.5B."),
+            (CRWV, "primary", "challenges",
+             "Q3 2026 net loss of $(709)M with $(846)M of net interest expense; Q4 interest expense guided to "
+             "$1.05–$1.15B and full-year capex to $37–$39B."),
             (GLXY, "primary", "challenges",
              "830 MW of approved capacity at Helios II is not yet under lease; Helios I, Phase II construction is "
              "funded by a $3.5B senior secured notes offering."),
