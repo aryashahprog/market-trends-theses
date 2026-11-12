@@ -12,6 +12,21 @@ from .base import AdapterResult, ParseError, RawItem, SeriesUpdate
 PAGE = "https://www.silicondata.com/products/silicon-index"
 CODES = {"SDH100RT": "H100 rental", "SDA100RT": "A100 rental", "SDB200RT": "B200 rental",
          "SDB300RT": "B300 rental", "SDH200RT": "H200 rental", "SDLLMTK": "LLM token index"}
+# Some index cards show only the GPU name, without the code in brackets.
+LABEL_CODES = {"H100": "SDH100RT", "A100": "SDA100RT", "B200": "SDB200RT", "B300": "SDB300RT", "H200": "SDH200RT"}
+# One index card: "<label>(<code>) $<value> <change>% vs 7D"; the code is optional.
+CARD = re.compile(r"(?P<label>[\w.\-]+)\s?(?:\((?P<code>SD[A-Z0-9]+)\))?\s+\$\s?(?P<value>[0-9][0-9,]*\.[0-9]+)"
+                  r"\s+[-+]?[0-9.]+%\s+vs\s+7D")
+
+
+def parse_index_values(text: str) -> dict[str, float]:
+    """Index values keyed by code, read only from card-shaped text so navigation and FAQ mentions are ignored."""
+    found: dict[str, float] = {}
+    for m in CARD.finditer(text):
+        code = m.group("code") or LABEL_CODES.get(m.group("label"))
+        if code in CODES and code not in found:
+            found[code] = float(m.group("value").replace(",", ""))
+    return found
 
 
 class SiliconDataAdapter:
@@ -23,15 +38,14 @@ class SiliconDataAdapter:
 
     def fetch(self, http: Fetcher, now: datetime) -> AdapterResult:
         text = strip_html(http.get(PAGE, ttl_s=3 * 3600, accept="text/html").decode("utf-8", "ignore"))
-        found: dict[str, float] = {}
-        for code in CODES:
-            m = re.search(rf"{code}\b.{{0,120}}?\$\s?([0-9]{{1,3}}\.[0-9]{{2}})", text)
-            if m:
-                found[code] = float(m.group(1))
+        found = parse_index_values(text)
         if not found:
             raise ParseError("Silicon Data page layout changed: no index values recognised")
         day = ny_date(now)
         res = AdapterResult()
+        missing = [c for c in CODES if c not in found]
+        if missing:
+            res.warnings.append("no value found on page for " + ", ".join(missing))
         for code, value in found.items():
             res.series.append(SeriesUpdate(
                 id=f"sd:{code}", label=f"Silicon Data {CODES[code]} ({code})", unit="USD",
