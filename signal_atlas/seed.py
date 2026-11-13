@@ -19,8 +19,9 @@ EVIDENCE_UPDATED_AT = "2026-11-08T13:40:00Z"  # primary filings retrieved and re
 EVIDENCE_V7_AT = "2026-11-09T13:30:00Z"  # Intel and Corning earnings exhibits retrieved and read for the v7 re-review
 EVIDENCE_V9_AT = "2026-11-11T13:40:00Z"  # TeraWulf (Nov 10) and CoreWeave Q3 exhibits retrieved and read for v9
 EVIDENCE_V10_AT = "2026-11-12T13:40:00Z"  # Micron FY2026 10-K and FQ4 results exhibit retrieved and read for v10
-REVISED_AT = "2026-11-12T14:00:00Z"  # editorial revision v10: memory thesis re-reviewed against Micron's filings
-CONTENT_VERSION = 10
+EVIDENCE_V11_AT = "2026-11-13T13:40:00Z"  # Nebius Q3 2026 results and shareholder letter (6-K) retrieved and read for v11
+REVISED_AT = "2026-11-13T14:00:00Z"  # editorial revision v11: powered compute re-reviewed against Nebius's Q3 6-K
+CONTENT_VERSION = 11
 
 SOURCES: list[tuple[str, str, str, str, str]] = [
     ("milkroad", "Milk Road", "discovery", "https://milkroad.com/",
@@ -88,6 +89,12 @@ DOCS: dict[str, tuple[str, str, str, str | None, str | None]] = {
     "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000461/coreweave3q26earningspress.htm":
         ("sec_edgar", "CoreWeave, Inc. — Q3 2026 results (8-K, Ex. 99.1) filed 2026-11-10",
          "regulatory_filing", "2026-11-10", "2026-09-30"),
+    "https://www.sec.gov/Archives/edgar/data/1513845/000110465926126008/tm2629571d1_ex99-1.htm":
+        ("sec_edgar", "Nebius Group N.V. — Q3 2026 results (6-K, Ex. 99.1) filed 2026-11-12",
+         "regulatory_filing", "2026-11-12", "2026-09-30"),
+    "https://www.sec.gov/Archives/edgar/data/1513845/000110465926126008/tm2629571d1_ex99-2.htm":
+        ("sec_edgar", "Nebius Group N.V. — Q3 2026 letter to shareholders (6-K, Ex. 99.2) filed 2026-11-12",
+         "regulatory_filing", "2026-11-12", "2026-09-30"),
     "https://www.sec.gov/Archives/edgar/data/1083301/000162828026069810/wulfhawesvillecsaandepcmpr.htm":
         ("sec_edgar", "TeraWulf Inc. — Google credit support and Fluor EPC release (8-K, Ex. 99.1) filed 2026-11-04",
          "regulatory_filing", "2026-11-04", "2026-11-04"),
@@ -123,6 +130,8 @@ GLW = "https://www.sec.gov/Archives/edgar/data/24741/000002474126000273/glw-2026
 WULF = "https://www.sec.gov/Archives/edgar/data/1083301/000162828026071306/a_wulfearningsreleaseq32026.htm"
 WULF_FIN = "https://www.sec.gov/Archives/edgar/data/1083301/000162828026069810/wulfhawesvillecsaandepcmpr.htm"
 CRWV = "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000461/coreweave3q26earningspress.htm"
+NBIS = "https://www.sec.gov/Archives/edgar/data/1513845/000110465926126008/tm2629571d1_ex99-1.htm"
+NBIS_LTR = "https://www.sec.gov/Archives/edgar/data/1513845/000110465926126008/tm2629571d1_ex99-2.htm"
 MU = "https://www.sec.gov/Archives/edgar/data/723125/000072312526000023/mu-20260903.htm"
 MU_PR = "https://www.sec.gov/Archives/edgar/data/723125/000072312526000018/a2026q4ex991-pressrelease.htm"
 
@@ -678,7 +687,8 @@ SIGNALS: list[dict[str, Any]] = [
                     "revenue per IT megawatt. TeraWulf has signed a 20-year lease with Anthropic for about 401 MW, worth "
                     "about $19 billion, with Google credit support for the project debt. On the tenant side, CoreWeave grew "
                     "contracted power by more than 900 MW in the quarter to over 4.6 GW, with a $132.5 billion revenue "
-                    "backlog. SpaceX reports 1.7 GW of "
+                    "backlog. Nebius says prepayments on its Q3 deals covered more than 100% of the related capex, "
+                    "at more than $25 million of annual contract value per MW. SpaceX reports 1.7 GW of "
                     "nameplate compute capacity, up from 0.6 GW. "
                     "Power-ready sites are selling as compute capacity; delivery timing and financing are the risks.",
         "caveats": [
@@ -690,6 +700,8 @@ SIGNALS: list[dict[str, Any]] = [
             "adjusted EBITDA was negative.",
             "CoreWeave, a major tenant of these sites, lost $709M in Q3 on $846M of net interest expense, so the "
             "demand side is itself debt-funded.",
+            "Nebius's prepayment coverage and per-MW contract values are company-defined metrics, and its "
+            "Microsoft capacity in New Jersey slipped partly to Q2 2027.",
         ],
         "sector": "AI infrastructure",
         "themes": ["Compute markets", "Power & sites", "Infrastructure finance"],
@@ -702,7 +714,8 @@ SIGNALS: list[dict[str, Any]] = [
                         "results (8-K, Nov 6, 2026) report HPC lease revenue of $63.0M, up from $7.2M a year earlier, "
                         "and a 20-year Anthropic lease for about 401 MW worth about $19B. CoreWeave's Q3 results (8-K, "
                         "Nov 10, 2026) report contracted power up more than 900 MW to over 4.6 GW and a $132.5B "
-                        "revenue backlog.",
+                        "revenue backlog. Nebius's Q3 results (6-K, Nov 12, 2026) report revenue of $980.8M, up from "
+                        "$146.1M, and prepayments covering more than 100% of the capex on deals signed in the quarter.",
         "changed_points": [
             "Galaxy 8-K: all 133 MW of Helios I, Phase I critical IT load delivered to CoreWeave; Q3 data-center "
             "adjusted EBITDA $69M.",
@@ -715,6 +728,8 @@ SIGNALS: list[dict[str, Any]] = [
             "lease for ~401 MW (~$19B) with Google credit support for the project debt.",
             "CoreWeave 8-K: contracted power up 900+ MW in Q3 to over 4.6 GW, 1.7+ GW active; revenue $3.66B vs "
             "$1.37B a year earlier; backlog ~$132.5B.",
+            "Nebius 6-K: revenue $980.8M vs $146.1M a year earlier; prepayments covered >100% of associated capex on "
+            "Q3 deals (50–60% in Q2); ACV per MW >$25M vs $20–25M on Q2 deals; more than 4 GW contracted.",
         ],
         "why_now": "Rising GPU rents and customer prepayments make leasing capacity attractive, and energized, permitted "
                    "sites are scarce, so companies that already have power, land and capital can monetize them.",
@@ -762,25 +777,29 @@ SIGNALS: list[dict[str, Any]] = [
             "TeraWulf's project financing for the Anthropic campus does not close, or its delivery slips past "
             "mid-2028.",
             "CoreWeave stops adding contracted power, or its interest costs force it to slow leasing.",
+            "Nebius's prepayment coverage falls back below the capex it funds, or it misses 5 GW contracted by "
+            "year-end 2026.",
         ],
         "value_chain": ["Power & sites", "Neoclouds", "Hyperscalers", "GPU finance"],
         "confidence": "Medium",
         "corroboration": "Primary sources (multiple issuers)",
         "confidence_rationale": "Leased, revenue-earning capacity, rising contract prices and a long-term lease are "
-                                "primary disclosures from three operators, and CoreWeave's filing shows tenant demand "
-                                "still growing, but per-megawatt figures are company "
+                                "primary disclosures from three operators, and CoreWeave's and Nebius's filings show "
+                                "tenant demand still growing, with Nebius's buyers prepaying its build, but per-megawatt "
+                                "figures are company "
                                 "estimates, IREN's delivery has slipped, TeraWulf's largest lease is not yet built or "
                                 "financed, and SpaceX does not disclose external rental revenue.",
         "next_validation": "Check whether Galaxy signs a tenant for Helios II's 830 MW and whether IREN's $4B ARR is "
                            "operational by February 2027; check whether TeraWulf closes the Anthropic campus "
                            "financing and brings Lake Mariner CB-4 online in Q4; check whether CoreWeave reaches "
-                           "1.85 GW of active power at year-end as guided; check SpaceX segment disclosures for "
+                           "1.85 GW of active power at year-end as guided; check whether Nebius reaches 5 GW "
+                           "contracted by year-end and delivers its remaining New Jersey tranches in Q2 2027; check SpaceX segment disclosures for "
                            "external compute rental revenue versus internal use.",
         "falsifier": "GPU rents fall back as short-term contracts roll off, leaving non-traditional owners with "
                      "under-used sites.",
         "thesis_sentence": "Powered compute is becoming a sellable product for owners outside the hyperscalers, making "
                            "power-ready sites and capacity financing key constraints.",
-        "evidence_reviewed_at": EVIDENCE_V9_AT,
+        "evidence_reviewed_at": EVIDENCE_V11_AT,
         "analyst_scores": {"relevance": 4, "impact": 3},
         "match": {"anchors": ["gigawatt", "gigawatts", "megawatt", "megawatts", "data center", "data centers",
                               "data centre", "coreweave", "helios", "neocloud", "colocation"],
@@ -801,6 +820,17 @@ SIGNALS: list[dict[str, Any]] = [
             (CRWV, "primary", "challenges",
              "Q3 2026 net loss of $(709)M with $(846)M of net interest expense; Q4 interest expense guided to "
              "$1.05–$1.15B and full-year capex to $37–$39B."),
+            (NBIS, "primary", "supports",
+             "Q3 2026 revenue $980.8M vs $146.1M a year earlier; adjusted EBITDA $465.8M vs $(5.2)M; purchases of "
+             "property, equipment and intangibles $7,300.4M vs $955.5M."),
+            (NBIS_LTR, "primary", "supports",
+             "Prepayments on Q3 agreements covered more than 100% of the associated capex, up from 50–60% in Q2; "
+             "annual contract value per MW above $25M on Q3 deals vs $20–25M on Q2 deals; more than 4 GW of power "
+             "contracted, with 5 GW expected by year-end 2026."),
+            (NBIS_LTR, "primary", "challenges",
+             "Remaining tranches of the Microsoft capacity in New Jersey moved to Q2 2027, ARR above $7B now expected "
+             "for February rather than December, and 2027 capex is guided to $40–45B; Q3 net loss from continuing "
+             "operations was $(37.5)M with $112.5M of interest expense."),
             (GLXY, "primary", "challenges",
              "830 MW of approved capacity at Helios II is not yet under lease; Helios I, Phase II construction is "
              "funded by a $3.5B senior secured notes offering."),
