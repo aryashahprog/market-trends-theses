@@ -20,8 +20,9 @@ EVIDENCE_V7_AT = "2026-11-09T13:30:00Z"  # Intel and Corning earnings exhibits r
 EVIDENCE_V9_AT = "2026-11-11T13:40:00Z"  # TeraWulf (Nov 10) and CoreWeave Q3 exhibits retrieved and read for v9
 EVIDENCE_V10_AT = "2026-11-12T13:40:00Z"  # Micron FY2026 10-K and FQ4 results exhibit retrieved and read for v10
 EVIDENCE_V11_AT = "2026-11-13T13:40:00Z"  # Nebius Q3 2026 results and shareholder letter (6-K) retrieved and read for v11
-REVISED_AT = "2026-11-13T14:00:00Z"  # editorial revision v11: powered compute re-reviewed against Nebius's Q3 6-K
-CONTENT_VERSION = 11
+EVIDENCE_V12_AT = "2026-11-14T13:40:00Z"  # Palantir Q3 2026 10-Q and results exhibit, Ramp Oct release read for v12
+REVISED_AT = "2026-11-14T14:00:00Z"  # editorial revision v12: enterprise AI spend re-reviewed against Palantir's Q3
+CONTENT_VERSION = 12
 
 SOURCES: list[tuple[str, str, str, str, str]] = [
     ("milkroad", "Milk Road", "discovery", "https://milkroad.com/",
@@ -89,6 +90,12 @@ DOCS: dict[str, tuple[str, str, str, str | None, str | None]] = {
     "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000461/coreweave3q26earningspress.htm":
         ("sec_edgar", "CoreWeave, Inc. — Q3 2026 results (8-K, Ex. 99.1) filed 2026-11-10",
          "regulatory_filing", "2026-11-10", "2026-09-30"),
+    "https://www.sec.gov/Archives/edgar/data/1321655/000132165526000048/pltr-20260930.htm":
+        ("sec_edgar", "Palantir Technologies Inc. — Q3 2026 10-Q filed 2026-11-03", "regulatory_filing",
+         "2026-11-03", "2026-09-30"),
+    "https://www.sec.gov/Archives/edgar/data/1321655/000132165526000045/a2026q3ex991pressrelease.htm":
+        ("sec_edgar", "Palantir Technologies Inc. — Q3 2026 results (8-K, Ex. 99.1) filed 2026-11-02",
+         "regulatory_filing", "2026-11-02", "2026-09-30"),
     "https://www.sec.gov/Archives/edgar/data/1513845/000110465926126008/tm2629571d1_ex99-1.htm":
         ("sec_edgar", "Nebius Group N.V. — Q3 2026 results (6-K, Ex. 99.1) filed 2026-11-12",
          "regulatory_filing", "2026-11-12", "2026-09-30"),
@@ -132,6 +139,8 @@ WULF_FIN = "https://www.sec.gov/Archives/edgar/data/1083301/000162828026069810/w
 CRWV = "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000461/coreweave3q26earningspress.htm"
 NBIS = "https://www.sec.gov/Archives/edgar/data/1513845/000110465926126008/tm2629571d1_ex99-1.htm"
 NBIS_LTR = "https://www.sec.gov/Archives/edgar/data/1513845/000110465926126008/tm2629571d1_ex99-2.htm"
+PLTR = "https://www.sec.gov/Archives/edgar/data/1321655/000132165526000048/pltr-20260930.htm"
+PLTR_PR = "https://www.sec.gov/Archives/edgar/data/1321655/000132165526000045/a2026q3ex991pressrelease.htm"
 MU = "https://www.sec.gov/Archives/edgar/data/723125/000072312526000023/mu-20260903.htm"
 MU_PR = "https://www.sec.gov/Archives/edgar/data/723125/000072312526000018/a2026q4ex991-pressrelease.htm"
 
@@ -292,32 +301,40 @@ SIGNALS: list[dict[str, Any]] = [
         "id": "enterprise-ai-spend-compounding",
         "content_version": CONTENT_VERSION,
         "title": "Enterprise AI spend compounds inside existing customers, creating a budget line that needs governance",
-        "brief": ["Anthropic: 950 → 11,900+ customers paying $100k+ a year", "~900% net revenue retention: existing customers drive growth", "56% of sampled US businesses pay for AI (Ramp), up 12 pts in a year"],
-        "dek": "An AI vendor's filing and a card-spend panel both show usage growing within accounts, with spend "
-               "concentrated in a few model vendors.",
+        "brief": ["Anthropic: ~900% net revenue retention; 11,900+ customers at $100k+", "Palantir: $407M of a $619M commercial revenue rise came from existing customers", "56.8% of sampled US businesses pay for AI (Ramp), up 13.3 pts in a year"],
+        "dek": "A model vendor's filing, an AI software vendor's filing and a card-spend panel all show spend growing "
+               "within accounts. New bookings growing far slower than revenue is the risk.",
         "takeaway": "Anthropic's S-1 reports about 900% net revenue retention (revenue this year from last year's "
                     "customers, relative to what they paid before) and over 11,900 customers paying $100k+ a year, up "
-                    "from about 950. Ramp's panel shows 55.9% of sampled US businesses paying for AI, with construction "
-                    "and retail rising fastest. Spend is growing inside accounts and spreading to less-digitized "
-                    "industries, which raises governance and vendor-concentration questions.",
+                    "from about 950. Palantir's Q3 10-Q says $407 million of its $619 million year-over-year rise in "
+                    "commercial revenue came from customers it already had at the end of 2025, and its top 20 "
+                    "customers averaged $146 million of revenue over twelve months, up 76%. Ramp's panel shows 56.8% "
+                    "of sampled US businesses paying for AI in October. Spend is compounding inside existing "
+                    "accounts, which raises governance and vendor-concentration questions.",
         "caveats": [
             "The S-1 metrics are issuer-defined and come from one unusually fast-growing vendor; net revenue "
             "retention excludes consumer plans.",
-            "Ramp measures whether a business pays for AI, not how deeply it uses it.",
+            "Ramp measures whether a business pays for AI, not how deeply it uses it, and it revises prior months.",
+            "Palantir's closed contract value grew only 6% year over year while revenue grew 96%, and many of its "
+            "customers can terminate for convenience on less than twelve months' notice.",
         ],
         "sector": "Enterprise software & services",
         "themes": ["Enterprise AI adoption", "AI spend management", "Vertical AI"],
         "direction": "Strengthening",
         "what_changed": "Anthropic's S-1 (filed Oct 26, 2026) discloses ~900% net revenue retention as of Sep 30, "
                         "2026 and more than 11,900 customers above $100k trailing-twelve-month revenue, up from more "
-                        "than 950 a year earlier. Ramp's AI Index shows 55.9% of sampled US businesses paying for AI in "
-                        "September 2026, up 12.1 points year over year.",
+                        "than 950 a year earlier. Palantir's Q3 10-Q (filed Nov 3, 2026) attributes $407M of a $619M "
+                        "rise in commercial revenue to customers existing at Dec 31, 2025. Ramp's AI Index shows 56.8% "
+                        "of sampled US businesses paying for AI in October 2026, up 13.3 points year over year.",
         "changed_points": [
             "Anthropic S-1: ~900% net revenue retention at Sep 30, 2026; >11,900 customers at $100k+ (vs >950 a year "
             "earlier); ~250 at $10M+.",
             "Anthropic S-1: $16.3B revenue in H1 2026 vs $1.2B a year earlier.",
-            "Ramp AI Index: 55.9% of sampled US businesses paid for AI in September (+12.1 pts y/y). Construction "
-            "43.2% (+1.9 pts m/m) and retail 49.9% (+1.6 pts) rose fastest.",
+            "Palantir 10-Q: Q3 commercial revenue $1,167.9M vs $548.4M a year earlier; $407M of the $619M increase "
+            "came from commercial customers existing at Dec 31, 2025; top-20 customers averaged $146M TTM revenue "
+            "(+76%).",
+            "Ramp AI Index: 56.8% of sampled US businesses paid for AI in October (+1.0 pt m/m, +13.3 pts y/y). "
+            "Construction 45.0% (+1.9 pts m/m); retail flat at 49.9%.",
         ],
         "why_now": "Lower cost per task makes production workloads easier to justify, and adoption gains now come from "
                    "construction and retail rather than only technology firms.",
@@ -337,8 +354,8 @@ SIGNALS: list[dict[str, Any]] = [
              "impact": "Peers are adopting AI tools; lagging can become a cost or response-time disadvantage.",
              "action": "Pilot one AI tool on a measurable task (quotes, scheduling, customer replies) and track hours "
                        "saved.",
-             "trigger": "Ramp's adoption rate for your sector passes half of businesses (construction 43.2%, retail "
-                        "49.9% in September)."},
+             "trigger": "Ramp's adoption rate for your sector passes half of businesses (construction 45.0%, retail "
+                        "49.9% in October)."},
             {"segment": "Software companies", "role": "benefits",
              "who": "Product and finance leaders at AI-enabled software vendors.",
              "impact": "Customers expand usage after the first purchase, so revenue depends on usage growth and on "
@@ -372,21 +389,24 @@ SIGNALS: list[dict[str, Any]] = [
             "Net revenue retention falls sharply in S-1 amendments or later filings.",
             "Ramp adoption flattens for two months, especially in construction and retail.",
             "Token spend keeps lagging usage, suggesting price cuts offset volume.",
+            "Palantir's revenue from existing customers stalls, or its closed contract value keeps lagging revenue.",
         ],
         "value_chain": ["Model vendors", "AI spend management", "Vertical AI applications", "Systems integrators"],
         "confidence": "Medium",
-        "corroboration": "Corroborated (two independent sources)",
-        "confidence_rationale": "An issuer filing and an 85,000+ business card-spend panel point the same way. But "
-                                "S-1 metrics are issuer-defined (NRR excludes consumer subscription plans) and come "
-                                "from an unusually fast-growing vendor; Ramp measures payment incidence, not workload "
-                                "depth.",
-        "next_validation": "Read S-1 amendments for NRR methodology and cohort detail; check whether Ramp's next "
-                           "monthly release extends gains in construction and retail.",
+        "corroboration": "Corroborated (three independent sources)",
+        "confidence_rationale": "Two vendor filings and an 85,000+ business card-spend panel point the same way. "
+                                "Confidence stays Medium: S-1 metrics are issuer-defined (NRR excludes consumer "
+                                "subscription plans), Palantir's new bookings grew far slower than its revenue, "
+                                "retail adoption on Ramp was flat in October, and Ramp measures payment incidence, "
+                                "not workload depth.",
+        "next_validation": "Read S-1 amendments for NRR methodology and cohort detail; check whether Palantir's Q4 "
+                           "results keep existing-customer growth while bookings catch up, and whether Ramp's next "
+                           "release resumes gains in retail.",
         "falsifier": "Net revenue retention falls sharply in subsequent filings while Ramp adoption flattens, which "
                      "would point to pilot churn rather than compounding deployment.",
         "thesis_sentence": "Enterprise AI revenue is deepening inside existing customers, creating a fast-growing "
                            "budget line that needs governance, attribution and industry-specific products.",
-        "evidence_reviewed_at": VERIFIED_AT,
+        "evidence_reviewed_at": EVIDENCE_V12_AT,
         "analyst_scores": {"relevance": 5, "impact": 4},
         "match": {"anchors": ["anthropic", "openai", "enterprise ai", "ai spend", "ai spending", "ai adoption",
                               "ai budget", "ai budgets", "copilot", "net revenue retention"],
@@ -401,9 +421,18 @@ SIGNALS: list[dict[str, Any]] = [
             (S1, "primary", "supports",
              "Revenue of $16.3B for the six months ended Jun 30, 2026, versus $1.2B in the prior-year period, as "
              "stated in the filing."),
+            (PLTR, "primary", "supports",
+             "Q3 2026 commercial revenue $1,167.9M vs $548.4M a year earlier; $407M of the $619M increase came from "
+             "commercial customers existing as of Dec 31, 2025. Top-20 customers averaged $146M of TTM revenue, up "
+             "76% from $83M."),
             (RAMP, "corroborated", "supports",
-             "55.9% of sampled US businesses paid for AI in September 2026 (+0.6 pts m/m, +12.1 pts y/y); "
-             "construction 43.2% (+1.9 pts) and retail 49.9% (+1.6 pts) rose fastest."),
+             "56.8% of sampled US businesses paid for AI in October 2026 (+1.0 pt m/m, +13.3 pts y/y); construction "
+             "45.0% (+1.9 pts m/m)."),
+            (PLTR_PR, "primary", "challenges",
+             "Q3 total contract value closed was $2.918B, up 6% year over year (U.S. commercial TCV $1.463B, +11%), "
+             "against 96% revenue growth; U.S. commercial remaining deal value rose 4% quarter over quarter."),
+            (RAMP, "corroborated", "challenges",
+             "Retail adoption was flat at 49.9% in October after rising in September."),
             ("https://milkroad.com/ideas/wait-cheaper-ai-is-good-for-anthropic/", "reported", "challenges",
              "Milk Road notes Ramp data showing business token spend barely grew in August–September even as usage "
              "rose — spend growth can lag usage when prices fall."),
