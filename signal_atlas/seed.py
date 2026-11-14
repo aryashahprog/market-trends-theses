@@ -17,8 +17,12 @@ PUBLISHED_AT = "2026-11-05T16:00:00Z"
 VERIFIED_AT = "2026-11-05T15:45:00Z"  # verification window for first-edition retrievals: 15:30–16:00 UTC
 EVIDENCE_UPDATED_AT = "2026-11-08T13:40:00Z"  # primary filings retrieved and read for theses re-reviewed in v6
 EVIDENCE_V7_AT = "2026-11-09T13:30:00Z"  # Intel and Corning earnings exhibits retrieved and read for the v7 re-review
-REVISED_AT = "2026-11-09T14:00:00Z"  # editorial revision v7: memory thesis re-reviewed against Intel and Corning 8-Ks
-CONTENT_VERSION = 7
+EVIDENCE_V9_AT = "2026-11-11T13:40:00Z"  # TeraWulf (Nov 10) and CoreWeave Q3 exhibits retrieved and read for v9
+EVIDENCE_V10_AT = "2026-11-12T13:40:00Z"  # Micron FY2026 10-K and FQ4 results exhibit retrieved and read for v10
+EVIDENCE_V11_AT = "2026-11-13T13:40:00Z"  # Nebius Q3 2026 results and shareholder letter (6-K) retrieved and read for v11
+EVIDENCE_V12_AT = "2026-11-14T13:40:00Z"  # Palantir Q3 2026 10-Q and results exhibit, Ramp Oct release read for v12
+REVISED_AT = "2026-11-14T14:00:00Z"  # editorial revision v12: enterprise AI spend re-reviewed against Palantir's Q3
+CONTENT_VERSION = 12
 
 SOURCES: list[tuple[str, str, str, str, str]] = [
     ("milkroad", "Milk Road", "discovery", "https://milkroad.com/",
@@ -80,12 +84,39 @@ DOCS: dict[str, tuple[str, str, str, str | None, str | None]] = {
     "https://www.sec.gov/Archives/edgar/data/1878848/000187884826000065/irenreportsq1-fy27result.htm":
         ("sec_edgar", "IREN Ltd — Q1 FY27 results (8-K, Ex. 99.1) filed 2026-11-05", "regulatory_filing",
          "2026-11-05", "2026-09-30"),
+    "https://www.sec.gov/Archives/edgar/data/1083301/000162828026071306/a_wulfearningsreleaseq32026.htm":
+        ("sec_edgar", "TeraWulf Inc. — Q3 2026 results (8-K, Ex. 99.1) filed 2026-11-06", "regulatory_filing",
+         "2026-11-06", "2026-09-30"),
+    "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000461/coreweave3q26earningspress.htm":
+        ("sec_edgar", "CoreWeave, Inc. — Q3 2026 results (8-K, Ex. 99.1) filed 2026-11-10",
+         "regulatory_filing", "2026-11-10", "2026-09-30"),
+    "https://www.sec.gov/Archives/edgar/data/1321655/000132165526000048/pltr-20260930.htm":
+        ("sec_edgar", "Palantir Technologies Inc. — Q3 2026 10-Q filed 2026-11-03", "regulatory_filing",
+         "2026-11-03", "2026-09-30"),
+    "https://www.sec.gov/Archives/edgar/data/1321655/000132165526000045/a2026q3ex991pressrelease.htm":
+        ("sec_edgar", "Palantir Technologies Inc. — Q3 2026 results (8-K, Ex. 99.1) filed 2026-11-02",
+         "regulatory_filing", "2026-11-02", "2026-09-30"),
+    "https://www.sec.gov/Archives/edgar/data/1513845/000110465926126008/tm2629571d1_ex99-1.htm":
+        ("sec_edgar", "Nebius Group N.V. — Q3 2026 results (6-K, Ex. 99.1) filed 2026-11-12",
+         "regulatory_filing", "2026-11-12", "2026-09-30"),
+    "https://www.sec.gov/Archives/edgar/data/1513845/000110465926126008/tm2629571d1_ex99-2.htm":
+        ("sec_edgar", "Nebius Group N.V. — Q3 2026 letter to shareholders (6-K, Ex. 99.2) filed 2026-11-12",
+         "regulatory_filing", "2026-11-12", "2026-09-30"),
+    "https://www.sec.gov/Archives/edgar/data/1083301/000162828026069810/wulfhawesvillecsaandepcmpr.htm":
+        ("sec_edgar", "TeraWulf Inc. — Google credit support and Fluor EPC release (8-K, Ex. 99.1) filed 2026-11-04",
+         "regulatory_filing", "2026-11-04", "2026-11-04"),
     "https://www.sec.gov/Archives/edgar/data/50863/000005086326000188/q326earningsrelease.htm":
         ("sec_edgar", "Intel Corp — Q3 2026 results (8-K, Ex. 99.1) filed 2026-10-29", "regulatory_filing",
          "2026-10-29", "2026-09-26"),
     "https://www.sec.gov/Archives/edgar/data/24741/000002474126000273/glw-20261027xex99xq32026.htm":
         ("sec_edgar", "Corning Inc. — Q3 2026 results (8-K, Ex. 99) filed 2026-10-27", "regulatory_filing",
          "2026-10-27", "2026-09-30"),
+    "https://www.sec.gov/Archives/edgar/data/723125/000072312526000023/mu-20260903.htm":
+        ("sec_edgar", "Micron Technology, Inc. — FY2026 10-K filed 2026-10-09", "regulatory_filing",
+         "2026-10-09", "2026-09-03"),
+    "https://www.sec.gov/Archives/edgar/data/723125/000072312526000018/a2026q4ex991-pressrelease.htm":
+        ("sec_edgar", "Micron Technology, Inc. — FQ4 2026 results (8-K, Ex. 99.1) filed 2026-09-30",
+         "regulatory_filing", "2026-09-30", "2026-09-03"),
 }
 
 MR_CHART = "https://milkroad.com/podcast/the-most-important-chart-in-ai-just-exposed-a-massive-contradiction-naWi9gIsWVE/"
@@ -103,6 +134,15 @@ GLXY = "https://www.sec.gov/Archives/edgar/data/1859392/000185939226000108/glxy-
 IREN = "https://www.sec.gov/Archives/edgar/data/1878848/000187884826000065/irenreportsq1-fy27result.htm"
 INTC_PR = "https://www.sec.gov/Archives/edgar/data/50863/000005086326000188/q326earningsrelease.htm"
 GLW = "https://www.sec.gov/Archives/edgar/data/24741/000002474126000273/glw-20261027xex99xq32026.htm"
+WULF = "https://www.sec.gov/Archives/edgar/data/1083301/000162828026071306/a_wulfearningsreleaseq32026.htm"
+WULF_FIN = "https://www.sec.gov/Archives/edgar/data/1083301/000162828026069810/wulfhawesvillecsaandepcmpr.htm"
+CRWV = "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000461/coreweave3q26earningspress.htm"
+NBIS = "https://www.sec.gov/Archives/edgar/data/1513845/000110465926126008/tm2629571d1_ex99-1.htm"
+NBIS_LTR = "https://www.sec.gov/Archives/edgar/data/1513845/000110465926126008/tm2629571d1_ex99-2.htm"
+PLTR = "https://www.sec.gov/Archives/edgar/data/1321655/000132165526000048/pltr-20260930.htm"
+PLTR_PR = "https://www.sec.gov/Archives/edgar/data/1321655/000132165526000045/a2026q3ex991pressrelease.htm"
+MU = "https://www.sec.gov/Archives/edgar/data/723125/000072312526000023/mu-20260903.htm"
+MU_PR = "https://www.sec.gov/Archives/edgar/data/723125/000072312526000018/a2026q4ex991-pressrelease.htm"
 
 # (url, claim_type, stance, statement)
 Ev = tuple[str, str, str, str]
@@ -261,32 +301,40 @@ SIGNALS: list[dict[str, Any]] = [
         "id": "enterprise-ai-spend-compounding",
         "content_version": CONTENT_VERSION,
         "title": "Enterprise AI spend compounds inside existing customers, creating a budget line that needs governance",
-        "brief": ["Anthropic: 950 → 11,900+ customers paying $100k+ a year", "~900% net revenue retention: existing customers drive growth", "56% of sampled US businesses pay for AI (Ramp), up 12 pts in a year"],
-        "dek": "An AI vendor's filing and a card-spend panel both show usage growing within accounts, with spend "
-               "concentrated in a few model vendors.",
+        "brief": ["Anthropic: ~900% net revenue retention; 11,900+ customers at $100k+", "Palantir: $407M of a $619M commercial revenue rise came from existing customers", "56.8% of sampled US businesses pay for AI (Ramp), up 13.3 pts in a year"],
+        "dek": "A model vendor's filing, an AI software vendor's filing and a card-spend panel all show spend growing "
+               "within accounts. New bookings growing far slower than revenue is the risk.",
         "takeaway": "Anthropic's S-1 reports about 900% net revenue retention (revenue this year from last year's "
                     "customers, relative to what they paid before) and over 11,900 customers paying $100k+ a year, up "
-                    "from about 950. Ramp's panel shows 55.9% of sampled US businesses paying for AI, with construction "
-                    "and retail rising fastest. Spend is growing inside accounts and spreading to less-digitized "
-                    "industries, which raises governance and vendor-concentration questions.",
+                    "from about 950. Palantir's Q3 10-Q says $407 million of its $619 million year-over-year rise in "
+                    "commercial revenue came from customers it already had at the end of 2025, and its top 20 "
+                    "customers averaged $146 million of revenue over twelve months, up 76%. Ramp's panel shows 56.8% "
+                    "of sampled US businesses paying for AI in October. Spend is compounding inside existing "
+                    "accounts, which raises governance and vendor-concentration questions.",
         "caveats": [
             "The S-1 metrics are issuer-defined and come from one unusually fast-growing vendor; net revenue "
             "retention excludes consumer plans.",
-            "Ramp measures whether a business pays for AI, not how deeply it uses it.",
+            "Ramp measures whether a business pays for AI, not how deeply it uses it, and it revises prior months.",
+            "Palantir's closed contract value grew only 6% year over year while revenue grew 96%, and many of its "
+            "customers can terminate for convenience on less than twelve months' notice.",
         ],
         "sector": "Enterprise software & services",
         "themes": ["Enterprise AI adoption", "AI spend management", "Vertical AI"],
         "direction": "Strengthening",
         "what_changed": "Anthropic's S-1 (filed Oct 26, 2026) discloses ~900% net revenue retention as of Sep 30, "
                         "2026 and more than 11,900 customers above $100k trailing-twelve-month revenue, up from more "
-                        "than 950 a year earlier. Ramp's AI Index shows 55.9% of sampled US businesses paying for AI in "
-                        "September 2026, up 12.1 points year over year.",
+                        "than 950 a year earlier. Palantir's Q3 10-Q (filed Nov 3, 2026) attributes $407M of a $619M "
+                        "rise in commercial revenue to customers existing at Dec 31, 2025. Ramp's AI Index shows 56.8% "
+                        "of sampled US businesses paying for AI in October 2026, up 13.3 points year over year.",
         "changed_points": [
             "Anthropic S-1: ~900% net revenue retention at Sep 30, 2026; >11,900 customers at $100k+ (vs >950 a year "
             "earlier); ~250 at $10M+.",
             "Anthropic S-1: $16.3B revenue in H1 2026 vs $1.2B a year earlier.",
-            "Ramp AI Index: 55.9% of sampled US businesses paid for AI in September (+12.1 pts y/y). Construction "
-            "43.2% (+1.9 pts m/m) and retail 49.9% (+1.6 pts) rose fastest.",
+            "Palantir 10-Q: Q3 commercial revenue $1,167.9M vs $548.4M a year earlier; $407M of the $619M increase "
+            "came from commercial customers existing at Dec 31, 2025; top-20 customers averaged $146M TTM revenue "
+            "(+76%).",
+            "Ramp AI Index: 56.8% of sampled US businesses paid for AI in October (+1.0 pt m/m, +13.3 pts y/y). "
+            "Construction 45.0% (+1.9 pts m/m); retail flat at 49.9%.",
         ],
         "why_now": "Lower cost per task makes production workloads easier to justify, and adoption gains now come from "
                    "construction and retail rather than only technology firms.",
@@ -306,8 +354,8 @@ SIGNALS: list[dict[str, Any]] = [
              "impact": "Peers are adopting AI tools; lagging can become a cost or response-time disadvantage.",
              "action": "Pilot one AI tool on a measurable task (quotes, scheduling, customer replies) and track hours "
                        "saved.",
-             "trigger": "Ramp's adoption rate for your sector passes half of businesses (construction 43.2%, retail "
-                        "49.9% in September)."},
+             "trigger": "Ramp's adoption rate for your sector passes half of businesses (construction 45.0%, retail "
+                        "49.9% in October)."},
             {"segment": "Software companies", "role": "benefits",
              "who": "Product and finance leaders at AI-enabled software vendors.",
              "impact": "Customers expand usage after the first purchase, so revenue depends on usage growth and on "
@@ -341,21 +389,24 @@ SIGNALS: list[dict[str, Any]] = [
             "Net revenue retention falls sharply in S-1 amendments or later filings.",
             "Ramp adoption flattens for two months, especially in construction and retail.",
             "Token spend keeps lagging usage, suggesting price cuts offset volume.",
+            "Palantir's revenue from existing customers stalls, or its closed contract value keeps lagging revenue.",
         ],
         "value_chain": ["Model vendors", "AI spend management", "Vertical AI applications", "Systems integrators"],
         "confidence": "Medium",
-        "corroboration": "Corroborated (two independent sources)",
-        "confidence_rationale": "An issuer filing and an 85,000+ business card-spend panel point the same way. But "
-                                "S-1 metrics are issuer-defined (NRR excludes consumer subscription plans) and come "
-                                "from an unusually fast-growing vendor; Ramp measures payment incidence, not workload "
-                                "depth.",
-        "next_validation": "Read S-1 amendments for NRR methodology and cohort detail; check whether Ramp's next "
-                           "monthly release extends gains in construction and retail.",
+        "corroboration": "Corroborated (three independent sources)",
+        "confidence_rationale": "Two vendor filings and an 85,000+ business card-spend panel point the same way. "
+                                "Confidence stays Medium: S-1 metrics are issuer-defined (NRR excludes consumer "
+                                "subscription plans), Palantir's new bookings grew far slower than its revenue, "
+                                "retail adoption on Ramp was flat in October, and Ramp measures payment incidence, "
+                                "not workload depth.",
+        "next_validation": "Read S-1 amendments for NRR methodology and cohort detail; check whether Palantir's Q4 "
+                           "results keep existing-customer growth while bookings catch up, and whether Ramp's next "
+                           "release resumes gains in retail.",
         "falsifier": "Net revenue retention falls sharply in subsequent filings while Ramp adoption flattens, which "
                      "would point to pilot churn rather than compounding deployment.",
         "thesis_sentence": "Enterprise AI revenue is deepening inside existing customers, creating a fast-growing "
                            "budget line that needs governance, attribution and industry-specific products.",
-        "evidence_reviewed_at": VERIFIED_AT,
+        "evidence_reviewed_at": EVIDENCE_V12_AT,
         "analyst_scores": {"relevance": 5, "impact": 4},
         "match": {"anchors": ["anthropic", "openai", "enterprise ai", "ai spend", "ai spending", "ai adoption",
                               "ai budget", "ai budgets", "copilot", "net revenue retention"],
@@ -370,9 +421,18 @@ SIGNALS: list[dict[str, Any]] = [
             (S1, "primary", "supports",
              "Revenue of $16.3B for the six months ended Jun 30, 2026, versus $1.2B in the prior-year period, as "
              "stated in the filing."),
+            (PLTR, "primary", "supports",
+             "Q3 2026 commercial revenue $1,167.9M vs $548.4M a year earlier; $407M of the $619M increase came from "
+             "commercial customers existing as of Dec 31, 2025. Top-20 customers averaged $146M of TTM revenue, up "
+             "76% from $83M."),
             (RAMP, "corroborated", "supports",
-             "55.9% of sampled US businesses paid for AI in September 2026 (+0.6 pts m/m, +12.1 pts y/y); "
-             "construction 43.2% (+1.9 pts) and retail 49.9% (+1.6 pts) rose fastest."),
+             "56.8% of sampled US businesses paid for AI in October 2026 (+1.0 pt m/m, +13.3 pts y/y); construction "
+             "45.0% (+1.9 pts m/m)."),
+            (PLTR_PR, "primary", "challenges",
+             "Q3 total contract value closed was $2.918B, up 6% year over year (U.S. commercial TCV $1.463B, +11%), "
+             "against 96% revenue growth; U.S. commercial remaining deal value rose 4% quarter over quarter."),
+            (RAMP, "corroborated", "challenges",
+             "Retail adoption was flat at 49.9% in October after rising in September."),
             ("https://milkroad.com/ideas/wait-cheaper-ai-is-good-for-anthropic/", "reported", "challenges",
              "Milk Road notes Ramp data showing business token spend barely grew in August–September even as usage "
              "rose — spend growth can lag usage when prices fall."),
@@ -503,18 +563,22 @@ SIGNALS: list[dict[str, Any]] = [
         "id": "memory-substrate-reallocation",
         "content_version": CONTENT_VERSION,
         "title": "Scarce memory and substrates are flowing to AI servers, favoring data-center chips over PCs",
-        "brief": ["Intel data-center revenue +78% while PC chips fell ~5%", "Intel expects the PC slowdown to last at least into mid-2027", "Corning also says memory pricing hit device markets"],
-        "dek": "Constrained components appear to be flowing to higher-margin AI servers. Intel expects a longer PC "
-               "slowdown and Corning ties device-market weakness to memory pricing, though Intel's PC revenue has so "
-               "far fallen only modestly.",
+        "brief": ["Micron says AI demand is outpacing memory supply, forcing allocation decisions", "Intel data-center revenue +78% while PC chips fell ~5%", "Corning says memory pricing hit device markets"],
+        "dek": "Memory maker Micron now says in its annual report that AI demand is outrunning "
+               "supply and forcing allocation choices. Intel and Corning describe the device-side squeeze, though "
+               "device makers are still being supplied, at much higher prices.",
         "takeaway": "Intel's Q3 filing shows data-center revenue up 78% year over year, with that segment's operating "
                     "margin rising from 23% to 42%, while PC-chip revenue fell about 5%. Intel names industry-wide "
                     "memory and substrate (chip-packaging material) shortages as a risk and expects the PC slowdown "
                     "to continue at least through the first half of 2027. Corning separately says TV, notebook and "
-                    "smartphone markets have been hit by memory pricing. Memory makers' own figures are still needed "
-                    "to call this an industry-wide shift.",
+                    "smartphone markets have been hit by memory pricing. Micron's FY2026 10-K says AI-driven demand "
+                    "is outpacing industry supply and has led to supply-allocation decisions that may affect "
+                    "certain customers and end markets; its quarterly revenue rose to $54.2B from $11.3B a year "
+                    "earlier.",
         "caveats": [
-            "Two issuers, neither a memory maker; an industry-wide reallocation is an inference.",
+            "One memory maker's filings checked; an industry-wide reallocation is still an inference.",
+            "Micron's PC and phone memory revenue also rose sharply, so devices are paying more rather than going "
+            "without.",
             "Corning's statement is one line of market commentary, not a measured figure.",
         ],
         "sector": "Semiconductors & hardware",
@@ -526,7 +590,11 @@ SIGNALS: list[dict[str, Any]] = [
                         "shortages\u201d as a supply-chain risk. Intel's Oct 29 earnings release guides Q4 revenue to "
                         "$15.0\u2013$16.0B and expects the PC slowdown to continue \u201cat least through the first "
                         "half of next year\u201d; Corning's Oct 27 release says TV, notebook and smartphone markets "
-                        "\u201chave been impacted by memory pricing\u201d.",
+                        "\u201chave been impacted by memory pricing\u201d. Micron's FY2026 10-K (filed Oct 9, 2026) "
+                        "says \u201cAI-driven memory and storage demand growth is outpacing industry supply\u201d "
+                        "and that this \u201chas led to decisions on supply allocation that may impact certain "
+                        "customers and end markets\u201d; it also describes new multi-year take-or-pay supply "
+                        "agreements with price bands.",
         "changed_points": [
             "Intel data-center (DCAI) revenue $7.32B in Q3 2026 vs $4.12B a year earlier (+78%); operating margin "
             "42% vs 23%.",
@@ -534,6 +602,8 @@ SIGNALS: list[dict[str, Any]] = [
             "Intel guides Q4 revenue to $15.0\u2013$16.0B (Q3: $16.5B) and sees the PC slowdown lasting at least "
             "through the first half of 2027.",
             "Corning, a supplier to device makers, says TV, notebook and smartphone markets were hit by memory pricing.",
+            "Micron's fiscal Q4 2026 revenue was $54.2B vs $11.3B a year earlier; its 10-K says AI demand is "
+            "outpacing industry supply and has forced supply-allocation decisions.",
         ],
         "why_now": "AI servers are absorbing memory and advanced-packaging capacity, so scarce components may be "
                    "flowing to the highest-margin data-center products ahead of PCs.",
@@ -577,22 +647,24 @@ SIGNALS: list[dict[str, Any]] = [
         "view_triggers": [
             "Memory contract prices fall within two quarters.",
             "Intel's PC segment recovers while data-center margin normalizes.",
-            "Memory makers' filings do not mention allocation to AI servers.",
+            "Micron's filings stop citing supply allocation, or its average selling prices fall as new supply arrives.",
         ],
         "value_chain": ["Memory & substrates", "Server OEMs", "PC OEMs", "Inference software"],
         "confidence": "Medium",
-        "corroboration": "Primary sources from two issuers",
+        "corroboration": "Primary sources from three issuers",
         "confidence_rationale": "Segment figures, guidance and shortage language come directly from Intel's 10-Q and "
-                                "earnings release, and Corning's filed release independently ties device-market "
-                                "weakness to memory pricing. It stays Medium because no memory maker's filing has "
-                                "yet been checked for pricing or allocation to AI servers.",
-        "next_validation": "Read memory makers' next filings for contract-pricing and AI-server allocation "
-                           "commentary; watch PC makers' shipment guidance.",
+                                "earnings release; Corning's filed release ties device-market weakness to memory "
+                                "pricing; and Micron's 10-K confirms from the supply side that AI demand is "
+                                "outpacing supply and forcing allocation decisions. It stays Medium because device "
+                                "makers' reported figures still show only modest damage: Intel's PC revenue fell "
+                                "about 5% and Micron's own PC and phone memory revenue more than tripled.",
+        "next_validation": "Read Micron's fiscal Q1 2027 results for allocation and pricing commentary, check a second "
+                           "memory maker's filing, and watch PC makers' shipment guidance.",
         "falsifier": "Memory contract prices fall and Intel's client segment recovers within two quarters, "
                      "indicating a transient rather than structural reallocation.",
         "thesis_sentence": "AI servers are absorbing scarce memory and substrates, favoring data-center silicon and "
                            "raising the value of software that does more with less memory.",
-        "evidence_reviewed_at": EVIDENCE_V7_AT,
+        "evidence_reviewed_at": EVIDENCE_V10_AT,
         "analyst_scores": {"relevance": 4, "impact": 4},
         "match": {"anchors": ["dram", "hbm", "nand", "substrate", "substrates", "memory shortage", "memory prices",
                               "micron", "sk hynix", "intel"],
@@ -614,25 +686,51 @@ SIGNALS: list[dict[str, Any]] = [
             (INTC, "primary", "challenges",
              "Client (CCPG) revenue fell only ~5% year over year ($8,097M vs $8,535M) — the device-side impact is so "
              "far modest in reported results."),
+            (MU, "primary", "supports",
+             "FY2026 10-K: \u201cAI-driven memory and storage demand growth is outpacing industry supply\u201d, which "
+             "\u201chas led to decisions on supply allocation that may impact certain customers and end markets\u201d."),
+            (MU_PR, "primary", "supports",
+             "Fiscal Q4 2026 revenue $54,229M vs $11,315M a year earlier; GAAP gross margin 86.8% vs 44.7%; Core Data "
+             "Center unit revenue $18,002M vs $1,577M."),
+            (MU, "primary", "supports",
+             "Entered multi-year take-or-pay strategic customer agreements in fiscal Q3\u2013Q4 2026 that give customers "
+             "contracted supply assurance, most with minimum and maximum price bands."),
+            (MU, "primary", "challenges",
+             "Micron warns that as it and others add supply, average selling prices may decline, and that customers "
+             "have at times overstated demand to procure additional supply."),
+            (MU_PR, "primary", "challenges",
+             "Mobile and Client unit revenue rose to $13,114M from $3,760M a year earlier at a 90% gross margin \u2014 "
+             "device markets are still being supplied, at much higher prices."),
         ],
     },
     {
         "id": "powered-compute-as-product",
         "content_version": CONTENT_VERSION,
         "title": "Power-ready sites are becoming a sellable compute product outside the hyperscalers",
-        "brief": ["Galaxy has delivered all 133 MW at its Texas Helios campus to CoreWeave", "IREN's contract prices rose 11–12%; a new five-year deal is ~$22M per MW", "Delivery timing and unleased capacity are the risks"],
-        "dek": "Galaxy and IREN filings show leased, revenue-earning AI capacity at rising contract prices. "
-               "Delivery delays and capacity still without a tenant are the risks.",
+        "brief": ["Galaxy has delivered all 133 MW at its Texas Helios campus to CoreWeave", "IREN's contract prices rose 11–12%; a new five-year deal is ~$22M per MW", "TeraWulf has a 20-year, ~$19B lease with Anthropic for ~401 MW"],
+        "dek": "Galaxy, IREN and TeraWulf filings show leased, revenue-earning AI capacity at rising contract prices "
+               "and on long leases. Delivery delays and capacity still without a tenant are the risks.",
         "takeaway": "Galaxy's Q3 results report all 133 MW of critical IT load at its Helios campus in West Texas "
                     "delivered to CoreWeave under a lease. IREN's Q1 FY27 results report contracted prices up 11% on "
                     "3-year and 12% on 5-year deals, and a new five-year contract at about $22 million of annual "
-                    "revenue per IT megawatt. SpaceX reports 1.7 GW of nameplate compute capacity, up from 0.6 GW. "
+                    "revenue per IT megawatt. TeraWulf has signed a 20-year lease with Anthropic for about 401 MW, worth "
+                    "about $19 billion, with Google credit support for the project debt. On the tenant side, CoreWeave grew "
+                    "contracted power by more than 900 MW in the quarter to over 4.6 GW, with a $132.5 billion revenue "
+                    "backlog. Nebius says prepayments on its Q3 deals covered more than 100% of the related capex, "
+                    "at more than $25 million of annual contract value per MW. SpaceX reports 1.7 GW of "
+                    "nameplate compute capacity, up from 0.6 GW. "
                     "Power-ready sites are selling as compute capacity; delivery timing and financing are the risks.",
         "caveats": [
             "Nameplate capacity is not utilization or external revenue; SpaceX does not disclose outside rental revenue.",
             "IREN's revenue-per-megawatt figures are company estimates based on its own power-consumption assumptions.",
             "IREN's $4B ARR target slipped from year-end 2026 to January 2027 and may extend to February; Galaxy has "
             "830 MW at Helios II not yet under lease.",
+            "TeraWulf's Anthropic campus is not expected to start coming online until late 2027, and its Q3 "
+            "adjusted EBITDA was negative.",
+            "CoreWeave, a major tenant of these sites, lost $709M in Q3 on $846M of net interest expense, so the "
+            "demand side is itself debt-funded.",
+            "Nebius's prepayment coverage and per-MW contract values are company-defined metrics, and its "
+            "Microsoft capacity in New Jersey slipped partly to Q2 2027.",
         ],
         "sector": "AI infrastructure",
         "themes": ["Compute markets", "Power & sites", "Infrastructure finance"],
@@ -641,7 +739,12 @@ SIGNALS: list[dict[str, Any]] = [
                         "load delivered to CoreWeave and $69M of data-center adjusted EBITDA in the first full quarter "
                         "of operations. IREN's Q1 FY27 results (8-K, Nov 5, 2026) report AI Cloud revenue of $200M, up "
                         "from $71M the prior quarter, and contracted pricing up 11% (3-year) and 12% (5-year). SpaceX's "
-                        "Q3 10-Q reports 1.7 GW of nameplate compute capacity, up from 0.6 GW a year earlier.",
+                        "Q3 10-Q reports 1.7 GW of nameplate compute capacity, up from 0.6 GW a year earlier. TeraWulf's Q3 "
+                        "results (8-K, Nov 6, 2026) report HPC lease revenue of $63.0M, up from $7.2M a year earlier, "
+                        "and a 20-year Anthropic lease for about 401 MW worth about $19B. CoreWeave's Q3 results (8-K, "
+                        "Nov 10, 2026) report contracted power up more than 900 MW to over 4.6 GW and a $132.5B "
+                        "revenue backlog. Nebius's Q3 results (6-K, Nov 12, 2026) report revenue of $980.8M, up from "
+                        "$146.1M, and prepayments covering more than 100% of the capex on deals signed in the quarter.",
         "changed_points": [
             "Galaxy 8-K: all 133 MW of Helios I, Phase I critical IT load delivered to CoreWeave; Q3 data-center "
             "adjusted EBITDA $69M.",
@@ -650,6 +753,12 @@ SIGNALS: list[dict[str, Any]] = [
             "IREN 8-K, after quarter-end: about $22M per IT-MW on a five-year contract with 90% of GPU capex prepaid, "
             "and a short-term contract at $40M per IT-MW.",
             "SpaceX 10-Q: 1.7 GW nameplate compute capacity at Sep 30, 2026 vs 0.6 GW a year earlier.",
+            "TeraWulf 8-Ks: HPC lease revenue $63.0M vs $7.2M a year earlier (~83% of revenue); 20-year Anthropic "
+            "lease for ~401 MW (~$19B) with Google credit support for the project debt.",
+            "CoreWeave 8-K: contracted power up 900+ MW in Q3 to over 4.6 GW, 1.7+ GW active; revenue $3.66B vs "
+            "$1.37B a year earlier; backlog ~$132.5B.",
+            "Nebius 6-K: revenue $980.8M vs $146.1M a year earlier; prepayments covered >100% of associated capex on "
+            "Q3 deals (50–60% in Q2); ACV per MW >$25M vs $20–25M on Q2 deals; more than 4 GW contracted.",
         ],
         "why_now": "Rising GPU rents and customer prepayments make leasing capacity attractive, and energized, permitted "
                    "sites are scarce, so companies that already have power, land and capital can monetize them.",
@@ -694,26 +803,37 @@ SIGNALS: list[dict[str, Any]] = [
             "SpaceX segment disclosures show capacity is mostly for internal use.",
             "Financing for smaller AI-infrastructure firms tightens further.",
             "IREN's $4B ARR is not operational by the end of February 2027.",
+            "TeraWulf's project financing for the Anthropic campus does not close, or its delivery slips past "
+            "mid-2028.",
+            "CoreWeave stops adding contracted power, or its interest costs force it to slow leasing.",
+            "Nebius's prepayment coverage falls back below the capex it funds, or it misses 5 GW contracted by "
+            "year-end 2026.",
         ],
         "value_chain": ["Power & sites", "Neoclouds", "Hyperscalers", "GPU finance"],
         "confidence": "Medium",
         "corroboration": "Primary sources (multiple issuers)",
-        "confidence_rationale": "Leased, revenue-earning capacity and rising contract prices are primary disclosures "
-                                "from two operators, but per-megawatt figures are company estimates, IREN's delivery "
-                                "has slipped, and SpaceX does not disclose external rental revenue.",
+        "confidence_rationale": "Leased, revenue-earning capacity, rising contract prices and a long-term lease are "
+                                "primary disclosures from three operators, and CoreWeave's and Nebius's filings show "
+                                "tenant demand still growing, with Nebius's buyers prepaying its build, but per-megawatt "
+                                "figures are company "
+                                "estimates, IREN's delivery has slipped, TeraWulf's largest lease is not yet built or "
+                                "financed, and SpaceX does not disclose external rental revenue.",
         "next_validation": "Check whether Galaxy signs a tenant for Helios II's 830 MW and whether IREN's $4B ARR is "
-                           "operational by February 2027; check SpaceX segment disclosures for external compute "
-                           "rental revenue versus internal use.",
+                           "operational by February 2027; check whether TeraWulf closes the Anthropic campus "
+                           "financing and brings Lake Mariner CB-4 online in Q4; check whether CoreWeave reaches "
+                           "1.85 GW of active power at year-end as guided; check whether Nebius reaches 5 GW "
+                           "contracted by year-end and delivers its remaining New Jersey tranches in Q2 2027; check SpaceX segment disclosures for "
+                           "external compute rental revenue versus internal use.",
         "falsifier": "GPU rents fall back as short-term contracts roll off, leaving non-traditional owners with "
                      "under-used sites.",
         "thesis_sentence": "Powered compute is becoming a sellable product for owners outside the hyperscalers, making "
                            "power-ready sites and capacity financing key constraints.",
-        "evidence_reviewed_at": EVIDENCE_UPDATED_AT,
+        "evidence_reviewed_at": EVIDENCE_V11_AT,
         "analyst_scores": {"relevance": 4, "impact": 3},
         "match": {"anchors": ["gigawatt", "gigawatts", "megawatt", "megawatts", "data center", "data centers",
                               "data centre", "coreweave", "helios", "neocloud", "colocation"],
                   "context": ["power", "lease", "leased", "capacity", "compute", "gpu", "gpus", "ai", "financing",
-                              "site", "campus", "spacex", "galaxy", "iren"],
+                              "site", "campus", "spacex", "galaxy", "iren", "terawulf", "anthropic"],
                   "exclude": CRYPTO, "min_terms": 2, "topic": "powered compute capacity"},
         "discovery": {"label": "Milk Road, Nov 4, 2026", "url": "https://milkroad.com/ideas/why-our-team-keeps-buying-spacex/"},
         "evidence": [
@@ -723,6 +843,23 @@ SIGNALS: list[dict[str, Any]] = [
             (GLXY, "primary", "supports",
              "All 133 MW of Helios I, Phase I critical IT load delivered to CoreWeave under a lease; Q3 data-center "
              "adjusted EBITDA of $69M in the first full quarter of revenue-generating operations."),
+            (CRWV, "primary", "supports",
+             "Added more than 200 MW of active power to over 1.7 GW and grew contracted power by more than 900 MW to "
+             "over 4.6 GW in Q3 2026; revenue $3,661M vs $1,365M a year earlier; revenue backlog about $132.5B."),
+            (CRWV, "primary", "challenges",
+             "Q3 2026 net loss of $(709)M with $(846)M of net interest expense; Q4 interest expense guided to "
+             "$1.05–$1.15B and full-year capex to $37–$39B."),
+            (NBIS, "primary", "supports",
+             "Q3 2026 revenue $980.8M vs $146.1M a year earlier; adjusted EBITDA $465.8M vs $(5.2)M; purchases of "
+             "property, equipment and intangibles $7,300.4M vs $955.5M."),
+            (NBIS_LTR, "primary", "supports",
+             "Prepayments on Q3 agreements covered more than 100% of the associated capex, up from 50–60% in Q2; "
+             "annual contract value per MW above $25M on Q3 deals vs $20–25M on Q2 deals; more than 4 GW of power "
+             "contracted, with 5 GW expected by year-end 2026."),
+            (NBIS_LTR, "primary", "challenges",
+             "Remaining tranches of the Microsoft capacity in New Jersey moved to Q2 2027, ARR above $7B now expected "
+             "for February rather than December, and 2027 capex is guided to $40–45B; Q3 net loss from continuing "
+             "operations was $(37.5)M with $112.5M of interest expense."),
             (GLXY, "primary", "challenges",
              "830 MW of approved capacity at Helios II is not yet under lease; Helios I, Phase II construction is "
              "funded by a $3.5B senior secured notes offering."),
@@ -733,6 +870,16 @@ SIGNALS: list[dict[str, Any]] = [
             (IREN, "primary", "challenges",
              "The more than $4B ARR target moved from year-end 2026 to January 2027 after a customer-requested change "
              "and supplier timing, and may extend to February 2027; per-MW revenue rests on internal assumptions."),
+            (WULF, "primary", "supports",
+             "HPC lease revenue $63.0M in Q3 2026 vs $7.2M in Q3 2025, about 83% of $76.2M total revenue; 102 MW of "
+             "revenue-generating critical IT capacity at Lake Mariner with 336 MW more under construction."),
+            (WULF_FIN, "primary", "supports",
+             "20-year lease with Anthropic for about 401 MW of critical IT capacity, about $19B of contracted revenue; "
+             "Google provides credit support for the anticipated project debt."),
+            (WULF, "primary", "challenges",
+             "Q3 non-GAAP adjusted EBITDA was about $(12.8)M; the Anthropic campus is expected to reach "
+             "ready-for-service in phases from late 2027 through Q2 2028, and its project financing is still "
+             "anticipated rather than closed."),
             ("https://milkroad.com/ideas/why-our-team-keeps-buying-spacex/", "reported", "supports",
              "Milk Road reports SpaceX rents compute on short-term contracts and cites commentary that GPU rents rose "
              "through October."),
@@ -942,7 +1089,8 @@ def _doc_ids(conn: sqlite3.Connection) -> dict[str, int]:
             continue
         item = RawItem(url=url, title=title, source_type=stype, published_at=pub, event_date=event,
                        meta={"verified_for_edition": EDITION_DATE})
-        ids[url], _ = upsert_document(conn, item, src, VERIFIED_AT, origin="seed")
+        seen_at = VERIFIED_AT if pub is None or pub <= VERIFIED_AT[:10] else REVISED_AT
+        ids[url], _ = upsert_document(conn, item, src, seen_at, origin="seed")
     return ids
 
 
