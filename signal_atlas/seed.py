@@ -1089,7 +1089,8 @@ def _doc_ids(conn: sqlite3.Connection) -> dict[str, int]:
             continue
         item = RawItem(url=url, title=title, source_type=stype, published_at=pub, event_date=event,
                        meta={"verified_for_edition": EDITION_DATE})
-        ids[url], _ = upsert_document(conn, item, src, VERIFIED_AT, origin="seed")
+        seen_at = VERIFIED_AT if pub is None or pub <= VERIFIED_AT[:10] else REVISED_AT
+        ids[url], _ = upsert_document(conn, item, src, seen_at, origin="seed")
     return ids
 
 
