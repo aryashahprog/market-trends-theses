@@ -21,8 +21,9 @@ EVIDENCE_V9_AT = "2026-11-11T13:40:00Z"  # TeraWulf (Nov 10) and CoreWeave Q3 ex
 EVIDENCE_V10_AT = "2026-11-12T13:40:00Z"  # Micron FY2026 10-K and FQ4 results exhibit retrieved and read for v10
 EVIDENCE_V11_AT = "2026-11-13T13:40:00Z"  # Nebius Q3 2026 results and shareholder letter (6-K) retrieved and read for v11
 EVIDENCE_V12_AT = "2026-11-14T13:40:00Z"  # Palantir Q3 2026 10-Q and results exhibit, Ramp Oct release read for v12
-REVISED_AT = "2026-11-14T14:00:00Z"  # editorial revision v12: enterprise AI spend re-reviewed against Palantir's Q3
-CONTENT_VERSION = 12
+EVIDENCE_V13_AT = "2026-11-15T13:40:00Z"  # CoreWeave Q3 2026 10-Q and NVIDIA CEO-transition 8-K read for v13
+REVISED_AT = "2026-11-15T14:00:00Z"  # editorial revision v13: powered compute re-reviewed for tenant concentration
+CONTENT_VERSION = 13
 
 SOURCES: list[tuple[str, str, str, str, str]] = [
     ("milkroad", "Milk Road", "discovery", "https://milkroad.com/",
@@ -96,6 +97,12 @@ DOCS: dict[str, tuple[str, str, str, str | None, str | None]] = {
     "https://www.sec.gov/Archives/edgar/data/1321655/000132165526000045/a2026q3ex991pressrelease.htm":
         ("sec_edgar", "Palantir Technologies Inc. — Q3 2026 results (8-K, Ex. 99.1) filed 2026-11-02",
          "regulatory_filing", "2026-11-02", "2026-09-30"),
+    "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000465/crwv-20260930.htm":
+        ("sec_edgar", "CoreWeave, Inc. — Q3 2026 quarterly report (10-Q) filed 2026-11-12",
+         "regulatory_filing", "2026-11-12", "2026-09-30"),
+    "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000082/nvidiaannouncesceotransiti.htm":
+        ("sec_edgar", "NVIDIA Corporation — CEO transition (8-K, Ex. 99.1) filed 2026-11-12",
+         "regulatory_filing", "2026-11-12", "2026-11-11"),
     "https://www.sec.gov/Archives/edgar/data/1513845/000110465926126008/tm2629571d1_ex99-1.htm":
         ("sec_edgar", "Nebius Group N.V. — Q3 2026 results (6-K, Ex. 99.1) filed 2026-11-12",
          "regulatory_filing", "2026-11-12", "2026-09-30"),
@@ -137,6 +144,8 @@ GLW = "https://www.sec.gov/Archives/edgar/data/24741/000002474126000273/glw-2026
 WULF = "https://www.sec.gov/Archives/edgar/data/1083301/000162828026071306/a_wulfearningsreleaseq32026.htm"
 WULF_FIN = "https://www.sec.gov/Archives/edgar/data/1083301/000162828026069810/wulfhawesvillecsaandepcmpr.htm"
 CRWV = "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000461/coreweave3q26earningspress.htm"
+CRWV_Q = "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000465/crwv-20260930.htm"
+NVDA_CEO = "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000082/nvidiaannouncesceotransiti.htm"
 NBIS = "https://www.sec.gov/Archives/edgar/data/1513845/000110465926126008/tm2629571d1_ex99-1.htm"
 NBIS_LTR = "https://www.sec.gov/Archives/edgar/data/1513845/000110465926126008/tm2629571d1_ex99-2.htm"
 PLTR = "https://www.sec.gov/Archives/edgar/data/1321655/000132165526000048/pltr-20260930.htm"
@@ -731,6 +740,8 @@ SIGNALS: list[dict[str, Any]] = [
             "demand side is itself debt-funded.",
             "Nebius's prepayment coverage and per-MW contract values are company-defined metrics, and its "
             "Microsoft capacity in New Jersey slipped partly to Q2 2027.",
+            "CoreWeave's revenue is concentrated: its top two customers were about 54% of Q3 revenue, and its GPU "
+            "supplier NVIDIA is also a $2.0B equity investor, whose CEO resigned on Nov 11.",
         ],
         "sector": "AI infrastructure",
         "themes": ["Compute markets", "Power & sites", "Infrastructure finance"],
@@ -744,7 +755,10 @@ SIGNALS: list[dict[str, Any]] = [
                         "and a 20-year Anthropic lease for about 401 MW worth about $19B. CoreWeave's Q3 results (8-K, "
                         "Nov 10, 2026) report contracted power up more than 900 MW to over 4.6 GW and a $132.5B "
                         "revenue backlog. Nebius's Q3 results (6-K, Nov 12, 2026) report revenue of $980.8M, up from "
-                        "$146.1M, and prepayments covering more than 100% of the capex on deals signed in the quarter.",
+                        "$146.1M, and prepayments covering more than 100% of the capex on deals signed in the quarter. "
+                        "CoreWeave's Q3 10-Q (Nov 12, 2026) shows its top two customers at about 30% and 24% of "
+                        "revenue, versus one customer at 67% a year earlier, with 98% of revenue on take-or-pay "
+                        "contracts.",
         "changed_points": [
             "Galaxy 8-K: all 133 MW of Helios I, Phase I critical IT load delivered to CoreWeave; Q3 data-center "
             "adjusted EBITDA $69M.",
@@ -759,6 +773,8 @@ SIGNALS: list[dict[str, Any]] = [
             "$1.37B a year earlier; backlog ~$132.5B.",
             "Nebius 6-K: revenue $980.8M vs $146.1M a year earlier; prepayments covered >100% of associated capex on "
             "Q3 deals (50–60% in Q2); ACV per MW >$25M vs $20–25M on Q2 deals; more than 4 GW contracted.",
+            "CoreWeave 10-Q: top two customers ~30% and ~24% of Q3 revenue (one customer 67% a year earlier); "
+            "98% of revenue under take-or-pay contracts; $132.3B of unsatisfied RPO, 36% due within 24 months.",
         ],
         "why_now": "Rising GPU rents and customer prepayments make leasing capacity attractive, and energized, permitted "
                    "sites are scarce, so companies that already have power, land and capital can monetize them.",
@@ -806,6 +822,8 @@ SIGNALS: list[dict[str, Any]] = [
             "TeraWulf's project financing for the Anthropic campus does not close, or its delivery slips past "
             "mid-2028.",
             "CoreWeave stops adding contracted power, or its interest costs force it to slow leasing.",
+            "CoreWeave loses or shrinks one of its two largest customers, or NVIDIA reduces its financing of "
+            "capacity buyers under new leadership.",
             "Nebius's prepayment coverage falls back below the capex it funds, or it misses 5 GW contracted by "
             "year-end 2026.",
         ],
@@ -817,18 +835,21 @@ SIGNALS: list[dict[str, Any]] = [
                                 "tenant demand still growing, with Nebius's buyers prepaying its build, but per-megawatt "
                                 "figures are company "
                                 "estimates, IREN's delivery has slipped, TeraWulf's largest lease is not yet built or "
-                                "financed, and SpaceX does not disclose external rental revenue.",
+                                "financed, CoreWeave's revenue rests largely on two customers, and SpaceX does not "
+                                "disclose external rental revenue.",
         "next_validation": "Check whether Galaxy signs a tenant for Helios II's 830 MW and whether IREN's $4B ARR is "
                            "operational by February 2027; check whether TeraWulf closes the Anthropic campus "
                            "financing and brings Lake Mariner CB-4 online in Q4; check whether CoreWeave reaches "
                            "1.85 GW of active power at year-end as guided; check whether Nebius reaches 5 GW "
-                           "contracted by year-end and delivers its remaining New Jersey tranches in Q2 2027; check SpaceX segment disclosures for "
+                           "contracted by year-end and delivers its remaining New Jersey tranches in Q2 2027; check NVIDIA's "
+                           "Q3 FY2027 results on Nov 17 for any change in customer financing or supply commitments; "
+                           "check SpaceX segment disclosures for "
                            "external compute rental revenue versus internal use.",
         "falsifier": "GPU rents fall back as short-term contracts roll off, leaving non-traditional owners with "
                      "under-used sites.",
         "thesis_sentence": "Powered compute is becoming a sellable product for owners outside the hyperscalers, making "
                            "power-ready sites and capacity financing key constraints.",
-        "evidence_reviewed_at": EVIDENCE_V11_AT,
+        "evidence_reviewed_at": EVIDENCE_V13_AT,
         "analyst_scores": {"relevance": 4, "impact": 3},
         "match": {"anchors": ["gigawatt", "gigawatts", "megawatt", "megawatts", "data center", "data centers",
                               "data centre", "coreweave", "helios", "neocloud", "colocation"],
@@ -860,6 +881,17 @@ SIGNALS: list[dict[str, Any]] = [
              "Remaining tranches of the Microsoft capacity in New Jersey moved to Q2 2027, ARR above $7B now expected "
              "for February rather than December, and 2027 capex is guided to $40–45B; Q3 net loss from continuing "
              "operations was $(37.5)M with $112.5M of interest expense."),
+            (CRWV_Q, "primary", "supports",
+             "$132.3B of unsatisfied RPO at Sep 30, 2026, 36% expected within 24 months; deferred revenue $10.0B vs "
+             "$8.2B at Dec 31, 2025; committed take-or-pay contracts were 98% of Q3 revenue."),
+            (CRWV_Q, "primary", "challenges",
+             "Top two customers were about 30% and 24% of Q3 2026 revenue (one customer 67% a year earlier); "
+             "operating lease liabilities $18.7B; NVIDIA bought about 23M shares for $2.0B gross in a January 2026 "
+             "private placement."),
+            (NVDA_CEO, "primary", "context",
+             "NVIDIA's CEO resigned on Nov 11, 2026; the CFO is interim CEO while the board searches; the board "
+             "says it expects operations, customer commitments and the product roadmap to continue without "
+             "interruption; Q3 FY2027 results are due Nov 17."),
             (GLXY, "primary", "challenges",
              "830 MW of approved capacity at Helios II is not yet under lease; Helios I, Phase II construction is "
              "funded by a $3.5B senior secured notes offering."),
