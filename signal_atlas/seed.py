@@ -22,8 +22,9 @@ EVIDENCE_V10_AT = "2026-11-12T13:40:00Z"  # Micron FY2026 10-K and FQ4 results e
 EVIDENCE_V11_AT = "2026-11-13T13:40:00Z"  # Nebius Q3 2026 results and shareholder letter (6-K) retrieved and read for v11
 EVIDENCE_V12_AT = "2026-11-14T13:40:00Z"  # Palantir Q3 2026 10-Q and results exhibit, Ramp Oct release read for v12
 EVIDENCE_V13_AT = "2026-11-15T13:40:00Z"  # CoreWeave Q3 2026 10-Q and NVIDIA CEO-transition 8-K read for v13
-REVISED_AT = "2026-11-15T14:00:00Z"  # editorial revision v13: powered compute re-reviewed for tenant concentration
-CONTENT_VERSION = 13
+EVIDENCE_V14_AT = "2026-11-16T13:40:00Z"  # NVIDIA Q2 FY2027 10-Q (supply and capacity commitments) read for v14
+REVISED_AT = "2026-11-16T14:00:00Z"  # editorial revision v14: memory thesis re-reviewed against NVIDIA's commitments
+CONTENT_VERSION = 14
 
 SOURCES: list[tuple[str, str, str, str, str]] = [
     ("milkroad", "Milk Road", "discovery", "https://milkroad.com/",
@@ -103,6 +104,9 @@ DOCS: dict[str, tuple[str, str, str, str | None, str | None]] = {
     "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000082/nvidiaannouncesceotransiti.htm":
         ("sec_edgar", "NVIDIA Corporation — CEO transition (8-K, Ex. 99.1) filed 2026-11-12",
          "regulatory_filing", "2026-11-12", "2026-11-11"),
+    "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000075/nvda-20260726.htm":
+        ("sec_edgar", "NVIDIA Corporation — Q2 FY2027 10-Q filed 2026-08-26", "regulatory_filing",
+         "2026-08-26", "2026-07-26"),
     "https://www.sec.gov/Archives/edgar/data/1513845/000110465926126008/tm2629571d1_ex99-1.htm":
         ("sec_edgar", "Nebius Group N.V. — Q3 2026 results (6-K, Ex. 99.1) filed 2026-11-12",
          "regulatory_filing", "2026-11-12", "2026-09-30"),
@@ -146,6 +150,7 @@ WULF_FIN = "https://www.sec.gov/Archives/edgar/data/1083301/000162828026069810/w
 CRWV = "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000461/coreweave3q26earningspress.htm"
 CRWV_Q = "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000465/crwv-20260930.htm"
 NVDA_CEO = "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000082/nvidiaannouncesceotransiti.htm"
+NVDA_Q = "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000075/nvda-20260726.htm"
 NBIS = "https://www.sec.gov/Archives/edgar/data/1513845/000110465926126008/tm2629571d1_ex99-1.htm"
 NBIS_LTR = "https://www.sec.gov/Archives/edgar/data/1513845/000110465926126008/tm2629571d1_ex99-2.htm"
 PLTR = "https://www.sec.gov/Archives/edgar/data/1321655/000132165526000048/pltr-20260930.htm"
@@ -572,10 +577,10 @@ SIGNALS: list[dict[str, Any]] = [
         "id": "memory-substrate-reallocation",
         "content_version": CONTENT_VERSION,
         "title": "Scarce memory and substrates are flowing to AI servers, favoring data-center chips over PCs",
-        "brief": ["Micron says AI demand is outpacing memory supply, forcing allocation decisions", "Intel data-center revenue +78% while PC chips fell ~5%", "Corning says memory pricing hit device markets"],
-        "dek": "Memory maker Micron now says in its annual report that AI demand is outrunning "
-               "supply and forcing allocation choices. Intel and Corning describe the device-side squeeze, though "
-               "device makers are still being supplied, at much higher prices.",
+        "brief": ["Micron says AI demand is outpacing memory supply, forcing allocation decisions", "Intel data-center revenue +78% while PC chips fell ~5%", "NVIDIA supply commitments, mainly memory, rose to $279B from $119B in a quarter"],
+        "dek": "Memory maker Micron says AI demand is outrunning supply and forcing allocation choices, and the "
+               "largest AI chip buyer has more than doubled its long-term supply commitments. Device makers are still "
+               "being supplied, at much higher prices.",
         "takeaway": "Intel's Q3 filing shows data-center revenue up 78% year over year, with that segment's operating "
                     "margin rising from 23% to 42%, while PC-chip revenue fell about 5%. Intel names industry-wide "
                     "memory and substrate (chip-packaging material) shortages as a risk and expects the PC slowdown "
@@ -583,12 +588,15 @@ SIGNALS: list[dict[str, Any]] = [
                     "smartphone markets have been hit by memory pricing. Micron's FY2026 10-K says AI-driven demand "
                     "is outpacing industry supply and has led to supply-allocation decisions that may affect "
                     "certain customers and end markets; its quarterly revenue rose to $54.2B from $11.3B a year "
+                    "earlier. On the buyer side, NVIDIA's Q2 FY2027 10-Q says its supply and capacity commitments, "
+                    "\u201cprimarily memory and manufacturing facilities\u201d, rose to $279B from $119B a quarter "
                     "earlier.",
         "caveats": [
             "One memory maker's filings checked; an industry-wide reallocation is still an inference.",
             "Micron's PC and phone memory revenue also rose sharply, so devices are paying more rather than going "
             "without.",
             "Corning's statement is one line of market commentary, not a measured figure.",
+            "NVIDIA's $279B figure is as of July 26, 2026 and does not separate memory from manufacturing capacity.",
         ],
         "sector": "Semiconductors & hardware",
         "themes": ["Supply-chain constraints", "Memory efficiency", "Data-center silicon"],
@@ -603,7 +611,9 @@ SIGNALS: list[dict[str, Any]] = [
                         "says \u201cAI-driven memory and storage demand growth is outpacing industry supply\u201d "
                         "and that this \u201chas led to decisions on supply allocation that may impact certain "
                         "customers and end markets\u201d; it also describes new multi-year take-or-pay supply "
-                        "agreements with price bands.",
+                        "agreements with price bands. NVIDIA's Q2 FY2027 10-Q (filed Aug 26, 2026) says it raised "
+                        "supply and capacity commitments from $119B to $279B in one quarter, \u201cprimarily memory "
+                        "and manufacturing facilities\u201d, to meet demand for the next several years.",
         "changed_points": [
             "Intel data-center (DCAI) revenue $7.32B in Q3 2026 vs $4.12B a year earlier (+78%); operating margin "
             "42% vs 23%.",
@@ -613,6 +623,8 @@ SIGNALS: list[dict[str, Any]] = [
             "Corning, a supplier to device makers, says TV, notebook and smartphone markets were hit by memory pricing.",
             "Micron's fiscal Q4 2026 revenue was $54.2B vs $11.3B a year earlier; its 10-K says AI demand is "
             "outpacing industry supply and has forced supply-allocation decisions.",
+            "NVIDIA's supply and capacity commitments rose to $279B as of July 26, 2026 from $119B a quarter earlier, "
+            "mainly for memory and manufacturing capacity.",
         ],
         "why_now": "AI servers are absorbing memory and advanced-packaging capacity, so scarce components may be "
                    "flowing to the highest-margin data-center products ahead of PCs.",
@@ -657,23 +669,28 @@ SIGNALS: list[dict[str, Any]] = [
             "Memory contract prices fall within two quarters.",
             "Intel's PC segment recovers while data-center margin normalizes.",
             "Micron's filings stop citing supply allocation, or its average selling prices fall as new supply arrives.",
+            "NVIDIA's next 10-Q shows supply and capacity commitments falling, or new charges for excess purchase "
+            "obligations.",
         ],
         "value_chain": ["Memory & substrates", "Server OEMs", "PC OEMs", "Inference software"],
         "confidence": "Medium",
-        "corroboration": "Primary sources from three issuers",
+        "corroboration": "Primary sources from four issuers",
         "confidence_rationale": "Segment figures, guidance and shortage language come directly from Intel's 10-Q and "
                                 "earnings release; Corning's filed release ties device-market weakness to memory "
                                 "pricing; and Micron's 10-K confirms from the supply side that AI demand is "
-                                "outpacing supply and forcing allocation decisions. It stays Medium because device "
+                                "outpacing supply and forcing allocation decisions; NVIDIA's 10-Q shows the largest "
+                                "AI chip buyer locking up memory and manufacturing capacity years ahead. It stays "
+                                "Medium because device "
                                 "makers' reported figures still show only modest damage: Intel's PC revenue fell "
                                 "about 5% and Micron's own PC and phone memory revenue more than tripled.",
-        "next_validation": "Read Micron's fiscal Q1 2027 results for allocation and pricing commentary, check a second "
-                           "memory maker's filing, and watch PC makers' shipment guidance.",
+        "next_validation": "Read NVIDIA's Q3 FY2027 10-Q (results due Nov 17) for the change in supply and capacity "
+                           "commitments, Micron's fiscal Q1 2027 results for allocation and pricing commentary, and "
+                           "a second memory maker's filing; watch PC makers' shipment guidance.",
         "falsifier": "Memory contract prices fall and Intel's client segment recovers within two quarters, "
                      "indicating a transient rather than structural reallocation.",
         "thesis_sentence": "AI servers are absorbing scarce memory and substrates, favoring data-center silicon and "
                            "raising the value of software that does more with less memory.",
-        "evidence_reviewed_at": EVIDENCE_V10_AT,
+        "evidence_reviewed_at": EVIDENCE_V14_AT,
         "analyst_scores": {"relevance": 4, "impact": 4},
         "match": {"anchors": ["dram", "hbm", "nand", "substrate", "substrates", "memory shortage", "memory prices",
                               "micron", "sk hynix", "intel"],
@@ -710,6 +727,14 @@ SIGNALS: list[dict[str, Any]] = [
             (MU_PR, "primary", "challenges",
              "Mobile and Client unit revenue rose to $13,114M from $3,760M a year earlier at a 90% gross margin \u2014 "
              "device markets are still being supplied, at much higher prices."),
+            (NVDA_Q, "primary", "supports",
+             "Q2 FY2027 10-Q: supply and capacity commitments rose from $119B last quarter to $279B as of July 26, "
+             "2026, \u201cprimarily memory and manufacturing facilities\u201d, to meet demand for the next several "
+             "years; $267B of it falls due by fiscal 2029."),
+            (NVDA_Q, "primary", "challenges",
+             "NVIDIA warns it may be unable to reduce these commitments if demand differs from expectations, and it "
+             "took a $0.4B excess inventory and purchase-obligation charge in the first half of fiscal 2027 as H200 "
+             "demand diminished."),
         ],
     },
     {
