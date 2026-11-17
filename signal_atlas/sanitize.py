@@ -35,15 +35,28 @@ def content_hash(*parts: str | None) -> str:
     return h.hexdigest()
 
 
+_META_TAG = re.compile(r"<meta\b(?:[^>\"']|\"[^\"]*\"|'[^']*')*>", re.I)
+_ATTR = re.compile(r"""([^\s=/>"']+)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>"']+))""")
+
+
+def _meta_tags(page: str) -> list[dict[str, str]]:
+    tags = []
+    for tag in _META_TAG.finditer(page):
+        tags.append({m.group(1).lower(): next(v for v in m.groups()[1:] if v is not None)
+                     for m in _ATTR.finditer(tag.group(0), 5)})
+    return tags
+
+
 def meta_content(page: str, *names: str) -> str | None:
+    """Content of the first non-empty <meta name|property=...> among names, in priority order.
+    Tags are tokenised once, so a missing name costs a linear scan instead of regex backtracking."""
+    tags = _meta_tags(page)
     for name in names:
-        for pat in (
-            rf'<meta[^>]+(?:name|property)=["\']{re.escape(name)}["\'][^>]*content=(["\'])(?P<v>.*?)\1',
-            rf'<meta[^>]+content=(["\'])(?P<v>.*?)\1[^>]*(?:name|property)=["\']{re.escape(name)}["\']',
-        ):
-            m = re.search(pat, page, flags=re.I | re.S)
-            if m and m.group("v").strip():
-                return html.unescape(m.group("v")).strip()
+        for attrs in tags:
+            key = attrs.get("name") or attrs.get("property") or ""
+            value = html.unescape(attrs.get("content", "")).strip()
+            if key.lower() == name.lower() and value:
+                return value
     return None
 
 

@@ -1,3 +1,5 @@
+import time
+
 from signal_atlas.sanitize import clean_text, content_hash, meta_content, page_title, strip_html
 
 
@@ -37,3 +39,26 @@ def test_clean_text_truncates_on_word_boundary():
 def test_content_hash_separates_parts():
     assert content_hash("ab", "c") != content_hash("a", "bc")
     assert content_hash(None) == content_hash("")
+
+
+def test_meta_content_handles_attribute_order_case_unquoted_values_and_gt_in_values():
+    page = ("<META CONTENT=\"a > b\" Property=\"OG:Title\"/>"
+            "<meta data-x='1' content=plain name=description>"
+            "<meta property=\"article:published_time\" content=\"2026-11-17T09:00:00Z\" />")
+    assert meta_content(page, "og:title") == "a > b"
+    assert meta_content(page, "description") == "plain"
+    assert meta_content(page, "article:published_time") == "2026-11-17T09:00:00Z"
+
+
+def test_meta_content_ignores_unterminated_tags_and_other_attributes():
+    assert meta_content('<meta name="description" content="never closed', "description") is None
+    assert meta_content('<meta name="og:title" value="x" content="">', "og:title") is None
+
+
+def test_meta_content_is_linear_when_a_name_is_missing():
+    # Inline JSON (quotes, no ">") made the previous regex backtrack quadratically: ~6 s here, ~20 s per real page.
+    head = "".join(f'<meta name="k{i}" content="v"/>' for i in range(4))
+    page = "<head>" + head + "</head><script>" + '{"k":"v"},' * 2000 + "</script>"
+    start = time.perf_counter()
+    assert meta_content(page, "article:published_time") is None
+    assert time.perf_counter() - start < 1.0
