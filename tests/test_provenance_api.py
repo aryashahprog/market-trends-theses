@@ -29,6 +29,17 @@ def test_every_published_signal_has_provenance(tmp_path):
     assert "not probabilities" in md and "https://www.sec.gov/Archives/" in md
 
 
+def test_seeded_documents_are_not_retrieved_before_publication(tmp_path):
+    conn = connect(tmp_path / "p.db")
+    seed(conn)
+    rows = conn.execute("SELECT canonical_url, published_at, first_seen_at, retrieved_at FROM documents "
+                        "WHERE origin='seed' AND published_at IS NOT NULL").fetchall()
+    assert rows
+    for r in rows:
+        assert r["first_seen_at"][:10] >= r["published_at"][:10], r["canonical_url"]
+        assert r["retrieved_at"][:10] >= r["published_at"][:10], r["canonical_url"]
+
+
 def test_validation_rejects_unsupported_signals():
     bad = dict(SIGNALS[0], evidence=[(SIGNALS[0]["evidence"][0][0], "reported", "supports", "claim only")])
     errs = validate_signal(bad)
