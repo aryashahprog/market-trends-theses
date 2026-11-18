@@ -6,7 +6,7 @@ import logging
 from pathlib import Path
 
 from .config import get_settings
-from .db import connect
+from .db import connect, pack_for_publication
 from .pipeline import get_status, run_pipeline
 from .scheduling import next_slot
 from .seed import seed_if_empty
@@ -24,6 +24,7 @@ def main() -> None:
     sub.add_parser("schedule", help="print the next six scheduled refresh times")
     ex = sub.add_parser("export", help="write a static copy of the site and API (for static hosting)")
     ex.add_argument("--out", default="site")
+    sub.add_parser("pack", help="drop the HTTP cache and compact the database before it is published")
     sub.add_parser("due", help="print due=true when the most recent scheduled slot has no successful ingestion")
     args = p.parse_args()
     settings = get_settings()
@@ -37,6 +38,9 @@ def main() -> None:
         print(json.dumps(get_status(conn, settings), indent=2))
     elif args.cmd == "export":
         print(json.dumps(export_site(conn, settings, Path(args.out))))
+    elif args.cmd == "pack":
+        pack_for_publication(conn)
+        print(f"packed {settings.db_path} ({settings.db_path.stat().st_size:,} bytes)")
     elif args.cmd == "due":
         st = get_status(conn, settings)
         last, prev = parse_iso(st["last_success_at"]), parse_iso(st["previous_slot"])

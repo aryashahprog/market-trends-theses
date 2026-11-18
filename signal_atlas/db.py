@@ -101,6 +101,15 @@ def tx(conn: sqlite3.Connection) -> Iterator[sqlite3.Connection]:
         conn.execute("COMMIT")
 
 
+def pack_for_publication(conn: sqlite3.Connection) -> None:
+    """Make the database safe to publish as one self-contained file: drop the HTTP cache (whole third-party
+    pages, which the publication never republishes), fold the WAL in and reclaim free pages."""
+    conn.execute("DELETE FROM http_cache")
+    conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+    conn.execute("PRAGMA journal_mode=DELETE")
+    conn.execute("VACUUM")
+
+
 def dumps(obj: Any) -> str:
     return json.dumps(obj, ensure_ascii=False, sort_keys=True)
 

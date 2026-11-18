@@ -50,8 +50,8 @@ Manual refresh is rate-limited and failed-auth attempts lock out after five trie
 | Silicon Data | public index page values | corroborating pricing dataset |
 | Ramp AI Index | public page headline figures | adoption dataset |
 
-All retrieval honours robots.txt, uses a persistent HTTP cache with ETag/Last-Modified, per-host rate limits and a size
-cap. Pages returning 401/402/403 are recorded as restricted and never bypassed. Only titles, metadata and short
+All retrieval honours robots.txt, uses a persistent HTTP cache with ETag/Last-Modified (entries are dropped after two days),
+per-host rate limits and a size cap. Pages returning 401/402/403 are recorded as restricted and never bypassed. Only titles, metadata and short
 sanitized excerpts are stored; full articles are never copied. Scraped text is treated as untrusted and rendered as text.
 
 ## Data model and integrity
@@ -83,7 +83,7 @@ Any host with a persistent disk works. A preview server without the worker proce
 
 `.github/workflows/publish.yml` runs ingestion on GitHub's runners at 08:00 and 16:00 America/New_York (UTC cron
 entries for both EDT and EST, gated by `cli due` so each slot runs once), keeps the SQLite database on a `data`
-branch, and publishes a read-only static build (`cli export`) to GitHub Pages. In static mode manual refresh is the
+branch (after `cli pack`, which drops the HTTP cache so no fetched third-party pages are published), and publishes a read-only static build (`cli export`) to GitHub Pages. In static mode manual refresh is the
 workflow's "Run workflow" button; set the optional `SEC_USER_AGENT` repository secret to enable SEC EDGAR.
 
 ### Thesis structure

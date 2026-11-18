@@ -12,6 +12,12 @@ import httpx
 MAX_BYTES = 6_000_000
 MAX_REDIRECTS = 5
 REDIRECT_CODES = frozenset({301, 302, 303, 307, 308})
+CACHE_RETENTION_S = 2 * 86400  # longer than any adapter's TTL (max 24 h)
+
+
+def prune_cache(conn: sqlite3.Connection, now: float, max_age_s: float = CACHE_RETENTION_S) -> int:
+    """Drop cached bodies older than max_age_s. Without this the cache keeps every article page ever fetched."""
+    return conn.execute("DELETE FROM http_cache WHERE fetched_at < ?", (now - max_age_s,)).rowcount
 
 
 class FetchError(Exception):

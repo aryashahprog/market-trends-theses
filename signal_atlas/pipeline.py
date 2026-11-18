@@ -14,7 +14,7 @@ from .adapters.base import Adapter, RawItem, SeriesUpdate
 from .cluster import assign_cluster
 from .config import Settings
 from .db import dumps, loads, tx
-from .fetcher import Fetcher
+from .fetcher import Fetcher, prune_cache
 from .ranking import METHOD, score_signal
 from .sanitize import clean_text, content_hash
 from .scheduling import is_stale, next_slot, previous_slot
@@ -350,6 +350,7 @@ def run_pipeline(conn: sqlite3.Connection, settings: Settings, trigger: str,
                          "error=? WHERE id=?", (iso(clock()), status, counts["seen"], counts["new"],
                                                  counts["updated"], err, sr))
             results.append({"source": a.id, "status": status, **counts, "error": err})
+        prune_cache(conn, http.clock())
         failed = sum(r["status"] == "failed" for r in results)
         overall = "failed" if results and failed == len(results) else ("partial" if failed else "success")
         matched = 0
