@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% from "ui.html" import csrf, icon, error with context %}
+{% block title %}{{ 'Edit thesis' if item else 'New thesis' }}{% endblock %}
+{% block page_class %}narrow{% endblock %}
+{% block content %}
+{% set back = url_for('views.thesis', thesis_id=item.id) if item else url_for('views.mine') %}
+<a class="breadcrumb" href="{{ back }}">{{ icon('back', 16) }} {{ 'Back to thesis' if item else 'My research' }}</a>
+<header class="page-heading"><p class="eyebrow">Owner-authored</p><h1>{{ 'Edit thesis' if item else 'New thesis' }}</h1><p class="lede">Write your position in your own words. No AI output changes this argument.</p></header>
+<form method="post" class="panel stack">
+  {{ csrf() }}{{ error(problem) }}
+  {% if item %}<input type="hidden" name="base_version" value="{{ values.get('base_version', item.version_token) }}">{% endif %}
+  {% if conflict %}<p class="attribution">Your unsaved text is below. <a href="{{ url_for('views.edit', thesis_id=item.id) }}" target="_blank" rel="noopener">Open the latest edit form in a new tab</a> to review and reapply your changes.</p>{% endif %}
+  <label>Title<input name="title" required maxlength="160" value="{{ values.get('title', '') }}" placeholder="Give your thesis a clear title"></label>
+  <label>Current argument<textarea name="argument" rows="7" maxlength="12000" placeholder="What do you believe, and why?">{{ values.get('argument', '') }}</textarea></label>
+  <label>Open questions<textarea name="questions" rows="3" maxlength="6000">{{ values.get('questions', '') }}</textarea></label>
+  <label>Competing views<textarea name="competing" rows="3" maxlength="6000">{{ values.get('competing', '') }}</textarea></label>
+  <label>Topics <small>Separate topics with commas.</small><input name="topics" value="{{ values.get('topics', '') }}" maxlength="200" placeholder="Enterprise AI, Workflow automation"></label>
+  <div class="form-grid">
+    <label>Status<select name="status">{% for state in statuses %}<option {{ 'selected' if state == values.get('status', 'Exploring') }}>{{ state }}</option>{% endfor %}</select></label>
+    <label>Last reviewed<input type="date" name="reviewed" max="{{ today }}" value="{{ values.get('reviewed', '') }}"></label>
+  </div>
+  <label>Visibility <small>Team members can read and discuss the shared version. Draft versions stay private.</small>
+    <select name="visibility"><option value="draft" {{ 'selected' if values.get('visibility', 'draft') == 'draft' }}>Draft · only me</option><option value="team" {{ 'selected' if values.get('visibility') == 'team' }}>Team · authenticated members</option></select>
+  </label>
+  <div class="form-actions"><button class="button primary" type="submit" {% if conflict %}disabled{% endif %}>{{ 'Save revision' if item else 'Create thesis' }}</button><a class="button subtle" href="{{ back }}">Cancel</a></div>
+</form>
+{% endblock %}

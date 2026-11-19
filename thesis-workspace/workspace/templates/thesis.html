@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% from "ui.html" import csrf, icon, status, label_list, source_type with context %}
+{% block title %}{{ item.title }}{% endblock %}
+{% block content %}
+<a class="breadcrumb" href="{{ url_for('views.mine' if item.visibility == 'draft' else 'views.team') }}">{{ icon('back', 16) }} {{ 'My research' if item.visibility == 'draft' else 'Team theses' }}</a>
+<header class="page-heading thesis-heading">
+  <div class="tag-line">{{ status(item.status) }}{% if item.visibility == 'draft' %}<span class="scope">{{ icon('lock', 15) }} Private draft</span>{% else %}<span class="scope">Team visibility</span>{% endif %}</div>
+  <h1>{{ item.title }}</h1>
+  <p class="thesis-byline">By {% if item.visibility == 'team' %}<a href="{{ url_for('views.team', owner=item.owner_id) }}">{{ item.owner }}</a>{% else %}{{ item.owner }}{% endif %}{% if item.visibility == 'team' %} <span aria-hidden="true">·</span> <a class="quiet-link" href="#discussion">Discussion ({{ comments|length }})</a>{% endif %}{% if own %} <span aria-hidden="true">·</span> <a class="quiet-link" href="{{ url_for('views.edit', thesis_id=item.id) }}">Edit thesis</a>{% endif %}</p>
+  <div class="topics">{{ label_list(item.topics, item.visibility == 'team') }}</div>
+</header>
+<div class="detail-grid">
+  <div class="article-stack">
+    <section class="panel article" id="argument">
+      <h2>Current argument</h2><p class="attribution">Written by {{ item.owner }}</p>
+      {% for text in passages(item.argument) %}<p id="argument-{{ loop.index }}" class="prose">{{ text }}</p>
+      {% else %}<p class="muted">The owner hasn’t written an argument yet.</p>{% endfor %}
+    </section>
+    <section class="panel article" id="evidence">
+      <div class="article-heading"><h2>Supporting evidence <span class="count">{{ attached|length }}</span></h2><a class="quiet-link" href="{{ url_for('views.add_research', thesis=item.id) }}">{{ icon('add', 16) }} Add evidence</a></div>
+      <p class="attribution">An attachment does not imply endorsement by the thesis owner.</p>
+      {% for source in attached %}
+      <div class="source-row">
+        <div class="doc-icon">{{ icon('external' if source.kind == 'link' else 'file') }}</div>
+        <div><a class="row-title" href="{{ url_for('views.source', source_id=source.id) }}">{{ source.title }}</a>
+          <p class="byline">{{ source_type(source) }} · Added by {{ source.added_name }}{% if source.visibility == 'draft' %} · Private draft{% endif %}</p>
+        </div>
+      </div>
+      {% else %}<p class="muted">No evidence is visible here yet.</p>{% endfor %}
+    </section>
+    <section class="panel article" id="questions">
+      <h2>Open questions &amp; competing views</h2>
+      <h3>Open questions</h3>
+      {% for text in passages(item.questions) %}<p id="questions-{{ loop.index }}" class="prose">{{ text }}</p>
+      {% else %}<p class="muted">No open questions recorded.</p>{% endfor %}
+      <h3>Competing views</h3><p class="attribution">Recorded by the owner, not necessarily their position.</p>
+      {% for text in passages(item.competing) %}<p id="competing-{{ loop.index }}" class="prose">{{ text }}</p>
+      {% else %}<p class="muted">No competing views recorded.</p>{% endfor %}
+    </section>
+    <section class="panel article" id="discussion" tabindex="-1">
+      <h2>Discussion <span class="count">{{ comments|length }}</span></h2>
+      {% if item.visibility == 'team' %}
+      <form method="post" action="{{ url_for('views.comment', thesis_id=item.id) }}" class="stack">
+        {{ csrf() }}<label>Join the discussion<textarea name="comment" rows="3" maxlength="3500" required></textarea></label>
+        <div><button class="button subtle" type="submit">Post comment</button></div>
+      </form>
+      {% for comment in comments %}
+      <article class="comment" id="comment-{{ comment.id }}"><p class="byline"><strong>{{ comment.name }}</strong> · {{ comment.created|date }}</p><p class="prose">{{ comment.body }}</p></article>
+      {% else %}<p class="muted">No comments yet.</p>{% endfor %}
+      {% else %}<p class="muted">Discussion is available once the thesis is shared with the team.</p>{% endif %}
+    </section>
+    <section class="panel article" id="history">
+      <h2>Version history</h2>
+      <p class="attribution">Saved owner-authored revisions. Draft revisions are visible only to the owner.</p>
+      {% for version, snapshot in history %}
+      <details class="revision">
+        <summary><time datetime="{{ version.changed }}">{{ version.changed|timestamp }}</time> · {{ item.owner }} · {{ 'Team' if version.visibility == 'team' else 'Private draft' }}{% if loop.first %} · Latest visible{% endif %}</summary>
+        <a class="quiet-link" href="{{ url_for('views.version', thesis_id=item.id, token=version.token) }}">Open saved version {{ icon('arrow', 15) }}</a>
+        <h3>{{ snapshot.title }}</h3>
+        <p class="byline">{{ snapshot.status }} · {{ snapshot.reviewed|date }}{% if snapshot.topics %} · {{ snapshot.topics }}{% endif %}</p>
+        <h4>Argument</h4><p class="prose">{{ snapshot.argument or 'None yet' }}</p>
+        <h4>Open questions</h4><p class="prose">{{ snapshot.questions or 'None yet' }}</p>
+        <h4>Competing views</h4><p class="prose">{{ snapshot.competing or 'None yet' }}</p>
+      </details>
+      {% endfor %}
+    </section>
+  </div>
+  <aside class="article-stack detail-side">
+    <section class="panel meta"><h2>Thesis details</h2>
+      <dl><dt>Owner</dt><dd>{{ item.owner }}</dd><dt>Contributors</dt><dd>{{ contributors|join(', ') if contributors else 'None yet' }}</dd><dt>Last reviewed</dt><dd>{{ item.reviewed|date }}</dd><dt>Last edited</dt><dd>{{ item.updated|date }}</dd></dl>
+    </section>
+    {% if related %}<section class="panel meta"><h2>Related theses</h2><p class="attribution">Shared topics</p>
+      {% for other in related %}<a class="related" href="{{ url_for('views.thesis', thesis_id=other.id) }}">{{ other.title }} <small>{{ other.owner }}</small></a>{% endfor %}
+    </section>{% endif %}
+  </aside>
+</div>
+{% endblock %}

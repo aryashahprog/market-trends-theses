@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% from "ui.html" import icon, csrf with context %}
+{% block title %}Sign in{% endblock %}
+{% block page_class %}signin-page{% endblock %}
+{% block content %}
+<div class="signin-shell">
+  <div class="signin-main">
+    <a class="brand" href="{{ url_for('auth.sign_in') }}">
+      <img width="44" height="44" alt="" src="{{ url_for('static', filename='mark.svg') }}">
+      <span><strong>Thesis Workspace</strong><small>Research library</small></span>
+    </a>
+    <p class="eyebrow">Investment research</p>
+    <h1>Research, in<br>one place.</h1>
+    <p class="lede">Share what you’re learning, see how perspectives differ, and trace every insight back to its source.</p>
+    {% if token %}
+      <form method="post" action="{{ url_for('auth.redeem') }}">
+        {{ csrf() }}<input type="hidden" name="token" value="{{ token }}">
+        <button class="button primary" type="submit">Confirm work email sign-in {{ icon('arrow') }}</button>
+      </form>
+    {% elif sent %}
+      <p class="notice" role="status">If your work email has access, a single-use link will arrive shortly.</p>
+    {% elif ready %}
+      <form method="post" action="{{ url_for('auth.request_login') }}" class="email-form">
+        {{ csrf() }}<label for="work-email">Work email</label>
+        <input type="email" name="email" id="work-email" placeholder="you@yourfirm.com" required autocomplete="email">
+        <button class="button primary" type="submit">Send sign-in link {{ icon('arrow') }}</button>
+      </form>
+    {% else %}
+      <p class="notice">Work email sign-in is not configured for this deployment.</p>
+    {% endif %}
+    {% if config.DEMO_ENABLED and not token %}
+      <form method="post" action="{{ url_for('auth.start_demo') }}" class="demo-entry">
+        {{ csrf() }}<button class="button {{ 'subtle' if ready else 'primary' }}" type="submit">Open fictional demo {{ icon('arrow') }}</button>
+        <p>Sample theses only. Your demo is separate from the team workspace.</p>
+      </form>
+    {% endif %}
+  </div>
+  <aside class="signin-aside" aria-label="Workspace features">
+    <p class="eyebrow">Inside the workspace</p>
+    <h2>Keep the argument and the evidence separate.</h2>
+    <div class="feature">{{ icon('team', 22) }}<div><strong>Team theses</strong><p>Browse what the team believes and what they’re still testing.</p></div></div>
+    <div class="feature">{{ icon('folder', 22) }}<div><strong>My research</strong><p>Collect evidence and keep drafts private until you’re ready.</p></div></div>
+    <div class="feature">{{ icon('ask', 22) }}<div><strong>Ask the workspace</strong><p>Find relevant passages with clear attribution and direct citations.</p></div></div>
+  </aside>
+</div>
+{% endblock %}

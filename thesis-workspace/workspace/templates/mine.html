@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% from "ui.html" import icon, thesis_row, source_type with context %}
+{% block title %}My research{% endblock %}
+{% block content %}
+<header class="page-heading split">
+  <div><p class="eyebrow">Personal library</p><h1>My research</h1><p class="lede">Keep track of your theses, private drafts, and evidence you’ve added.</p></div>
+  <a class="button subtle" href="{{ url_for('views.new') }}">{{ icon('add') }} New thesis</a>
+</header>
+<div class="section-heading"><h2>My theses <span class="count">{{ items|length }}</span></h2><span class="sort-label">{{ drafts }} private {{ 'draft' if drafts == 1 else 'drafts' }}</span></div>
+{% if items %}<div class="results">{% for item in items %}{{ thesis_row(item, true) }}{% endfor %}</div>
+{% else %}<div class="empty"><h3>No theses yet</h3><p>Start a private draft or create a thesis when you add research.</p></div>{% endif %}
+<div class="section-heading spaced"><h2>My attachments <span class="count">{{ attachments|length }}</span></h2>
+<a class="quiet-link" href="{{ url_for('views.add_research') }}">Add research {{ icon('arrow', 16) }}</a></div>
+{% if attachments %}<div class="results">{% for item in attachments %}
+<article class="compact-row"><div class="doc-icon">{{ icon('external' if item.kind == 'link' else 'file') }}</div><div><a class="row-title" href="{{ url_for('views.source', source_id=item.id) }}">{{ item.title }}</a><p class="byline">{{ source_type(item) }} · {{ item.thesis_title or 'Unassigned' }} · {{ item.added|date }} · {{ 'Private draft' if item.visibility == 'draft' else 'Team' }}</p></div></article>
+{% endfor %}</div>
+{% else %}<div class="empty"><p>No attachments yet. Add a note, a reference link, or a file.</p></div>{% endif %}
+{% endblock %}

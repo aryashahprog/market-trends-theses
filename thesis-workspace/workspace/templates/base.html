@@ -1,0 +1,72 @@
+{% from "ui.html" import icon, csrf with context %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#fcfcfc">
+  <title>{% block title %}Thesis workspace{% endblock %} · Thesis Workspace</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+  <link rel="icon" href="{{ url_for('static', filename='mark.svg') }}" type="image/svg+xml">
+  <link rel="manifest" href="{{ url_for('static', filename='site.webmanifest') }}" crossorigin="use-credentials">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon-192.png') }}">
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</head>
+<body class="{{ 'signed-in' if g.user else 'signed-out' }}">
+<a class="skip" href="#main">Skip to content</a>
+{% if g.user %}
+{% set demo = g.user.space.startswith('demo:') %}
+{% set route = request.endpoint or '' %}
+{% set personal = item is defined and item and item.visibility == 'draft' and route in ['views.source', 'views.thesis', 'views.version'] %}
+<aside class="sidebar">
+  <a class="brand" href="{{ url_for('views.team') }}">
+    <img width="36" height="36" alt="" src="{{ url_for('static', filename='mark.svg') }}">
+    <span><strong>Thesis Workspace</strong><small>Research library</small></span>
+  </a>
+  <nav aria-label="Workspace">
+    <p class="nav-label">Workspace</p>
+    {% for endpoint, label, glyph, active in [
+      ('views.team', 'Team theses', 'team', route in ['views.team', 'views.thesis', 'views.source', 'views.version'] and not personal),
+      ('views.mine', 'My research', 'folder', route == 'views.mine' or personal),
+      ('views.ask', 'Ask', 'ask', route == 'views.ask')
+    ] %}
+    <a class="nav-item{{ ' active' if active else '' }}" {% if active %}aria-current="{{ 'page' if route == endpoint else 'location' }}"{% endif %} href="{{ url_for(endpoint) }}">{{ icon(glyph) }}{{ label }}</a>
+    {% endfor %}
+    <details class="mobile-account">
+      <summary>Account</summary>
+      <div>
+        <a class="quiet-link" href="{{ url_for('views.profile') }}">Profile · {{ g.user.name }}</a>
+        <form method="post" action="{{ url_for('auth.sign_out') }}">{{ csrf() }}<button type="submit" class="text-button">{{ 'Exit demo' if demo else 'Sign out' }}</button></form>
+      </div>
+    </details>
+  </nav>
+  <a class="button primary global-add" href="{{ url_for('views.add_research') }}">{{ icon('add') }}Add research</a>
+  <div class="sidebar-foot">
+    <a class="profile-link" href="{{ url_for('views.profile') }}" title="Your profile">
+      <span class="avatar">{{ g.user.name[:1]|upper }}</span>
+      <span><strong>{{ g.user.name }}</strong><small>{{ 'Demo account' if demo else 'Team member' }}</small></span>
+    </a>
+    <form method="post" action="{{ url_for('auth.sign_out') }}">{{ csrf() }}<button type="submit" class="text-button">{{ 'Exit demo' if demo else 'Sign out' }}</button></form>
+  </div>
+</aside>
+<div class="workspace">
+  {% if demo %}
+  <div class="demo-bar">
+    <div><span class="demo-label">Fictional demo</span><span class="demo-note">A separate workspace with sample data. Don’t enter firm information.</span></div>
+    <form method="post" action="{{ url_for('auth.switch_demo') }}" class="switcher">
+      {{ csrf() }}
+      <label for="demo-person">View as</label>
+      <select id="demo-person" name="person">
+        {% for key, email, label in demo_profiles() %}
+        <option value="{{ key }}" {% if g.user.email == email %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <button class="button subtle small" type="submit">Switch</button>
+    </form>
+  </div>
+  {% endif %}
+{% endif %}
+<main id="main" class="page {% block page_class %}{% endblock %}">{% block content %}{% endblock %}</main>
+{% if g.user %}</div>{% endif %}
+</body>
+</html>

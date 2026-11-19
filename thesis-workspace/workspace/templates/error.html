@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}{{ error.name }}{% endblock %}
+{% block content %}
+<header class="page-heading"><p class="eyebrow">Workspace</p><h1>{{ error.code }} · {{ error.name }}</h1><p class="lede">{{ error.description }}</p></header>
+<a class="button subtle" href="{{ url_for('views.team') }}">Back to workspace</a>
+{% endblock %}
