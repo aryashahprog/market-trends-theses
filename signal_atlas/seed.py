@@ -24,8 +24,9 @@ EVIDENCE_V12_AT = "2026-11-14T13:40:00Z"  # Palantir Q3 2026 10-Q and results ex
 EVIDENCE_V13_AT = "2026-11-15T13:40:00Z"  # CoreWeave Q3 2026 10-Q and NVIDIA CEO-transition 8-K read for v13
 EVIDENCE_V14_AT = "2026-11-16T13:40:00Z"  # NVIDIA Q2 FY2027 10-Q (supply and capacity commitments) read for v14
 EVIDENCE_V15_AT = "2026-11-18T13:40:00Z"  # NVIDIA Q3 FY2027 CFO commentary (8-K, Ex. 99.2) read for v15
-REVISED_AT = "2026-11-18T14:00:00Z"  # editorial revision v15: memory and powered compute re-reviewed against NVIDIA Q3
-CONTENT_VERSION = 15
+EVIDENCE_V16_AT = "2026-11-19T13:40:00Z"  # Galaxy Q3 2026 10-Q (Helios commitments and power approvals) read for v16
+REVISED_AT = "2026-11-19T14:00:00Z"  # editorial revision v16: powered compute re-reviewed against Galaxy's Q3 10-Q
+CONTENT_VERSION = 16
 
 SOURCES: list[tuple[str, str, str, str, str]] = [
     ("milkroad", "Milk Road", "discovery", "https://milkroad.com/",
@@ -84,6 +85,9 @@ DOCS: dict[str, tuple[str, str, str, str | None, str | None]] = {
     "https://www.sec.gov/Archives/edgar/data/1859392/000185939226000108/glxy-20260930xpressrelease.htm":
         ("sec_edgar", "Galaxy Digital Inc. — Q3 2026 results (8-K, Ex. 99.1) filed 2026-10-27", "regulatory_filing",
          "2026-10-27", "2026-09-30"),
+    "https://www.sec.gov/Archives/edgar/data/1859392/000185939226000112/glxy-20260930.htm":
+        ("sec_edgar", "Galaxy Digital Inc. — Q3 2026 10-Q filed 2026-11-09", "regulatory_filing",
+         "2026-11-09", "2026-09-30"),
     "https://www.sec.gov/Archives/edgar/data/1878848/000187884826000065/irenreportsq1-fy27result.htm":
         ("sec_edgar", "IREN Ltd — Q1 FY27 results (8-K, Ex. 99.1) filed 2026-11-05", "regulatory_filing",
          "2026-11-05", "2026-09-30"),
@@ -146,6 +150,7 @@ INTC = "https://www.sec.gov/Archives/edgar/data/50863/000005086326000191/intc-20
 SPCX = "https://www.sec.gov/Archives/edgar/data/1181412/000162828026066880/spcx-20260930.htm"
 ERIC = "https://www.sec.gov/Archives/edgar/data/717826/000162828026065962/a2026q3forfiling.htm"
 GLXY = "https://www.sec.gov/Archives/edgar/data/1859392/000185939226000108/glxy-20260930xpressrelease.htm"
+GLXY_Q = "https://www.sec.gov/Archives/edgar/data/1859392/000185939226000112/glxy-20260930.htm"
 IREN = "https://www.sec.gov/Archives/edgar/data/1878848/000187884826000065/irenreportsq1-fy27result.htm"
 INTC_PR = "https://www.sec.gov/Archives/edgar/data/50863/000005086326000188/q326earningsrelease.htm"
 GLW = "https://www.sec.gov/Archives/edgar/data/24741/000002474126000273/glw-20261027xex99xq32026.htm"
@@ -805,7 +810,8 @@ SIGNALS: list[dict[str, Any]] = [
                         "$146.1M, and prepayments covering more than 100% of the capex on deals signed in the quarter. "
                         "CoreWeave's Q3 10-Q (Nov 12, 2026) shows its top two customers at about 30% and 24% of "
                         "revenue, versus one customer at 67% a year earlier, with 98% of revenue on take-or-pay "
-                        "contracts.",
+                        "contracts. Galaxy's Q3 10-Q (Nov 9, 2026) reports over 1.6 GW of ERCOT-approved power at "
+                        "Helios and construction commitments of $3,158.9M, up from $529.8M at the end of 2025.",
         "changed_points": [
             "Galaxy 8-K: all 133 MW of Helios I, Phase I critical IT load delivered to CoreWeave; Q3 data-center "
             "adjusted EBITDA $69M.",
@@ -820,6 +826,8 @@ SIGNALS: list[dict[str, Any]] = [
             "$1.37B a year earlier; backlog ~$132.5B.",
             "Nebius 6-K: revenue $980.8M vs $146.1M a year earlier; prepayments covered >100% of associated capex on "
             "Q3 deals (50–60% in Q2); ACV per MW >$25M vs $20–25M on Q2 deals; more than 4 GW contracted.",
+            "Galaxy 10-Q: over 1.6 GW of ERCOT-approved power at Helios, a further 1 GW pending; construction "
+            "commitments $3,158.9M vs $529.8M at the end of 2025.",
             "CoreWeave 10-Q: top two customers ~30% and ~24% of Q3 revenue (one customer 67% a year earlier); "
             "98% of revenue under take-or-pay contracts; $132.3B of unsatisfied RPO, 36% due within 24 months.",
         ],
@@ -897,7 +905,7 @@ SIGNALS: list[dict[str, Any]] = [
                      "under-used sites.",
         "thesis_sentence": "Powered compute is becoming a sellable product for owners outside the hyperscalers, making "
                            "power-ready sites and capacity financing key constraints.",
-        "evidence_reviewed_at": EVIDENCE_V15_AT,
+        "evidence_reviewed_at": EVIDENCE_V16_AT,
         "analyst_scores": {"relevance": 4, "impact": 3},
         "match": {"anchors": ["gigawatt", "gigawatts", "megawatt", "megawatts", "data center", "data centers",
                               "data centre", "coreweave", "helios", "neocloud", "colocation"],
@@ -951,6 +959,12 @@ SIGNALS: list[dict[str, Any]] = [
             (GLXY, "primary", "challenges",
              "830 MW of approved capacity at Helios II is not yet under lease; Helios I, Phase II construction is "
              "funded by a $3.5B senior secured notes offering."),
+            (GLXY_Q, "primary", "supports",
+             "Q3 2026 10-Q: ERCOT has approved over 1.6 GW of gross power capacity at Helios, and a further 1 GW "
+             "load request is pending; Phases I and II are funded through construction completion."),
+            (GLXY_Q, "primary", "challenges",
+             "Outstanding construction commitments at Helios were $3,158.9M at Sep 30, 2026 vs $529.8M at Dec 31, "
+             "2025; capacity beyond Phase III would need additional debt, equity or equity-linked financing."),
             (IREN, "primary", "supports",
              "AI Cloud revenue $200M in the quarter ended Sep 30, 2026 vs $71M the prior quarter; contracted pricing "
              "+11% on 3-year and +12% on 5-year deals; after quarter-end, about $22M per IT-MW on a five-year "
