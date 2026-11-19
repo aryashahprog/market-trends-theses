@@ -17,7 +17,7 @@ from .db import dumps, loads, tx
 from .fetcher import Fetcher, prune_cache
 from .ranking import METHOD, score_signal
 from .sanitize import clean_text, content_hash
-from .scheduling import is_stale, next_slot, previous_slot
+from .scheduling import SLOTS, is_stale, next_slot, previous_slot
 from .timeutil import NY, iso, ny_date, parse_iso, utcnow
 from .urlnorm import canonicalize
 
@@ -227,8 +227,16 @@ def build_edition(conn: sqlite3.Connection, edition_date: str, now: datetime, ru
             ch = since_last(prev_sigs.get(s["id"]), s, prev["edition_date"])
             if ch:
                 s["since_last"] = ch
+    chart_series = {}
+    if edition_date == ny_date(now):
+        for sid in sorted({sid for s in signals if s.get("chart") for sid in s["chart"]["series"]}):
+            series = get_series(conn, sid)
+            if series and series["updated_at"] <= iso(now):
+                series["points"] = [p for p in series["points"] if p["day"] <= edition_date]
+                if len(series["points"]) >= 2:
+                    chart_series[sid] = series
     return {"edition_date": edition_date, "generated_at": iso(now), "run_id": run_id, "note": note,
-            "signals": signals, "leads_new": leads_new, "ranking": METHOD}
+            "signals": signals, "chart_series": chart_series, "leads_new": leads_new, "ranking": METHOD}
 
 
 def since_last(prev: dict[str, Any] | None, cur: dict[str, Any], prev_date: str) -> dict[str, Any] | None:
@@ -379,8 +387,8 @@ def run_pipeline(conn: sqlite3.Connection, settings: Settings, trigger: str,
 def plain_error(err: str | None) -> str:
     """Reader-facing reason for a source problem; the raw error stays in diagnostics."""
     e = (err or "").lower()
-    if "sec_user_agent" in e or "contact" in e:
-        return "not configured: SEC requests need a contact address"
+    if "sec_user_agent" in e:
+        return "not configured: SEC requests need a contact email"
     if "robots" in e:
         return "skipped: the site's robots.txt does not allow this page"
     if any(c in e for c in ("401", "402", "403", "access restricted", "not bypassed", "paywall")):
@@ -426,8 +434,10 @@ def get_status(conn: sqlite3.Connection, settings: Settings, now: datetime | Non
         "now": iso(now),
         "timezone": "America/New_York",
         "schedule": "08:00 and 16:00 America/New_York daily",
+        "refresh_hours": [s.hour for s in SLOTS],
         "next_scheduled": iso(next_slot(now)),
         "previous_slot": iso(previous_slot(now)),
+        "due_slot": iso(previous_slot(now - grace)),
         "last_run": run,
         "refresh_summary": refresh,
         "last_success_at": iso(last_ok_dt) if last_ok_dt else None,
