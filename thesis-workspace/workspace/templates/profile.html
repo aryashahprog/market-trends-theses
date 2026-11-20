@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% from "ui.html" import csrf, error with context %}
+{% block title %}Your profile{% endblock %}
+{% block page_class %}narrow{% endblock %}
+{% block content %}
+<header class="page-heading"><p class="eyebrow">Account</p><h1>Your profile</h1><p class="lede">Your display name appears on theses, attachments, and comments you contribute.</p></header>
+<form method="post" class="panel stack">
+  {{ csrf() }}{{ error(problem) }}
+  <label>Display name<input name="name" value="{{ g.user.name }}" maxlength="80" required autocomplete="name"></label>
+  <label>Email<input type="email" value="{{ g.user.email }}" readonly></label>
+  <div><button type="submit" class="button primary">Save profile</button></div>
+</form>
+{% endblock %}

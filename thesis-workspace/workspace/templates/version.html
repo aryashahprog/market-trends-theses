@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% from "ui.html" import csrf, icon, label_list with context %}
+{% block title %}Saved version · {{ snapshot.title }}{% endblock %}
+{% block page_class %}narrow{% endblock %}
+{% block content %}
+<a class="breadcrumb" href="{{ url_for('views.thesis', thesis_id=item.id) }}">{{ icon('back', 16) }} Current thesis</a>
+<header class="page-heading thesis-heading">
+  <p class="eyebrow">Saved version · <time datetime="{{ record.changed }}">{{ record.changed|timestamp }}</time> · {{ 'Team' if record.visibility == 'team' else 'Private draft' }}</p>
+  <h1>{{ snapshot.title }}</h1>
+  <p class="lede">Written by {{ item.owner }} · {{ snapshot.status }}</p>
+  <p class="attribution">Last reviewed: {{ snapshot.reviewed|date }}</p>
+  <div class="topics">{{ label_list(snapshot.topics) }}</div>
+</header>
+<div class="article-stack">
+{% for field, label in [('argument','Owner’s argument'), ('questions','Open questions'), ('competing','Competing views recorded by the owner')] %}
+  <section class="panel article"><h2>{{ label }}</h2>
+  {% for text in passages(snapshot[field]) %}<p id="{{ field }}-{{ loop.index }}" class="prose">{{ text }}</p>
+  {% else %}<p class="muted">None recorded.</p>{% endfor %}
+  </section>
+{% endfor %}
+{% if older %}
+  <details class="panel article">
+    <summary>Changes from the previous visible version</summary>
+    {% for label, before, after in changes %}
+    <h3>{{ label }}</h3>
+    <div class="form-grid version-diff">
+      <div><p class="attribution">Before</p><p class="prose">{{ before or '—' }}</p></div>
+      <div><p class="attribution">After</p><p class="prose">{{ after or '—' }}</p></div>
+    </div>
+    {% else %}<p class="muted">No fields changed.</p>{% endfor %}
+  </details>
+{% endif %}
+{% if own and item.version_token != record.token %}
+  <details class="panel article">
+    <summary>Restore this version</summary>
+    <p class="attribution">This appends a new revision and keeps all history and attachments.{% if item.visibility == 'draft' or record.visibility == 'draft' %} The restored thesis will be private.{% endif %}</p>
+    <form method="post" action="{{ url_for('views.restore_version', thesis_id=item.id, token=record.token) }}">
+      {{ csrf() }}
+      <input type="hidden" name="base_version" value="{{ item.version_token }}">
+      <button class="button subtle" type="submit">Restore as a new revision</button>
+    </form>
+  </details>
+{% endif %}
+</div>
+{% endblock %}
