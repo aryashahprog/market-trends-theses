@@ -25,8 +25,9 @@ EVIDENCE_V13_AT = "2026-11-15T13:40:00Z"  # CoreWeave Q3 2026 10-Q and NVIDIA CE
 EVIDENCE_V14_AT = "2026-11-16T13:40:00Z"  # NVIDIA Q2 FY2027 10-Q (supply and capacity commitments) read for v14
 EVIDENCE_V15_AT = "2026-11-18T13:40:00Z"  # NVIDIA Q3 FY2027 CFO commentary (8-K, Ex. 99.2) read for v15
 EVIDENCE_V16_AT = "2026-11-19T13:40:00Z"  # Galaxy Q3 2026 10-Q (Helios commitments and power approvals) read for v16
-REVISED_AT = "2026-11-19T14:00:00Z"  # editorial revision v16: powered compute re-reviewed against Galaxy's Q3 10-Q
-CONTENT_VERSION = 16
+EVIDENCE_V17_AT = "2026-11-20T13:40:00Z"  # Anthropic final prospectus (424B4, Q3 2026 figures) read for v17
+REVISED_AT = "2026-11-20T14:00:00Z"  # editorial revision v17: enterprise AI spend re-reviewed against Anthropic's 424B4
+CONTENT_VERSION = 17
 
 SOURCES: list[tuple[str, str, str, str, str]] = [
     ("milkroad", "Milk Road", "discovery", "https://milkroad.com/",
@@ -70,6 +71,9 @@ DOCS: dict[str, tuple[str, str, str, str | None, str | None]] = {
         ("ramp_ai_index", "Ramp AI Index", "adoption_dataset", None, "2026-10-23"),
     "https://www.sec.gov/Archives/edgar/data/2130357/000162828026067168/anthropicpbc-sx1.htm":
         ("sec_edgar", "Anthropic, PBC — S-1 filed 2026-10-26", "regulatory_filing", "2026-10-26", "2026-09-30"),
+    "https://www.sec.gov/Archives/edgar/data/2130357/000162828026074944/anthropicpbc-424b4.htm":
+        ("sec_edgar", "Anthropic, PBC — final prospectus (424B4) filed 2026-11-19", "regulatory_filing",
+         "2026-11-19", "2026-09-30"),
     "https://www.sec.gov/Archives/edgar/data/1404655/000119312526447363/hubs-20260930.htm":
         ("sec_edgar", "HubSpot, Inc. — 10-Q filed 2026-11-04", "regulatory_filing", "2026-11-04", "2026-09-30"),
     "https://www.sec.gov/Archives/edgar/data/1297989/000129798926000031/exls-20260930.htm":
@@ -144,6 +148,7 @@ POC_H100 = "https://priceofcompute.com/api/v1/prices/h100-sxm"
 SD = "https://www.silicondata.com/products/silicon-index"
 RAMP = "https://ramp.com/data/ai-index"
 S1 = "https://www.sec.gov/Archives/edgar/data/2130357/000162828026067168/anthropicpbc-sx1.htm"
+ANT_P = "https://www.sec.gov/Archives/edgar/data/2130357/000162828026074944/anthropicpbc-424b4.htm"
 HUBS = "https://www.sec.gov/Archives/edgar/data/1404655/000119312526447363/hubs-20260930.htm"
 EXLS = "https://www.sec.gov/Archives/edgar/data/1297989/000129798926000031/exls-20260930.htm"
 INTC = "https://www.sec.gov/Archives/edgar/data/50863/000005086326000191/intc-20260926.htm"
@@ -330,7 +335,8 @@ SIGNALS: list[dict[str, Any]] = [
                "within accounts. New bookings growing far slower than revenue is the risk.",
         "takeaway": "Anthropic's S-1 reports about 900% net revenue retention (revenue this year from last year's "
                     "customers, relative to what they paid before) and over 11,900 customers paying $100k+ a year, up "
-                    "from about 950. Palantir's Q3 10-Q says $407 million of its $619 million year-over-year rise in "
+                    "from about 950. Its final prospectus adds Q3 revenue of $16.96 billion, up from $1.38 billion a year "
+                    "earlier. Palantir's Q3 10-Q says $407 million of its $619 million year-over-year rise in "
                     "commercial revenue came from customers it already had at the end of 2025, and its top 20 "
                     "customers averaged $146 million of revenue over twelve months, up 76%. Ramp's panel shows 56.8% "
                     "of sampled US businesses paying for AI in October. Spend is compounding inside existing "
@@ -349,11 +355,15 @@ SIGNALS: list[dict[str, Any]] = [
                         "2026 and more than 11,900 customers above $100k trailing-twelve-month revenue, up from more "
                         "than 950 a year earlier. Palantir's Q3 10-Q (filed Nov 3, 2026) attributes $407M of a $619M "
                         "rise in commercial revenue to customers existing at Dec 31, 2025. Ramp's AI Index shows 56.8% "
-                        "of sampled US businesses paying for AI in October 2026, up 13.3 points year over year.",
+                        "of sampled US businesses paying for AI in October 2026, up 13.3 points year over year. Anthropic's "
+                        "final prospectus (424B4, Nov 19, 2026) reports Q3 2026 revenue of $16,956M vs $1,382M a year "
+                        "earlier, with 79% of nine-month revenue consumption-based.",
         "changed_points": [
             "Anthropic S-1: ~900% net revenue retention at Sep 30, 2026; >11,900 customers at $100k+ (vs >950 a year "
             "earlier); ~250 at $10M+.",
             "Anthropic S-1: $16.3B revenue in H1 2026 vs $1.2B a year earlier.",
+            "Anthropic 424B4: Q3 2026 revenue $16.96B vs $1.38B a year earlier; adjusted operating margin 15% vs "
+            "\u221293%; 79% of nine-month revenue consumption-based.",
             "Palantir 10-Q: Q3 commercial revenue $1,167.9M vs $548.4M a year earlier; $407M of the $619M increase "
             "came from commercial customers existing at Dec 31, 2025; top-20 customers averaged $146M TTM revenue "
             "(+76%).",
@@ -423,14 +433,15 @@ SIGNALS: list[dict[str, Any]] = [
                                 "subscription plans), Palantir's new bookings grew far slower than its revenue, "
                                 "retail adoption on Ramp was flat in October, and Ramp measures payment incidence, "
                                 "not workload depth.",
-        "next_validation": "Read S-1 amendments for NRR methodology and cohort detail; check whether Palantir's Q4 "
+        "next_validation": "Check Anthropic's first 10-Q as a public company for whether NRR and $100k+ customer "
+                           "growth hold and how much revenue stays consumption-based; check whether Palantir's Q4 "
                            "results keep existing-customer growth while bookings catch up, and whether Ramp's next "
                            "release resumes gains in retail.",
         "falsifier": "Net revenue retention falls sharply in subsequent filings while Ramp adoption flattens, which "
                      "would point to pilot churn rather than compounding deployment.",
         "thesis_sentence": "Enterprise AI revenue is deepening inside existing customers, creating a fast-growing "
                            "budget line that needs governance, attribution and industry-specific products.",
-        "evidence_reviewed_at": EVIDENCE_V12_AT,
+        "evidence_reviewed_at": EVIDENCE_V17_AT,
         "analyst_scores": {"relevance": 5, "impact": 4},
         "match": {"anchors": ["anthropic", "openai", "enterprise ai", "ai spend", "ai spending", "ai adoption",
                               "ai budget", "ai budgets", "copilot", "net revenue retention"],
@@ -463,6 +474,17 @@ SIGNALS: list[dict[str, Any]] = [
             (S1, "primary", "challenges",
              "The filing reports a $693M operating loss for H1 2026 and $6.2B of total indebtedness at Jun 30, 2026, "
              "partly to fund compute commitments, and flags power and regulatory risk at compute sites."),
+            (ANT_P, "primary", "supports",
+             "Final prospectus: Q3 2026 revenue $16,956M vs $1,382M a year earlier; nine-month revenue $33,242M vs "
+             "$2,545M; net revenue retention about 900% at Sep 30, 2026; over 50% of $100k+ customers used both its "
+             "developer platform and a first-party app in Q3, up from about 30% in Q4 2025."),
+            (ANT_P, "primary", "challenges",
+             "79% of nine-month revenue was consumption-based and much of it is not under long-term contracts, while "
+             "committed compute and lease spend totals about $900.9B ($451.6B before 2031); model versions released "
+             "in the prior six months were over 80% of Q3 revenue."),
+            (ANT_P, "primary", "challenges",
+             "Q3 2026 operating loss of $567M; the top five customers were about 25% of nine-month revenue, and about "
+             "44% came through cloud-provider marketplaces."),
         ],
     },
     {
