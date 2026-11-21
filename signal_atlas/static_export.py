@@ -11,6 +11,8 @@ from typing import Any
 from .config import Settings
 from .export import edition_markdown
 from .pipeline import get_series, get_status, latest_snapshot, list_editions, recent_leads
+from .scheduling import next_slot
+from .timeutil import iso, parse_iso
 
 STATIC = Path(__file__).parent / "static"
 CSP = ("default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; font-src 'self'; "
@@ -25,6 +27,17 @@ def _write(path: Path, data: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     text = data if isinstance(data, str) else json.dumps(data, separators=(",", ":"), default=str)
     path.write_text(text, "utf-8")
+
+
+def upcoming_slots(after: str, count: int = 14) -> list[str]:
+    """The next refresh slots after build time, so the static page can tell which slot is overdue."""
+    t = parse_iso(after)
+    assert t is not None
+    out = []
+    for _ in range(count):
+        t = next_slot(t)
+        out.append(iso(t))
+    return out
 
 
 def export_site(conn: sqlite3.Connection, settings: Settings, out: Path) -> dict[str, int]:
@@ -42,7 +55,7 @@ def export_site(conn: sqlite3.Connection, settings: Settings, out: Path) -> dict
 
     status = get_status(conn, settings)
     status.update(mode="static", manual_refresh_enabled=False, running=False,
-                  stale_grace_minutes=settings.stale_grace_minutes)
+                  stale_grace_minutes=settings.stale_grace_minutes, slots=upcoming_slots(status["now"]))
     _write(out / "api" / "status.json", status)
     editions = list_editions(conn)
     _write(out / "api" / "editions.json", editions)

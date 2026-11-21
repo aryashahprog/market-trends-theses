@@ -396,7 +396,15 @@
   }
   function renderStatus() {
     const s = state.status; if (!s) return;
-    if (STATIC) s.stale = !!s.last_success_at && Date.now() > d(s.next_scheduled).getTime() + (s.stale_grace_minutes || 90) * 60000;
+    if (STATIC) {  // status.json is frozen at build time: re-derive the overdue and next slots from the clock
+      const now = Date.now(), grace = (s.stale_grace_minutes || 90) * 60000;
+      const slots = (s.slots || [s.next_scheduled]).map((x) => d(x).getTime());
+      const overdue = slots.filter((t) => t + grace < now);
+      s.stale = !!s.last_success_at && overdue.length > 0;
+      if (overdue.length) s.previous_slot = new Date(overdue.at(-1)).toISOString();
+      const next = slots.find((t) => t > now);
+      s.next_scheduled = next ? new Date(next).toISOString() : null;
+    }
     const rs = s.refresh_summary, issues = (rs?.issues || []).filter((x) => !/^not configured/.test(x.reason || "")), partial = issues.length > 0;
     const pill = $("#statusPill"), never = !s.last_success_at;
     pill.dataset.state = s.running ? "running" : never ? "never" : s.stale ? "stale" : partial ? "partial" : "fresh";

@@ -19,6 +19,8 @@ def test_static_export_writes_read_only_site(tmp_path):
     assert "url(/static/" not in (out / "static" / "styles.css").read_text()
     st = json.loads((out / "api" / "status.json").read_text())
     assert st["mode"] == "static" and st["manual_refresh_enabled"] is False
+    assert len(st["slots"]) == 14 and st["slots"][0] == st["next_scheduled"] and st["slots"] == sorted(st["slots"])
+    assert st["slots"][0] > st["now"]
     ed = json.loads((out / "api" / "edition" / "latest.json").read_text())
     assert ed["edition_date"] == "2026-11-05" and (out / "api" / "edition" / "2026-11-05.json").exists()
     assert (out / "api" / "export" / "2026-11-05.md").read_text().startswith("#")
