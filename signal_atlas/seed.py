@@ -26,8 +26,9 @@ EVIDENCE_V14_AT = "2026-11-16T13:40:00Z"  # NVIDIA Q2 FY2027 10-Q (supply and ca
 EVIDENCE_V15_AT = "2026-11-18T13:40:00Z"  # NVIDIA Q3 FY2027 CFO commentary (8-K, Ex. 99.2) read for v15
 EVIDENCE_V16_AT = "2026-11-19T13:40:00Z"  # Galaxy Q3 2026 10-Q (Helios commitments and power approvals) read for v16
 EVIDENCE_V17_AT = "2026-11-20T13:40:00Z"  # Anthropic final prospectus (424B4, Q3 2026 figures) read for v17
-REVISED_AT = "2026-11-20T14:00:00Z"  # editorial revision v17: enterprise AI spend re-reviewed against Anthropic's 424B4
-CONTENT_VERSION = 17
+EVIDENCE_V18_AT = "2026-11-21T13:40:00Z"  # Alibaba Sep-quarter results (6-K) and remote-access rule disclosure read for v18
+REVISED_AT = "2026-11-21T14:00:00Z"  # editorial revision v18: powered compute re-reviewed against Alibaba's 6-K
+CONTENT_VERSION = 18
 
 SOURCES: list[tuple[str, str, str, str, str]] = [
     ("milkroad", "Milk Road", "discovery", "https://milkroad.com/",
@@ -89,6 +90,9 @@ DOCS: dict[str, tuple[str, str, str, str | None, str | None]] = {
     "https://www.sec.gov/Archives/edgar/data/1859392/000185939226000108/glxy-20260930xpressrelease.htm":
         ("sec_edgar", "Galaxy Digital Inc. — Q3 2026 results (8-K, Ex. 99.1) filed 2026-10-27", "regulatory_filing",
          "2026-10-27", "2026-09-30"),
+    "https://www.sec.gov/Archives/edgar/data/1577552/000110465926130115/tm2630263d1_ex99-1.htm":
+        ("sec_edgar", "Alibaba Group Holding Ltd — Sep quarter 2026 results (6-K, Ex. 99.1) filed 2026-11-19",
+         "regulatory_filing", "2026-11-19", "2026-09-30"),
     "https://www.sec.gov/Archives/edgar/data/1859392/000185939226000112/glxy-20260930.htm":
         ("sec_edgar", "Galaxy Digital Inc. — Q3 2026 10-Q filed 2026-11-09", "regulatory_filing",
          "2026-11-09", "2026-09-30"),
@@ -156,6 +160,7 @@ SPCX = "https://www.sec.gov/Archives/edgar/data/1181412/000162828026066880/spcx-
 ERIC = "https://www.sec.gov/Archives/edgar/data/717826/000162828026065962/a2026q3forfiling.htm"
 GLXY = "https://www.sec.gov/Archives/edgar/data/1859392/000185939226000108/glxy-20260930xpressrelease.htm"
 GLXY_Q = "https://www.sec.gov/Archives/edgar/data/1859392/000185939226000112/glxy-20260930.htm"
+BABA = "https://www.sec.gov/Archives/edgar/data/1577552/000110465926130115/tm2630263d1_ex99-1.htm"
 IREN = "https://www.sec.gov/Archives/edgar/data/1878848/000187884826000065/irenreportsq1-fy27result.htm"
 INTC_PR = "https://www.sec.gov/Archives/edgar/data/50863/000005086326000188/q326earningsrelease.htm"
 GLW = "https://www.sec.gov/Archives/edgar/data/24741/000002474126000273/glw-20261027xex99xq32026.htm"
@@ -833,7 +838,10 @@ SIGNALS: list[dict[str, Any]] = [
                         "CoreWeave's Q3 10-Q (Nov 12, 2026) shows its top two customers at about 30% and 24% of "
                         "revenue, versus one customer at 67% a year earlier, with 98% of revenue on take-or-pay "
                         "contracts. Galaxy's Q3 10-Q (Nov 9, 2026) reports over 1.6 GW of ERCOT-approved power at "
-                        "Helios and construction commitments of $3,158.9M, up from $529.8M at the end of 2025.",
+                        "Helios and construction commitments of $3,158.9M, up from $529.8M at the end of 2025. "
+                        "Alibaba's Sep-quarter results (6-K, Nov 19, 2026) say a new US interim final rule on remote "
+                        "access to advanced semiconductors will impact its ability to access compute from certain "
+                        "providers outside China.",
         "changed_points": [
             "Galaxy 8-K: all 133 MW of Helios I, Phase I critical IT load delivered to CoreWeave; Q3 data-center "
             "adjusted EBITDA $69M.",
@@ -850,6 +858,8 @@ SIGNALS: list[dict[str, Any]] = [
             "Q3 deals (50–60% in Q2); ACV per MW >$25M vs $20–25M on Q2 deals; more than 4 GW contracted.",
             "Galaxy 10-Q: over 1.6 GW of ERCOT-approved power at Helios, a further 1 GW pending; construction "
             "commitments $3,158.9M vs $529.8M at the end of 2025.",
+            "Alibaba 6-K: a new US rule on remote access to advanced chips will impact its access to compute from "
+            "certain providers outside China; its external AI cloud revenue rose 64% year over year.",
             "CoreWeave 10-Q: top two customers ~30% and ~24% of Q3 revenue (one customer 67% a year earlier); "
             "98% of revenue under take-or-pay contracts; $132.3B of unsatisfied RPO, 36% due within 24 months.",
         ],
@@ -920,14 +930,15 @@ SIGNALS: list[dict[str, Any]] = [
                            "1.85 GW of active power at year-end as guided; check whether Nebius reaches 5 GW "
                            "contracted by year-end and delivers its remaining New Jersey tranches in Q2 2027; check NVIDIA's "
                            "Q3 FY2027 10-Q for whether its $32B of contingent neocloud agreements and its site "
-                           "guarantees grow or are reduced; "
+                           "guarantees grow or are reduced; check whether operators outside China report lost or "
+                           "restricted customers under the Nov 2026 remote-access rule; "
                            "check SpaceX segment disclosures for "
                            "external compute rental revenue versus internal use.",
         "falsifier": "GPU rents fall back as short-term contracts roll off, leaving non-traditional owners with "
                      "under-used sites.",
         "thesis_sentence": "Powered compute is becoming a sellable product for owners outside the hyperscalers, making "
                            "power-ready sites and capacity financing key constraints.",
-        "evidence_reviewed_at": EVIDENCE_V16_AT,
+        "evidence_reviewed_at": EVIDENCE_V18_AT,
         "analyst_scores": {"relevance": 4, "impact": 3},
         "match": {"anchors": ["gigawatt", "gigawatts", "megawatt", "megawatts", "data center", "data centers",
                               "data centre", "coreweave", "helios", "neocloud", "colocation"],
@@ -987,6 +998,13 @@ SIGNALS: list[dict[str, Any]] = [
             (GLXY_Q, "primary", "challenges",
              "Outstanding construction commitments at Helios were $3,158.9M at Sep 30, 2026 vs $529.8M at Dec 31, "
              "2025; capacity beyond Phase III would need additional debt, equity or equity-linked financing."),
+            (BABA, "primary", "challenges",
+             "Alibaba says a US interim final rule on remote access to advanced semiconductors \u201cwill impact our "
+             "company\u2019s ability to access compute from certain providers outside China\u201d; it cannot yet "
+             "estimate the financial effect."),
+            (BABA, "primary", "context",
+             "In the quarter to Sep 30, 2026, AI Cloud and Compute Services revenue from external customers rose 64% "
+             "year over year and capital expenditures rose 60% to RMB50,477M, for AI infrastructure."),
             (IREN, "primary", "supports",
              "AI Cloud revenue $200M in the quarter ended Sep 30, 2026 vs $71M the prior quarter; contracted pricing "
              "+11% on 3-year and +12% on 5-year deals; after quarter-end, about $22M per IT-MW on a five-year "
