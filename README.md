@@ -83,7 +83,8 @@ node --test tests/frontend.test.mjs
 ### Static hosting with scheduled GitHub Actions
 
 `.github/workflows/publish.yml` runs ingestion on GitHub's runners at 08:00 and 16:00 America/New_York (UTC cron
-entries for both EDT and EST, gated by `cli due` so each slot runs once), keeps the SQLite database on a `data`
+entries for both EDT and EST, gated by `cli due` so each slot runs once; GitHub
+often delays or drops scheduled runs, so each slot is retried every 20 minutes for about four hours), keeps the SQLite database on a `data`
 branch (after `cli pack`, which drops the HTTP cache so no fetched third-party pages are published), and publishes a read-only static build (`cli export`) to GitHub Pages. In static mode manual refresh is the
 workflow's "Run workflow" button. Under **Settings → Secrets and variables → Actions**, set the repository secret
 `SEC_USER_AGENT` to a project name and monitored contact email (e.g. `Market Trends Theses contact@example.org`)

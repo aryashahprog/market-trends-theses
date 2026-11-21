@@ -6,6 +6,7 @@ const status = {
   timezone: "America/New_York", refresh_hours: [8, 16], stale_grace_minutes: 90,
   now: "2026-11-19T01:52:00Z", next_scheduled: "2026-11-19T13:00:00Z",
   previous_slot: "2026-11-18T21:00:00Z",
+  slots: ["2026-11-19T13:00:00Z", "2026-11-19T21:00:00Z"],
 };
 
 test("static status uses the reader's clock and waits for the grace period", () => {
@@ -14,6 +15,12 @@ test("static status uses the reader's clock and waits for the grace period", () 
   });
   assert.deepEqual(staticSchedule(status, Date.parse("2026-11-19T14:30:00Z")), {
     due: "2026-11-19T13:00:00.000Z", next: "2026-11-19T21:00:00.000Z",
+  });
+});
+
+test("static status still finds the missed and next slots after the exported schedule expires", () => {
+  assert.deepEqual(staticSchedule(status, Date.parse("2026-11-20T19:00:00Z")), {
+    due: "2026-11-20T13:00:00.000Z", next: "2026-11-20T21:00:00.000Z",
   });
 });
 

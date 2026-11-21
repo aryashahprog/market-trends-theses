@@ -1,11 +1,13 @@
 name: Ingest and publish
 
-# GitHub cron is UTC. Each slot lists both its EDT and EST hour plus a late retry; the "due" step
-# runs ingestion only when the latest 08:00/16:00 America/New_York slot has no successful run.
+# GitHub cron is UTC and best-effort: scheduled runs are often hours late or dropped (here usually two of
+# six fired a day, 4-6 h after the slot). So every 20 minutes for about four hours after each slot, in both
+# its EDT and EST hour, a run checks the "due" step, which ingests only when the latest 08:00/16:00
+# America/New_York slot has no successful run. Runs that are not due exit after the check.
 on:
   schedule:
-    - cron: "5 12,13,14 * * *"
-    - cron: "5 20,21,22 * * *"
+    - cron: "11,31,51 12-15 * * *"
+    - cron: "11,31,51 20-23 * * *"
   workflow_dispatch: {}
   push:
     branches: [main]

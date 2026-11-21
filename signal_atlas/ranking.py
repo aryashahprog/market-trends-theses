@@ -1,8 +1,10 @@
 """Transparent ordering. Scores are ranking points, never probabilities."""
 from __future__ import annotations
 
+import re
 from datetime import datetime
 from typing import Any
+from urllib.parse import urlsplit
 
 from .timeutil import parse_iso
 
@@ -17,11 +19,24 @@ METHOD: dict[str, Any] = {
         "novelty": "Recency of first publication: 5 points when new, −0.5 per day, floor 1. Unreviewed discovery "
                    "mentions never affect ranking.",
         "evidence": "Points per supporting item (primary 1.25, corroborated 1.0, reported 0.35; context counts half), "
-                    "capped at 4, plus up to +1 for independent source diversity.",
+                    "capped at 4, plus 0.25 (up to +1) for each additional independent publisher of "
+                    "supporting or context evidence (each SEC filer counts as its own publisher).",
         "relevance": "Analyst judgement of usefulness to enterprise-focused investors and corporate innovation teams.",
         "impact": "Analyst judgement of potential economic magnitude if the signal holds.",
     },
 }
+
+
+_SEC_FILER = re.compile(r"/Archives/edgar/data/(\d+)/", re.I)
+
+
+def publisher(e: dict[str, Any]) -> str:
+    """Who published an evidence item: the filer for SEC EDGAR documents, otherwise the site's host. The ingest
+    source is not used, because one adapter (e.g. SEC full-text search) returns filings from many issuers."""
+    parts = urlsplit(e.get("canonical_url") or e.get("url") or "")
+    host = parts.netloc.lower().removeprefix("www.")
+    m = _SEC_FILER.search(parts.path) if host == "sec.gov" else None
+    return f"sec.gov/cik/{int(m.group(1))}" if m else host or str(e.get("source_name") or "")
 
 
 def evidence_strength(evidence: list[dict[str, Any]]) -> float:
@@ -32,8 +47,8 @@ def evidence_strength(evidence: list[dict[str, Any]]) -> float:
             pts += base
         elif e["stance"] == "context":
             pts += base / 2
-    sources = {e.get("source_name") or e.get("canonical_url") for e in evidence}
-    diversity = min(1.0, 0.25 * max(0, len(sources) - 1))
+    publishers = {publisher(e) for e in evidence if e["stance"] != "challenges"}
+    diversity = min(1.0, 0.25 * max(0, len(publishers) - 1))
     return round(min(5.0, min(4.0, pts) + diversity), 2)
 
 
