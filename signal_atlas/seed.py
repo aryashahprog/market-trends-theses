@@ -23,8 +23,12 @@ EVIDENCE_V11_AT = "2026-11-13T13:40:00Z"  # Nebius Q3 2026 results and sharehold
 EVIDENCE_V12_AT = "2026-11-14T13:40:00Z"  # Palantir Q3 2026 10-Q and results exhibit, Ramp Oct release read for v12
 EVIDENCE_V13_AT = "2026-11-15T13:40:00Z"  # CoreWeave Q3 2026 10-Q and NVIDIA CEO-transition 8-K read for v13
 EVIDENCE_V14_AT = "2026-11-16T13:40:00Z"  # NVIDIA Q2 FY2027 10-Q (supply and capacity commitments) read for v14
-REVISED_AT = "2026-11-16T14:00:00Z"  # editorial revision v14: memory thesis re-reviewed against NVIDIA's commitments
-CONTENT_VERSION = 14
+EVIDENCE_V15_AT = "2026-11-18T13:40:00Z"  # NVIDIA Q3 FY2027 CFO commentary (8-K, Ex. 99.2) read for v15
+EVIDENCE_V16_AT = "2026-11-19T13:40:00Z"  # Galaxy Q3 2026 10-Q (Helios commitments and power approvals) read for v16
+EVIDENCE_V17_AT = "2026-11-20T13:40:00Z"  # Anthropic final prospectus (424B4, Q3 2026 figures) read for v17
+EVIDENCE_V18_AT = "2026-11-21T13:40:00Z"  # Alibaba Sep-quarter results (6-K) and remote-access rule disclosure read for v18
+REVISED_AT = "2026-11-21T14:00:00Z"  # editorial revision v18: powered compute re-reviewed against Alibaba's 6-K
+CONTENT_VERSION = 18
 
 SOURCES: list[tuple[str, str, str, str, str]] = [
     ("milkroad", "Milk Road", "discovery", "https://milkroad.com/",
@@ -68,6 +72,9 @@ DOCS: dict[str, tuple[str, str, str, str | None, str | None]] = {
         ("ramp_ai_index", "Ramp AI Index", "adoption_dataset", None, "2026-10-23"),
     "https://www.sec.gov/Archives/edgar/data/2130357/000162828026067168/anthropicpbc-sx1.htm":
         ("sec_edgar", "Anthropic, PBC — S-1 filed 2026-10-26", "regulatory_filing", "2026-10-26", "2026-09-30"),
+    "https://www.sec.gov/Archives/edgar/data/2130357/000162828026074944/anthropicpbc-424b4.htm":
+        ("sec_edgar", "Anthropic, PBC — final prospectus (424B4) filed 2026-11-19", "regulatory_filing",
+         "2026-11-19", "2026-09-30"),
     "https://www.sec.gov/Archives/edgar/data/1404655/000119312526447363/hubs-20260930.htm":
         ("sec_edgar", "HubSpot, Inc. — 10-Q filed 2026-11-04", "regulatory_filing", "2026-11-04", "2026-09-30"),
     "https://www.sec.gov/Archives/edgar/data/1297989/000129798926000031/exls-20260930.htm":
@@ -83,6 +90,12 @@ DOCS: dict[str, tuple[str, str, str, str | None, str | None]] = {
     "https://www.sec.gov/Archives/edgar/data/1859392/000185939226000108/glxy-20260930xpressrelease.htm":
         ("sec_edgar", "Galaxy Digital Inc. — Q3 2026 results (8-K, Ex. 99.1) filed 2026-10-27", "regulatory_filing",
          "2026-10-27", "2026-09-30"),
+    "https://www.sec.gov/Archives/edgar/data/1577552/000110465926130115/tm2630263d1_ex99-1.htm":
+        ("sec_edgar", "Alibaba Group Holding Ltd — Sep quarter 2026 results (6-K, Ex. 99.1) filed 2026-11-19",
+         "regulatory_filing", "2026-11-19", "2026-09-30"),
+    "https://www.sec.gov/Archives/edgar/data/1859392/000185939226000112/glxy-20260930.htm":
+        ("sec_edgar", "Galaxy Digital Inc. — Q3 2026 10-Q filed 2026-11-09", "regulatory_filing",
+         "2026-11-09", "2026-09-30"),
     "https://www.sec.gov/Archives/edgar/data/1878848/000187884826000065/irenreportsq1-fy27result.htm":
         ("sec_edgar", "IREN Ltd — Q1 FY27 results (8-K, Ex. 99.1) filed 2026-11-05", "regulatory_filing",
          "2026-11-05", "2026-09-30"),
@@ -107,6 +120,9 @@ DOCS: dict[str, tuple[str, str, str, str | None, str | None]] = {
     "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000075/nvda-20260726.htm":
         ("sec_edgar", "NVIDIA Corporation — Q2 FY2027 10-Q filed 2026-08-26", "regulatory_filing",
          "2026-08-26", "2026-07-26"),
+    "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000088/q3fy27cfocommentary.htm":
+        ("sec_edgar", "NVIDIA Corporation — Q3 FY2027 CFO commentary (8-K, Ex. 99.2) filed 2026-11-17",
+         "regulatory_filing", "2026-11-17", "2026-10-25"),
     "https://www.sec.gov/Archives/edgar/data/1513845/000110465926126008/tm2629571d1_ex99-1.htm":
         ("sec_edgar", "Nebius Group N.V. — Q3 2026 results (6-K, Ex. 99.1) filed 2026-11-12",
          "regulatory_filing", "2026-11-12", "2026-09-30"),
@@ -136,12 +152,15 @@ POC_H100 = "https://priceofcompute.com/api/v1/prices/h100-sxm"
 SD = "https://www.silicondata.com/products/silicon-index"
 RAMP = "https://ramp.com/data/ai-index"
 S1 = "https://www.sec.gov/Archives/edgar/data/2130357/000162828026067168/anthropicpbc-sx1.htm"
+ANT_P = "https://www.sec.gov/Archives/edgar/data/2130357/000162828026074944/anthropicpbc-424b4.htm"
 HUBS = "https://www.sec.gov/Archives/edgar/data/1404655/000119312526447363/hubs-20260930.htm"
 EXLS = "https://www.sec.gov/Archives/edgar/data/1297989/000129798926000031/exls-20260930.htm"
 INTC = "https://www.sec.gov/Archives/edgar/data/50863/000005086326000191/intc-20260926.htm"
 SPCX = "https://www.sec.gov/Archives/edgar/data/1181412/000162828026066880/spcx-20260930.htm"
 ERIC = "https://www.sec.gov/Archives/edgar/data/717826/000162828026065962/a2026q3forfiling.htm"
 GLXY = "https://www.sec.gov/Archives/edgar/data/1859392/000185939226000108/glxy-20260930xpressrelease.htm"
+GLXY_Q = "https://www.sec.gov/Archives/edgar/data/1859392/000185939226000112/glxy-20260930.htm"
+BABA = "https://www.sec.gov/Archives/edgar/data/1577552/000110465926130115/tm2630263d1_ex99-1.htm"
 IREN = "https://www.sec.gov/Archives/edgar/data/1878848/000187884826000065/irenreportsq1-fy27result.htm"
 INTC_PR = "https://www.sec.gov/Archives/edgar/data/50863/000005086326000188/q326earningsrelease.htm"
 GLW = "https://www.sec.gov/Archives/edgar/data/24741/000002474126000273/glw-20261027xex99xq32026.htm"
@@ -151,6 +170,7 @@ CRWV = "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000461/corew
 CRWV_Q = "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000465/crwv-20260930.htm"
 NVDA_CEO = "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000082/nvidiaannouncesceotransiti.htm"
 NVDA_Q = "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000075/nvda-20260726.htm"
+NVDA_Q3 = "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000088/q3fy27cfocommentary.htm"
 NBIS = "https://www.sec.gov/Archives/edgar/data/1513845/000110465926126008/tm2629571d1_ex99-1.htm"
 NBIS_LTR = "https://www.sec.gov/Archives/edgar/data/1513845/000110465926126008/tm2629571d1_ex99-2.htm"
 PLTR = "https://www.sec.gov/Archives/edgar/data/1321655/000132165526000048/pltr-20260930.htm"
@@ -320,7 +340,8 @@ SIGNALS: list[dict[str, Any]] = [
                "within accounts. New bookings growing far slower than revenue is the risk.",
         "takeaway": "Anthropic's S-1 reports about 900% net revenue retention (revenue this year from last year's "
                     "customers, relative to what they paid before) and over 11,900 customers paying $100k+ a year, up "
-                    "from about 950. Palantir's Q3 10-Q says $407 million of its $619 million year-over-year rise in "
+                    "from about 950. Its final prospectus adds Q3 revenue of $16.96 billion, up from $1.38 billion a year "
+                    "earlier. Palantir's Q3 10-Q says $407 million of its $619 million year-over-year rise in "
                     "commercial revenue came from customers it already had at the end of 2025, and its top 20 "
                     "customers averaged $146 million of revenue over twelve months, up 76%. Ramp's panel shows 56.8% "
                     "of sampled US businesses paying for AI in October. Spend is compounding inside existing "
@@ -339,11 +360,15 @@ SIGNALS: list[dict[str, Any]] = [
                         "2026 and more than 11,900 customers above $100k trailing-twelve-month revenue, up from more "
                         "than 950 a year earlier. Palantir's Q3 10-Q (filed Nov 3, 2026) attributes $407M of a $619M "
                         "rise in commercial revenue to customers existing at Dec 31, 2025. Ramp's AI Index shows 56.8% "
-                        "of sampled US businesses paying for AI in October 2026, up 13.3 points year over year.",
+                        "of sampled US businesses paying for AI in October 2026, up 13.3 points year over year. Anthropic's "
+                        "final prospectus (424B4, Nov 19, 2026) reports Q3 2026 revenue of $16,956M vs $1,382M a year "
+                        "earlier, with 79% of nine-month revenue consumption-based.",
         "changed_points": [
             "Anthropic S-1: ~900% net revenue retention at Sep 30, 2026; >11,900 customers at $100k+ (vs >950 a year "
             "earlier); ~250 at $10M+.",
             "Anthropic S-1: $16.3B revenue in H1 2026 vs $1.2B a year earlier.",
+            "Anthropic 424B4: Q3 2026 revenue $16.96B vs $1.38B a year earlier; adjusted operating margin 15% vs "
+            "\u221293%; 79% of nine-month revenue consumption-based.",
             "Palantir 10-Q: Q3 commercial revenue $1,167.9M vs $548.4M a year earlier; $407M of the $619M increase "
             "came from commercial customers existing at Dec 31, 2025; top-20 customers averaged $146M TTM revenue "
             "(+76%).",
@@ -413,14 +438,15 @@ SIGNALS: list[dict[str, Any]] = [
                                 "subscription plans), Palantir's new bookings grew far slower than its revenue, "
                                 "retail adoption on Ramp was flat in October, and Ramp measures payment incidence, "
                                 "not workload depth.",
-        "next_validation": "Read S-1 amendments for NRR methodology and cohort detail; check whether Palantir's Q4 "
+        "next_validation": "Check Anthropic's first 10-Q as a public company for whether NRR and $100k+ customer "
+                           "growth hold and how much revenue stays consumption-based; check whether Palantir's Q4 "
                            "results keep existing-customer growth while bookings catch up, and whether Ramp's next "
                            "release resumes gains in retail.",
         "falsifier": "Net revenue retention falls sharply in subsequent filings while Ramp adoption flattens, which "
                      "would point to pilot churn rather than compounding deployment.",
         "thesis_sentence": "Enterprise AI revenue is deepening inside existing customers, creating a fast-growing "
                            "budget line that needs governance, attribution and industry-specific products.",
-        "evidence_reviewed_at": EVIDENCE_V12_AT,
+        "evidence_reviewed_at": EVIDENCE_V17_AT,
         "analyst_scores": {"relevance": 5, "impact": 4},
         "match": {"anchors": ["anthropic", "openai", "enterprise ai", "ai spend", "ai spending", "ai adoption",
                               "ai budget", "ai budgets", "copilot", "net revenue retention"],
@@ -453,6 +479,17 @@ SIGNALS: list[dict[str, Any]] = [
             (S1, "primary", "challenges",
              "The filing reports a $693M operating loss for H1 2026 and $6.2B of total indebtedness at Jun 30, 2026, "
              "partly to fund compute commitments, and flags power and regulatory risk at compute sites."),
+            (ANT_P, "primary", "supports",
+             "Final prospectus: Q3 2026 revenue $16,956M vs $1,382M a year earlier; nine-month revenue $33,242M vs "
+             "$2,545M; net revenue retention about 900% at Sep 30, 2026; over 50% of $100k+ customers used both its "
+             "developer platform and a first-party app in Q3, up from about 30% in Q4 2025."),
+            (ANT_P, "primary", "challenges",
+             "79% of nine-month revenue was consumption-based and much of it is not under long-term contracts, while "
+             "committed compute and lease spend totals about $900.9B ($451.6B before 2031); model versions released "
+             "in the prior six months were over 80% of Q3 revenue."),
+            (ANT_P, "primary", "challenges",
+             "Q3 2026 operating loss of $567M; the top five customers were about 25% of nine-month revenue, and about "
+             "44% came through cloud-provider marketplaces."),
         ],
     },
     {
@@ -577,9 +614,9 @@ SIGNALS: list[dict[str, Any]] = [
         "id": "memory-substrate-reallocation",
         "content_version": CONTENT_VERSION,
         "title": "Scarce memory and substrates are flowing to AI servers, favoring data-center chips over PCs",
-        "brief": ["Micron says AI demand is outpacing memory supply, forcing allocation decisions", "Intel data-center revenue +78% while PC chips fell ~5%", "NVIDIA supply commitments, mainly memory, rose to $279B from $119B in a quarter"],
+        "brief": ["Micron says AI demand is outpacing memory supply, forcing allocation decisions", "Intel data-center revenue +78% while PC chips fell ~5%", "NVIDIA supply commitments, mainly memory, rose to $390B from $279B in a quarter"],
         "dek": "Memory maker Micron says AI demand is outrunning supply and forcing allocation choices, and the "
-               "largest AI chip buyer has more than doubled its long-term supply commitments. Device makers are still "
+               "largest AI chip buyer has more than tripled its supply commitments in two quarters. Device makers are still "
                "being supplied, at much higher prices.",
         "takeaway": "Intel's Q3 filing shows data-center revenue up 78% year over year, with that segment's operating "
                     "margin rising from 23% to 42%, while PC-chip revenue fell about 5%. Intel names industry-wide "
@@ -588,15 +625,16 @@ SIGNALS: list[dict[str, Any]] = [
                     "smartphone markets have been hit by memory pricing. Micron's FY2026 10-K says AI-driven demand "
                     "is outpacing industry supply and has led to supply-allocation decisions that may affect "
                     "certain customers and end markets; its quarterly revenue rose to $54.2B from $11.3B a year "
-                    "earlier. On the buyer side, NVIDIA's Q2 FY2027 10-Q says its supply and capacity commitments, "
-                    "\u201cprimarily memory and manufacturing facilities\u201d, rose to $279B from $119B a quarter "
-                    "earlier.",
+                    "earlier. On the buyer side, NVIDIA's supply commitments rose from $119B to $279B in its fiscal "
+                    "Q2 and to $390B in Q3, which it attributes \u201cprimarily\u201d to multi-year procurement of "
+                    "memory supply.",
         "caveats": [
             "One memory maker's filings checked; an industry-wide reallocation is still an inference.",
             "Micron's PC and phone memory revenue also rose sharply, so devices are paying more rather than going "
             "without.",
             "Corning's statement is one line of market commentary, not a measured figure.",
-            "NVIDIA's $279B figure is as of July 26, 2026 and does not separate memory from manufacturing capacity.",
+            "NVIDIA's commitment figures are company-reported and do not give a memory-only amount; its Q3 10-Q "
+            "was not yet filed at this review.",
         ],
         "sector": "Semiconductors & hardware",
         "themes": ["Supply-chain constraints", "Memory efficiency", "Data-center silicon"],
@@ -613,7 +651,10 @@ SIGNALS: list[dict[str, Any]] = [
                         "customers and end markets\u201d; it also describes new multi-year take-or-pay supply "
                         "agreements with price bands. NVIDIA's Q2 FY2027 10-Q (filed Aug 26, 2026) says it raised "
                         "supply and capacity commitments from $119B to $279B in one quarter, \u201cprimarily memory "
-                        "and manufacturing facilities\u201d, to meet demand for the next several years.",
+                        "and manufacturing facilities\u201d, to meet demand for the next several years. Its Q3 FY2027 CFO "
+                        "commentary (8-K, filed Nov 17, 2026) says supply commitments rose again to $390B, "
+                        "\u201cprimarily related to the multi-year procurement of memory supply\u201d, and that "
+                        "higher memory and system prices continue to affect consumer PC demand.",
         "changed_points": [
             "Intel data-center (DCAI) revenue $7.32B in Q3 2026 vs $4.12B a year earlier (+78%); operating margin "
             "42% vs 23%.",
@@ -625,6 +666,8 @@ SIGNALS: list[dict[str, Any]] = [
             "outpacing industry supply and has forced supply-allocation decisions.",
             "NVIDIA's supply and capacity commitments rose to $279B as of July 26, 2026 from $119B a quarter earlier, "
             "mainly for memory and manufacturing capacity.",
+            "NVIDIA's supply commitments rose again to $390B as of Oct 25, 2026, mainly for multi-year memory "
+            "procurement; it says higher memory prices continue to affect consumer PC demand.",
         ],
         "why_now": "AI servers are absorbing memory and advanced-packaging capacity, so scarce components may be "
                    "flowing to the highest-margin data-center products ahead of PCs.",
@@ -678,19 +721,20 @@ SIGNALS: list[dict[str, Any]] = [
         "confidence_rationale": "Segment figures, guidance and shortage language come directly from Intel's 10-Q and "
                                 "earnings release; Corning's filed release ties device-market weakness to memory "
                                 "pricing; and Micron's 10-K confirms from the supply side that AI demand is "
-                                "outpacing supply and forcing allocation decisions; NVIDIA's 10-Q shows the largest "
-                                "AI chip buyer locking up memory and manufacturing capacity years ahead. It stays "
+                                "outpacing supply and forcing allocation decisions; NVIDIA's filings show the largest "
+                                "AI chip buyer locking up memory years ahead, with supply commitments up from $119B "
+                                "to $390B in two quarters. It stays "
                                 "Medium because device "
                                 "makers' reported figures still show only modest damage: Intel's PC revenue fell "
                                 "about 5% and Micron's own PC and phone memory revenue more than tripled.",
-        "next_validation": "Read NVIDIA's Q3 FY2027 10-Q (results due Nov 17) for the change in supply and capacity "
-                           "commitments, Micron's fiscal Q1 2027 results for allocation and pricing commentary, and "
+        "next_validation": "Read NVIDIA's Q3 FY2027 10-Q for how much of the $390B is memory and for any "
+                           "excess-purchase charges, Micron's fiscal Q1 2027 results for allocation and pricing commentary, and "
                            "a second memory maker's filing; watch PC makers' shipment guidance.",
         "falsifier": "Memory contract prices fall and Intel's client segment recovers within two quarters, "
                      "indicating a transient rather than structural reallocation.",
         "thesis_sentence": "AI servers are absorbing scarce memory and substrates, favoring data-center silicon and "
                            "raising the value of software that does more with less memory.",
-        "evidence_reviewed_at": EVIDENCE_V14_AT,
+        "evidence_reviewed_at": EVIDENCE_V15_AT,
         "analyst_scores": {"relevance": 4, "impact": 4},
         "match": {"anchors": ["dram", "hbm", "nand", "substrate", "substrates", "memory shortage", "memory prices",
                               "micron", "sk hynix", "intel"],
@@ -735,6 +779,16 @@ SIGNALS: list[dict[str, Any]] = [
              "NVIDIA warns it may be unable to reduce these commitments if demand differs from expectations, and it "
              "took a $0.4B excess inventory and purchase-obligation charge in the first half of fiscal 2027 as H200 "
              "demand diminished."),
+            (NVDA_Q3, "primary", "supports",
+             "Q3 FY2027 CFO commentary: supply commitments rose from $279B last quarter to $390B as of Oct 25, 2026, "
+             "\u201cprimarily related to the multi-year procurement of memory supply\u201d; $364B of supply and "
+             "capacity commitments fall due by fiscal 2029."),
+            (NVDA_Q3, "primary", "supports",
+             "NVIDIA says \u201chigher memory and system prices continue to affect consumer PC demand\u201d (Q3 "
+             "FY2027 CFO commentary)."),
+            (NVDA_Q3, "primary", "challenges",
+             "Inventory rose to $39.7B from $31.6B in one quarter to support the Rubin ramp, on top of the $390B of "
+             "supply commitments."),
         ],
     },
     {
@@ -783,7 +837,11 @@ SIGNALS: list[dict[str, Any]] = [
                         "$146.1M, and prepayments covering more than 100% of the capex on deals signed in the quarter. "
                         "CoreWeave's Q3 10-Q (Nov 12, 2026) shows its top two customers at about 30% and 24% of "
                         "revenue, versus one customer at 67% a year earlier, with 98% of revenue on take-or-pay "
-                        "contracts.",
+                        "contracts. Galaxy's Q3 10-Q (Nov 9, 2026) reports over 1.6 GW of ERCOT-approved power at "
+                        "Helios and construction commitments of $3,158.9M, up from $529.8M at the end of 2025. "
+                        "Alibaba's Sep-quarter results (6-K, Nov 19, 2026) say a new US interim final rule on remote "
+                        "access to advanced semiconductors will impact its ability to access compute from certain "
+                        "providers outside China.",
         "changed_points": [
             "Galaxy 8-K: all 133 MW of Helios I, Phase I critical IT load delivered to CoreWeave; Q3 data-center "
             "adjusted EBITDA $69M.",
@@ -798,6 +856,10 @@ SIGNALS: list[dict[str, Any]] = [
             "$1.37B a year earlier; backlog ~$132.5B.",
             "Nebius 6-K: revenue $980.8M vs $146.1M a year earlier; prepayments covered >100% of associated capex on "
             "Q3 deals (50–60% in Q2); ACV per MW >$25M vs $20–25M on Q2 deals; more than 4 GW contracted.",
+            "Galaxy 10-Q: over 1.6 GW of ERCOT-approved power at Helios, a further 1 GW pending; construction "
+            "commitments $3,158.9M vs $529.8M at the end of 2025.",
+            "Alibaba 6-K: a new US rule on remote access to advanced chips will impact its access to compute from "
+            "certain providers outside China; its external AI cloud revenue rose 64% year over year.",
             "CoreWeave 10-Q: top two customers ~30% and ~24% of Q3 revenue (one customer 67% a year earlier); "
             "98% of revenue under take-or-pay contracts; $132.3B of unsatisfied RPO, 36% due within 24 months.",
         ],
@@ -867,14 +929,16 @@ SIGNALS: list[dict[str, Any]] = [
                            "financing and brings Lake Mariner CB-4 online in Q4; check whether CoreWeave reaches "
                            "1.85 GW of active power at year-end as guided; check whether Nebius reaches 5 GW "
                            "contracted by year-end and delivers its remaining New Jersey tranches in Q2 2027; check NVIDIA's "
-                           "Q3 FY2027 results on Nov 17 for any change in customer financing or supply commitments; "
+                           "Q3 FY2027 10-Q for whether its $32B of contingent neocloud agreements and its site "
+                           "guarantees grow or are reduced; check whether operators outside China report lost or "
+                           "restricted customers under the Nov 2026 remote-access rule; "
                            "check SpaceX segment disclosures for "
                            "external compute rental revenue versus internal use.",
         "falsifier": "GPU rents fall back as short-term contracts roll off, leaving non-traditional owners with "
                      "under-used sites.",
         "thesis_sentence": "Powered compute is becoming a sellable product for owners outside the hyperscalers, making "
                            "power-ready sites and capacity financing key constraints.",
-        "evidence_reviewed_at": EVIDENCE_V13_AT,
+        "evidence_reviewed_at": EVIDENCE_V18_AT,
         "analyst_scores": {"relevance": 4, "impact": 3},
         "match": {"anchors": ["gigawatt", "gigawatts", "megawatt", "megawatts", "data center", "data centers",
                               "data centre", "coreweave", "helios", "neocloud", "colocation"],
@@ -917,9 +981,30 @@ SIGNALS: list[dict[str, Any]] = [
              "NVIDIA's CEO resigned on Nov 11, 2026; the CFO is interim CEO while the board searches; the board "
              "says it expects operations, customer commitments and the product roadmap to continue without "
              "interruption; Q3 FY2027 results are due Nov 17."),
+            (NVDA_Q3, "primary", "supports",
+             "Q3 FY2027 CFO commentary: neoclouds and frontier labs \u201care seeing extraordinary demand for AI "
+             "infrastructure\u201d but many are growing faster than their balance sheets can support, so NVIDIA has "
+             "entered arrangements to help select customers secure land, power and data-center capacity."),
+            (NVDA_Q3, "primary", "challenges",
+             "NVIDIA's $32B of neocloud agreements take effect only if the neoclouds secure financing, and it has "
+             "guaranteed up to $105B of credit support for the land, power and shell of about 4.25 GW at an Ohio "
+             "campus leased to OpenAI for 20 years."),
             (GLXY, "primary", "challenges",
              "830 MW of approved capacity at Helios II is not yet under lease; Helios I, Phase II construction is "
              "funded by a $3.5B senior secured notes offering."),
+            (GLXY_Q, "primary", "supports",
+             "Q3 2026 10-Q: ERCOT has approved over 1.6 GW of gross power capacity at Helios, and a further 1 GW "
+             "load request is pending; Phases I and II are funded through construction completion."),
+            (GLXY_Q, "primary", "challenges",
+             "Outstanding construction commitments at Helios were $3,158.9M at Sep 30, 2026 vs $529.8M at Dec 31, "
+             "2025; capacity beyond Phase III would need additional debt, equity or equity-linked financing."),
+            (BABA, "primary", "challenges",
+             "Alibaba says a US interim final rule on remote access to advanced semiconductors \u201cwill impact our "
+             "company\u2019s ability to access compute from certain providers outside China\u201d; it cannot yet "
+             "estimate the financial effect."),
+            (BABA, "primary", "context",
+             "In the quarter to Sep 30, 2026, AI Cloud and Compute Services revenue from external customers rose 64% "
+             "year over year and capital expenditures rose 60% to RMB50,477M, for AI infrastructure."),
             (IREN, "primary", "supports",
              "AI Cloud revenue $200M in the quarter ended Sep 30, 2026 vs $71M the prior quarter; contracted pricing "
              "+11% on 3-year and +12% on 5-year deals; after quarter-end, about $22M per IT-MW on a five-year "
