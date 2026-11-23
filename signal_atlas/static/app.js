@@ -345,8 +345,8 @@ import { count, evidenceLabel, sourceCount, staticSchedule } from "./edition.mjs
     $("#allTitle").textContent = browsing ? "More theses" : `${items.length} thes${items.length === 1 ? "is" : "es"}${state.sector ? ` · ${state.sector}` : ""}`;
     $("#feedEmpty").hidden = items.length > 0;
     items.forEach((s, i) => {
-      const open = h("button", { class: "item__open", type: "button", "data-id": s.id, onclick: () => openSignal(s.id),
-        "aria-label": `${s.title}. Open thesis.` }, h("span", { class: "card__flag", "aria-hidden": "true" },
+      const open = h("button", { class: "item__open", type: "button", "data-id": s.id, onclick: () => openSignal(s.id) },
+        h("span", { class: "card__flag", "aria-hidden": "true" },
         h("span", { class: "card__rank" }, String(s.rank).padStart(2, "0")), h("span", { class: "card__arrow" }, "↗")),
         kicker(s), h("h3", {}, s.title));
       const li = h("li", { class: "item card" }, open, miniVisual(s), where(s),
@@ -492,7 +492,7 @@ import { count, evidenceLabel, sourceCount, staticSchedule } from "./edition.mjs
     const vis = h("div", { class: "d-visual" });
     const deep = (title, kids) => h("details", { class: "deep" }, h("summary", {}, title), h("div", { class: "deep__body" }, ...kids));
     panel.replaceChildren(
-      h("header", { class: "d-head" },
+      h("div", { class: "d-head" },
         h("div", { class: "d-head__top" }, h("button", { class: "d-back", type: "button", "data-close": "" }, "← All theses")),
         kicker(s),
         h("p", { class: "d-label" }, `The thesis · ${fmtDay(state.edition.edition_date)} edition`), h("h2", { id: "dTitle" }, s.title),

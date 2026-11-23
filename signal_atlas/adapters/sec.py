@@ -45,14 +45,16 @@ def _filing(hit: object, q: str) -> RawItem | None:
     filed = _first_str(src.get("file_date"))
     filed_at = parse_iso(filed) if filed else None
     period = _first_str(src.get("period_ending"))
+    file_type = _first_str(src.get("file_type"))
+    exhibit = file_type.upper() if file_type and file_type.upper().startswith("EX-") else None
     return RawItem(
         url=f"https://www.sec.gov/Archives/edgar/data/{cik}/{acc.replace('-', '')}/{fname}",
-        title=f"{name} — {form} filed {filed or 'date unknown'}",
+        title=f"{name} — {form} filed {filed or 'date unknown'}" + (f" (exhibit {exhibit})" if exhibit else ""),
         source_type="regulatory_filing",
         excerpt=f"EDGAR full-text match for {q}. Issuer disclosure; open the filing for context.",
         published_at=iso(filed_at) if filed_at else None,
         event_date=period,
-        meta={"query": q, "form": form, "cik": cik, "claim_status": "primary"},
+        meta={"query": q, "form": form, "cik": cik, "accession": acc, "exhibit": exhibit, "claim_status": "primary"},
     )
 
 
@@ -75,6 +77,7 @@ class SecEdgarAdapter:
             raise ParseError("SEC_USER_AGENT must include a contact email (SEC fair-access policy)")
         res = AdapterResult()
         ok = 0
+        seen: set[str] = set()  # accession numbers: one item per filing, not one per matching exhibit
         start = (now - timedelta(days=self.lookback_days)).strftime("%Y-%m-%d")
         end = now.strftime("%Y-%m-%d")
         for q, forms in self.queries:
@@ -92,10 +95,15 @@ class SecEdgarAdapter:
                 res.warnings.append(f"{q}: unexpected EDGAR response shape")
                 continue
             ok += 1
-            for hit in hits[: self.per_query]:
+            added = 0
+            for hit in hits:
+                if added >= self.per_query:
+                    break
                 item = _filing(hit, q)
-                if item:
+                if item and item.meta["accession"] not in seen:
+                    seen.add(item.meta["accession"])
                     res.items.append(item)
+                    added += 1
         if ok == 0:
             raise ParseError("all EDGAR queries failed: " + "; ".join(res.warnings[:3]))
         return res
