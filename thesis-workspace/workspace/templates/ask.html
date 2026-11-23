@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% from "ui.html" import csrf, icon, error with context %}
+{% block title %}Ask the workspace{% endblock %}
+{% block page_class %}ask-page{% endblock %}
+{% block content %}
+<header class="page-heading"><p class="eyebrow">Cross-thesis research</p><h1>Ask the workspace</h1><p class="lede">Find connections across shared theses and your drafts. Every cited passage links back to its source.</p></header>
+<form method="post" action="{{ url_for('views.ask') }}" class="panel stack ask-form">
+  {{ csrf() }}{{ error(problem) }}
+  <label for="question">Your question<textarea id="question" name="question" maxlength="800" rows="3" required placeholder="What evidence challenges our workflow automation thesis?">{{ question }}</textarea></label>
+  {% if enabled %}<label class="check-label"><input type="checkbox" name="use_model" value="yes" {{ 'checked' if use_model }}>Use AI synthesis <small>Sends your question and matched excerpts, which may include your drafts, to OpenAI.</small></label>
+  {% else %}<p class="attribution">AI synthesis is not configured. Passage search stays available and shows sources in their original words.</p>{% endif %}
+  <div><button class="button primary" type="submit">{{ icon('ask', 17) }} Ask workspace</button></div>
+</form>
+{% if not result %}
+<section class="suggestions"><h2>Try a question{% if g.user.space.startswith('demo:') %} from the demo{% endif %}</h2>
+{% for prompt in [
+  "Where do Maya’s and Leo’s views on enterprise AI overlap?" if g.user.space.startswith('demo:') else "Where do two owners’ views overlap?",
+  "Which theses depend on proprietary data remaining valuable?",
+  "What evidence challenges our workflow automation thesis?"
+] %}
+<button type="button" class="suggestion" data-question="{{ prompt }}">{{ prompt }} {{ icon('arrow', 15) }}</button>
+{% endfor %}
+</section>
+{% else %}
+<section class="ask-results">
+  <div class="section-heading"><h2>{{ result.mode }}</h2><span class="sort-label">{{ result.refs|length }} {{ 'passage' if result.refs|length == 1 else 'passages' }}</span></div>
+  {% if result.model_failed %}<p class="notice">AI synthesis is unavailable. Showing passage search instead.</p>{% endif %}
+  {% if result.points %}
+  <div class="panel article"><p class="attribution">AI-generated interpretation. It does not change or replace an owner’s argument.</p>
+  {% for point, ids in result.points %}<p class="prose">{{ point }} {% for id in ids %}<a class="citation" href="#citation-{{ id }}" aria-label="Citation {{ id }}">[{{ id }}]</a>{% endfor %}</p>{% endfor %}
+  </div>
+  {% else %}<p class="notice">{{ result.intro }}</p>{% endif %}
+  {% for item in result.refs %}
+    <article id="citation-{{ loop.index }}" class="panel citation-card">
+      <p class="eyebrow">[{{ loop.index }}] {{ item.role }}</p>
+      <a class="row-title" href="{{ item.link }}">{{ item.title }}{% if item.detail and item.detail.startswith('Page ') %} · {{ item.detail }}{% endif %} {{ icon('arrow', 15) }}</a>
+      <p class="attribution">{{ 'Thesis owner: ' ~ item.owner if item.owner else 'Unassigned private note' }}{% if item.owner and item.title != item.thesis %} · {{ item.thesis }}{% endif %}{% if item.attribution != item.owner %} · {{ item.attribution }}{% endif %}</p>
+      <blockquote class="prose">{{ item.text }}</blockquote>
+    </article>
+  {% endfor %}
+</section>
+{% endif %}
+{% endblock %}

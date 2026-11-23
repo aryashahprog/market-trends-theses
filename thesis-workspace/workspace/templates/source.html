@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% from "ui.html" import csrf, icon, error, duplicate_link with context %}
+{% block title %}{{ item.title }}{% endblock %}
+{% block content %}
+<a class="breadcrumb" href="{{ url_for('views.thesis', thesis_id=parent.id) ~ '#evidence' if parent else url_for('views.mine') }}">{{ icon('back', 16) }} {{ parent.title if parent else 'My research' }}</a>
+<header class="page-heading thesis-heading"><p class="eyebrow">Supporting material · not an owner endorsement</p><h1>{{ item.title }}</h1><p class="lede">{{ 'Private draft' if item.visibility == 'draft' else 'Team evidence' }} · {{ 'Reference only' if item.kind == 'link' else ('Imported text' if extracted else 'No extracted text') }}</p></header>
+{{ error(problem) }}{{ duplicate_link(duplicate) }}
+<div class="detail-grid">
+  <section class="panel article">
+    {% if item.kind == 'link' %}
+      <h2>Reference link</h2><p>Full text was not imported. This reference is not included in Ask’s passage results.</p>
+      <a class="button subtle" href="{{ item.url }}" target="_blank" rel="noopener noreferrer">Open reference {{ icon('external', 17) }}</a>
+    {% else %}
+      <div class="article-heading"><h2>{{ 'Extracted passages' if item.kind == 'file' else 'Source passages' }}</h2>
+      {% if item.kind == 'file' %}<a class="quiet-link" href="{{ url_for('views.download', source_id=item.id) }}">Download original</a>{% endif %}</div>
+      {% for part in extracted %}
+      <article class="passage" id="passage-{{ loop.index }}"><p class="byline">Passage {{ loop.index }}{% if part.label %} · {{ part.label }}{% endif %}</p><p class="prose">{{ part.text }}</p></article>
+      {% else %}<p>No extractable text was found. You can download the original, but Ask can’t cite its content.</p>{% endfor %}
+    {% endif %}
+  </section>
+  <aside class="panel meta">
+    <h2>Attribution</h2>
+    <dl><dt>Source author</dt><dd>{{ item.author or 'Not supplied' }}</dd><dt>Added by</dt><dd>{{ item.added_name }}</dd><dt>Date added</dt><dd><time datetime="{{ item.added }}">{{ item.added|date }}</time></dd><dt>Thesis owner</dt><dd>{{ parent.owner if parent else 'Not assigned' }}</dd></dl>
+    {% if item.added_by == g.user.id %}
+    {% if not parent and destinations %}
+    <form method="post" action="{{ url_for('views.assign_source', source_id=item.id) }}" class="stack" data-assign>
+      {{ csrf() }}<label>Attach to a thesis<select name="thesis" required>
+        <option value="">Choose a thesis</option>{% for target in destinations %}<option value="{{ target.id }}" data-scope="{{ target.visibility }}">{{ target.title }}</option>{% endfor %}
+      </select></label>
+      <label data-evidence-scope>Visibility<select name="visibility"><option value="draft">Draft · only me</option><option value="team">Team · share now</option></select></label>
+      <div><button type="submit" class="button subtle">Attach evidence</button></div>
+    </form>
+    {% elif not parent %}
+    <p class="attribution">This note is only visible to you. Create a thesis to attach it.</p>
+    <a class="button subtle" href="{{ url_for('views.new') }}">New thesis</a>
+    {% elif item.visibility == 'team' or parent.visibility == 'team' %}
+    <form method="post" action="{{ url_for('views.source_sharing', source_id=item.id) }}">
+      {{ csrf() }}<input type="hidden" name="visibility" value="{{ 'draft' if item.visibility == 'team' else 'team' }}">
+      <button class="button subtle" type="submit">{{ 'Make private' if item.visibility == 'team' else 'Share with team' }}</button>
+    </form>
+    {% else %}<p class="attribution">Share the thesis before sharing this source.</p>{% endif %}
+    <div class="form-actions">
+      <a class="button subtle" href="{{ url_for('views.edit_source', source_id=item.id) }}">Edit source</a>
+    </div>
+    <details>
+      <summary>Delete source</summary>
+      <form method="post" action="{{ url_for('views.delete_source', source_id=item.id) }}" class="stack">
+        {{ csrf() }}
+        <p class="attribution">This removes the source and its passages from the workspace. Existing citations to it will no longer open.</p>
+        <div><button class="button subtle" type="submit">Permanently delete source</button></div>
+      </form>
+    </details>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}

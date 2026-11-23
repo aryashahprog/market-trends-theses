@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% from "ui.html" import csrf, icon, error, duplicate_link with context %}
+{% block title %}Add research{% endblock %}
+{% block page_class %}narrow{% endblock %}
+{% block content %}
+<header class="page-heading"><p class="eyebrow">Contribute</p><h1>Add research</h1><p class="lede">Save a private note or attach a source to a thesis.</p></header>
+<form method="post" enctype="multipart/form-data" class="panel stack" data-research novalidate>
+  {{ csrf() }}{{ error(problem) }}{{ duplicate_link(duplicate) }}
+  <fieldset>
+    <legend>Source type</legend>
+    <div class="segments">{% for kind, label in [('text','Paste text'), ('link','Add a URL'), ('file','Upload file')] %}
+    <label><input type="radio" name="kind" value="{{ kind }}" {{ 'checked' if values.get('kind', 'text') == kind }}>{{ label }}</label>
+    {% endfor %}</div>
+  </fieldset>
+  <div data-kind="text"><label>Research text<textarea name="text" rows="7" maxlength="60000" data-needed>{{ values.get('text', '') }}</textarea></label></div>
+  <div data-kind="link"><label>Source URL <small>Google Drive and Granola links are saved as references only. No text is imported.</small><input type="url" name="url" maxlength="2048" value="{{ values.get('url', '') }}" placeholder="https://" data-needed></label></div>
+  <div data-kind="file"><label>Choose file <small>PDF, DOCX, or UTF-8 TXT, up to 8 MiB. Scanned pages aren’t OCR’d.</small><input type="file" name="file" accept=".pdf,.docx,.txt" data-needed></label></div>
+  <label>Attach to a thesis<select name="thesis">
+    <option value="">No thesis yet · save to My research</option><option value="new" {{ 'selected' if values.get('thesis') == 'new' }}>Create a new thesis</option>
+    {% for item in items %}<option value="{{ item.id }}" data-scope="{{ item.visibility }}" {{ 'selected' if values.get('thesis') == item.id|string }}>{{ item.title }} · {{ item.owner }}{{ ' (draft)' if item.visibility == 'draft' else '' }}</option>{% endfor %}
+  </select></label>
+  <div class="stack inset" data-new>
+    <label>New thesis title<input name="new_title" maxlength="160" value="{{ values.get('new_title', '') }}" data-needed></label>
+    <label>Current argument <small>Optional; the attachment is not your argument.</small><textarea name="new_argument" rows="3" maxlength="12000">{{ values.get('new_argument', '') }}</textarea></label>
+    <label>Topics<input name="new_topics" maxlength="200" value="{{ values.get('new_topics', '') }}"></label>
+    <label>New thesis visibility<select name="new_visibility"><option value="draft" {{ 'selected' if values.get('new_visibility', 'draft') == 'draft' }}>Draft · only me</option><option value="team" {{ 'selected' if values.get('new_visibility') == 'team' }}>Team · authenticated members</option></select></label>
+  </div>
+  <label data-evidence-scope>Evidence visibility <small>Choose Team to share now, or keep the evidence private as a draft.</small><select name="source_visibility"><option value="draft" {{ 'selected' if values.get('source_visibility', 'draft') == 'draft' }}>Draft · only me</option><option value="team" {{ 'selected' if values.get('source_visibility') == 'team' }}>Team · authenticated members</option></select></label>
+  <details class="source-options" {% if values.get('source_title') or values.get('source_author') %}open{% endif %}>
+    <summary>Source title and author <span class="muted">· optional</span></summary>
+    <div class="stack">
+      <label>Source title <small>Leave blank to use a short preview, filename, or website name.</small><input name="source_title" maxlength="160" value="{{ values.get('source_title', '') }}"></label>
+      <label>Source author <small>Your name is recorded separately as the person who added it.</small><input name="source_author" maxlength="160" value="{{ values.get('source_author', '') }}"></label>
+    </div>
+  </details>
+  <div class="form-actions"><button class="button primary" type="submit" data-save-research>Save research</button><a class="button subtle" href="{{ url_for('views.mine') }}">Cancel</a></div>
+</form>
+{% endblock %}

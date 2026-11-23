@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% from "ui.html" import csrf, icon, error, duplicate_link with context %}
+{% block title %}Edit source{% endblock %}
+{% block page_class %}narrow{% endblock %}
+{% block content %}
+{% set back = url_for('views.source', source_id=item.id) %}
+<a class="breadcrumb" href="{{ back }}">{{ icon('back', 16) }} Back to source</a>
+<header class="page-heading"><h1>Edit source</h1><p class="lede">Correct the source details without changing who added it or who can see it.</p></header>
+<form method="post" class="panel stack" novalidate>
+  {{ csrf() }}{{ error(problem) }}{{ duplicate_link(duplicate) }}
+  <label>Source title<input name="title" required maxlength="160" value="{{ values['title'] }}"></label>
+  <label>Source author<input name="author" maxlength="160" value="{{ values['author'] }}"></label>
+  {% if item.kind == 'link' %}
+  <label>Source URL<input name="url" type="url" required maxlength="2048" value="{{ values['url'] }}"></label>
+  {% else %}
+  <p class="attribution">Pasted and imported passages stay unchanged so citations still point to the original text. To replace the material, add it as a new source.</p>
+  {% endif %}
+  <div class="form-actions"><button class="button primary" type="submit">Save source</button><a class="button subtle" href="{{ back }}">Cancel</a></div>
+</form>
+{% endblock %}

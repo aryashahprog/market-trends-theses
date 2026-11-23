@@ -1,0 +1,45 @@
+{% macro icon(name, size=18) -%}
+<svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+{% if name == 'team' %}<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M13 9h4m-4 4h4"/>
+{% elif name == 'folder' %}<path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+{% elif name == 'ask' %}<path d="M12 3l1.9 6.1L20 11l-6.1 1.9L12 19l-1.9-6.1L4 11l6.1-1.9L12 3zm7 13v5m-2.5-2.5h5"/>
+{% elif name == 'add' %}<path d="M12 5v14M5 12h14"/>
+{% elif name == 'arrow' %}<path d="M5 12h14m-5-5 5 5-5 5"/>
+{% elif name == 'back' %}<path d="M19 12H5m5-5-5 5 5 5"/>
+{% elif name == 'search' %}<circle cx="10.5" cy="10.5" r="5.8"/><path d="m15 15 5 5"/>
+{% elif name == 'file' %}<path d="M6 3h8l4 4v14H6zm8 0v5h4M9 12h6m-6 4h6"/>
+{% elif name == 'lock' %}<rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>
+{% elif name == 'external' %}<path d="M13 4h7v7m0-7-9 9m7 1v5H5V6h5"/>
+{% endif %}
+</svg>
+{%- endmacro %}
+{% macro csrf() -%}<input type="hidden" name="csrf" value="{{ csrf_token() }}">{%- endmacro %}
+{% macro status(value) -%}
+<span class="status status-{{ value|lower }}"><span></span>{{ value }}</span>
+{%- endmacro %}
+{% macro label_list(value, linked=false) -%}
+{% for topic in value|topics %}{% if linked %}<a class="topic" href="{{ url_for('views.team', topic=topic) }}">{{ topic }}</a>{% else %}<span class="topic">{{ topic }}</span>{% endif %}{% endfor %}
+{%- endmacro %}
+
+{% macro source_type(item) -%}
+{{ 'Reference only' if item.kind == 'link' else 'Pasted text' if item.kind == 'text' else 'Extracted text' if item.passage_data != '[]' else 'File · no extracted text' }}
+{%- endmacro %}
+
+{% macro duplicate_link(item) -%}
+{% if item %}<a class="quiet-link" href="{{ url_for('views.source', source_id=item.id) }}">Open existing reference {{ icon('arrow', 15) }}</a>{% endif %}
+{%- endmacro %}
+{% macro thesis_row(item, show_visibility=false) -%}
+<article class="thesis-row">
+  <div class="doc-icon">{{ icon('file', 20) }}</div>
+  <div class="row-copy">
+    <a class="row-title" href="{{ url_for('views.thesis', thesis_id=item.id) }}">{{ item.title }}</a>
+    <p class="byline">{% if item.visibility == 'team' %}<a href="{{ url_for('views.team', owner=item.owner_id) }}">{{ item.owner }}</a>{% else %}{{ item.owner }}{% endif %} <span aria-hidden="true">·</span> {{ item.updated|date }}
+      {% if show_visibility %} <span aria-hidden="true">·</span> {{ 'Private draft' if item.visibility == 'draft' else 'Team' }}{% endif %}
+    </p>
+    {% if item.argument %}<p class="excerpt">{{ item.argument|truncate(157, true, '…', 0) }}</p>{% endif %}
+    <div class="topics">{{ label_list(item.topics, item.visibility == 'team') }}</div>
+  </div>
+  <div class="row-end">{{ status(item.status) }}<a class="row-arrow" aria-label="Open {{ item.title }}" href="{{ url_for('views.thesis', thesis_id=item.id) }}">{{ icon('arrow', 17) }}</a></div>
+</article>
+{%- endmacro %}
+{% macro error(problem) -%}{% if problem %}<p role="alert" class="notice error">{{ problem }}</p>{% endif %}{%- endmacro %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% from "ui.html" import icon, thesis_row with context %}
+{% block title %}Team theses{% endblock %}
+{% block content %}
+<header class="page-heading split">
+  <div><p class="eyebrow">Shared library</p><h1>Team theses</h1><p class="lede">Explore the team’s current arguments, evidence, and open questions.</p></div>
+  <a class="button subtle" href="{{ url_for('views.new') }}">{{ icon('add') }} New thesis</a>
+</header>
+<form class="filters" method="get" data-filters>
+  <label class="search-field"><span class="sr-only">Search shared theses</span>{{ icon('search') }}<input type="search" name="q" value="{{ q }}" placeholder="Search shared theses" maxlength="200"></label>
+  <label><span class="sr-only">Owner</span><select name="owner"><option value="">All owners</option>{% for id, name in owners %}<option value="{{ id }}" {{ 'selected' if id == owner }}>{{ name }}</option>{% endfor %}</select></label>
+  <label><span class="sr-only">Topic</span><select name="topic"><option value="">All topics</option>{% for label in topics %}<option {{ 'selected' if label == topic }}>{{ label }}</option>{% endfor %}</select></label>
+  <label><span class="sr-only">Status</span><select name="status"><option value="">All statuses</option>{% for value in statuses %}<option {{ 'selected' if value == status }}>{{ value }}</option>{% endfor %}</select></label>
+  <button class="button subtle" type="submit">Search</button>
+</form>
+<div class="section-heading"><h2>{{ 'Search results' if q or owner or status or topic else 'Shared theses' }} <span class="count">{{ items|length }}</span></h2>
+{% if q or owner or topic or status %}<a href="{{ url_for('views.team') }}" class="quiet-link">Clear filters</a>{% else %}<span class="sort-label">Recently updated</span>{% endif %}</div>
+{% if items %}<div class="results">{% for item in items %}{{ thesis_row(item) }}{% endfor %}</div>
+{% else %}<div class="empty"><h3>{{ 'No theses match your filters' if total else 'No shared theses yet' }}</h3><p>{{ 'Change the search or filters and try again.' if total else 'Create a thesis and choose Team visibility when you’re ready to share.' }}</p></div>{% endif %}
+<aside class="ask-callout"><div class="doc-icon">{{ icon('ask', 21) }}</div><div><strong>Looking for a connection?</strong><p>Find passages across team theses and your own drafts.</p></div><a class="quiet-link" href="{{ url_for('views.ask') }}">Ask the workspace {{ icon('arrow', 16) }}</a></aside>
+{% endblock %}
