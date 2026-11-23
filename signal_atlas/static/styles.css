@@ -49,8 +49,8 @@ kbd{font:500 11px/1 var(--mono);border:1px solid var(--rule);border-bottom-width
 .btn-icon{width:36px;height:36px;border-radius:50%;border:1px solid var(--rule-dark);background:transparent;color:#EDE9DF;font-size:16px;cursor:pointer;transition:background .2s}
 .btn-icon:hover:not(:disabled){background:var(--charcoal-2)}
 .btn-icon:disabled{opacity:.35;cursor:default}
-.link-quiet{color:var(--muted-dark);font-size:13px;margin-left:6px}
-.link-quiet:hover{color:#fff}
+.link-quiet{color:var(--muted);font-size:13px;margin-left:6px}
+.link-quiet:hover{color:var(--ink)}
 @keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .btn{font:600 14px/1 var(--sans);background:var(--teal);color:#fff;border:0;border-radius:var(--radius);padding:12px 16px;cursor:pointer;transition:background .2s,transform .2s}
 .btn:hover{background:var(--teal-ink)}

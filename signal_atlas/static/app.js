@@ -346,8 +346,8 @@
     $("#allTitle").textContent = browsing ? "More theses" : `${items.length} thes${items.length === 1 ? "is" : "es"}${state.sector ? ` · ${state.sector}` : ""}`;
     $("#feedEmpty").hidden = items.length > 0;
     items.forEach((s, i) => {
-      const open = h("button", { class: "item__open", type: "button", "data-id": s.id, onclick: () => openSignal(s.id),
-        "aria-label": `${s.title}. Open thesis.` }, kicker(s), h("h3", {}, s.title));
+      const open = h("button", { class: "item__open", type: "button", "data-id": s.id, onclick: () => openSignal(s.id) },
+        kicker(s), h("h3", {}, s.title));
       const li = h("li", { class: "item card" }, open, miniVisual(s), where(s),
         h("p", { class: "card__meta" }, confLine(s), h("span", {}, `${s.evidence.length} sources`)));
       li.style.animationDelay = `${Math.min(i, 8) * 40}ms`;
@@ -490,7 +490,7 @@
     const vis = h("div", { class: "d-visual" });
     const deep = (title, kids) => h("details", { class: "deep" }, h("summary", {}, title), h("div", { class: "deep__body" }, ...kids));
     panel.replaceChildren(
-      h("header", { class: "d-head" },
+      h("div", { class: "d-head" },
         h("div", { class: "d-head__top" }, h("button", { class: "d-back", type: "button", "data-close": "" }, "← All theses")),
         kicker(s),
         h("p", { class: "d-label" }, "The thesis"), h("h2", { id: "dTitle" }, s.title),
