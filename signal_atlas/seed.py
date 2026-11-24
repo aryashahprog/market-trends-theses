@@ -27,8 +27,9 @@ EVIDENCE_V15_AT = "2026-11-18T13:40:00Z"  # NVIDIA Q3 FY2027 CFO commentary (8-K
 EVIDENCE_V16_AT = "2026-11-19T13:40:00Z"  # Galaxy Q3 2026 10-Q (Helios commitments and power approvals) read for v16
 EVIDENCE_V17_AT = "2026-11-20T13:40:00Z"  # Anthropic final prospectus (424B4, Q3 2026 figures) read for v17
 EVIDENCE_V18_AT = "2026-11-21T13:40:00Z"  # Alibaba Sep-quarter results (6-K) and remote-access rule disclosure read for v18
-REVISED_AT = "2026-11-21T14:00:00Z"  # editorial revision v18: powered compute re-reviewed against Alibaba's 6-K
-CONTENT_VERSION = 18
+EVIDENCE_V19_AT = "2026-11-24T13:40:00Z"  # NVIDIA CEO-reinstatement 8-K (filed Nov 23) read for v19
+REVISED_AT = "2026-11-24T14:00:00Z"  # editorial revision v19: powered compute updated for NVIDIA's CEO reinstatement
+CONTENT_VERSION = 19
 
 SOURCES: list[tuple[str, str, str, str, str]] = [
     ("milkroad", "Milk Road", "discovery", "https://milkroad.com/",
@@ -117,6 +118,9 @@ DOCS: dict[str, tuple[str, str, str, str | None, str | None]] = {
     "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000082/nvidiaannouncesceotransiti.htm":
         ("sec_edgar", "NVIDIA Corporation — CEO transition (8-K, Ex. 99.1) filed 2026-11-12",
          "regulatory_filing", "2026-11-12", "2026-11-11"),
+    "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000090/nov23pressrelease.htm":
+        ("sec_edgar", "NVIDIA Corporation — CEO reinstatement (8-K, Ex. 99.1) filed 2026-11-23",
+         "regulatory_filing", "2026-11-23", "2026-11-22"),
     "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000075/nvda-20260726.htm":
         ("sec_edgar", "NVIDIA Corporation — Q2 FY2027 10-Q filed 2026-08-26", "regulatory_filing",
          "2026-08-26", "2026-07-26"),
@@ -169,6 +173,7 @@ WULF_FIN = "https://www.sec.gov/Archives/edgar/data/1083301/000162828026069810/w
 CRWV = "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000461/coreweave3q26earningspress.htm"
 CRWV_Q = "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000465/crwv-20260930.htm"
 NVDA_CEO = "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000082/nvidiaannouncesceotransiti.htm"
+NVDA_CEO2 = "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000090/nov23pressrelease.htm"
 NVDA_Q = "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000075/nvda-20260726.htm"
 NVDA_Q3 = "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000088/q3fy27cfocommentary.htm"
 NBIS = "https://www.sec.gov/Archives/edgar/data/1513845/000110465926126008/tm2629571d1_ex99-1.htm"
@@ -820,7 +825,8 @@ SIGNALS: list[dict[str, Any]] = [
             "Nebius's prepayment coverage and per-MW contract values are company-defined metrics, and its "
             "Microsoft capacity in New Jersey slipped partly to Q2 2027.",
             "CoreWeave's revenue is concentrated: its top two customers were about 54% of Q3 revenue, and its GPU "
-            "supplier NVIDIA is also a $2.0B equity investor, whose CEO resigned on Nov 11.",
+            "supplier NVIDIA is also a $2.0B equity investor; NVIDIA's CEO resigned on Nov 11 and was reinstated "
+            "on Nov 22.",
         ],
         "sector": "AI infrastructure",
         "themes": ["Compute markets", "Power & sites", "Infrastructure finance"],
@@ -910,7 +916,7 @@ SIGNALS: list[dict[str, Any]] = [
             "mid-2028.",
             "CoreWeave stops adding contracted power, or its interest costs force it to slow leasing.",
             "CoreWeave loses or shrinks one of its two largest customers, or NVIDIA reduces its financing of "
-            "capacity buyers under new leadership.",
+            "capacity buyers.",
             "Nebius's prepayment coverage falls back below the capex it funds, or it misses 5 GW contracted by "
             "year-end 2026.",
         ],
@@ -938,7 +944,7 @@ SIGNALS: list[dict[str, Any]] = [
                      "under-used sites.",
         "thesis_sentence": "Powered compute is becoming a sellable product for owners outside the hyperscalers, making "
                            "power-ready sites and capacity financing key constraints.",
-        "evidence_reviewed_at": EVIDENCE_V18_AT,
+        "evidence_reviewed_at": EVIDENCE_V19_AT,
         "analyst_scores": {"relevance": 4, "impact": 3},
         "match": {"anchors": ["gigawatt", "gigawatts", "megawatt", "megawatts", "data center", "data centers",
                               "data centre", "coreweave", "helios", "neocloud", "colocation"],
@@ -981,6 +987,10 @@ SIGNALS: list[dict[str, Any]] = [
              "NVIDIA's CEO resigned on Nov 11, 2026; the CFO is interim CEO while the board searches; the board "
              "says it expects operations, customer commitments and the product roadmap to continue without "
              "interruption; Q3 FY2027 results are due Nov 17."),
+            (NVDA_CEO2, "primary", "context",
+             "On Nov 22, 2026 NVIDIA's board unanimously reinstated the CEO who resigned on Nov 11; the CFO keeps "
+             "that role. An independent board committee's investigation continues, and the board has formed a "
+             "National Security and Export Control Committee."),
             (NVDA_Q3, "primary", "supports",
              "Q3 FY2027 CFO commentary: neoclouds and frontier labs \u201care seeing extraordinary demand for AI "
              "infrastructure\u201d but many are growing faster than their balance sheets can support, so NVIDIA has "
