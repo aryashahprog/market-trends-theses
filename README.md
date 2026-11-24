@@ -34,8 +34,8 @@ Setting `SIGNAL_ATLAS_SCHEDULER_IN_WEB=1` embeds the scheduler in the web proces
 | `SIGNAL_ATLAS_ADMIN_TOKEN` | Enables `POST /api/admin/refresh` (Bearer, ≥24 chars). Unset = disabled |
 | `SEC_USER_AGENT` | Required for SEC EDGAR: `"Name contact@example.org"` per SEC fair-access policy. Unset = SEC source reports failed |
 | `SIGNAL_ATLAS_USER_AGENT` | User-Agent for other public sources |
-| `SIGNAL_ATLAS_REFRESH_COOLDOWN_S` | Minimum seconds between manual refreshes (default 600) |
-| `SIGNAL_ATLAS_STALE_GRACE_MIN` | Minutes after a slot before data is flagged stale (default 90) |
+| `SIGNAL_ATLAS_REFRESH_COOLDOWN_S` | Minimum seconds between manual refreshes (default 600, at least 60; invalid values use the default) |
+| `SIGNAL_ATLAS_STALE_GRACE_MIN` | Minutes after a slot before data is flagged stale (default 90; invalid values use the default) |
 
 Manual refresh is rate-limited and failed-auth attempts lock out after five tries per 15 minutes.
 
