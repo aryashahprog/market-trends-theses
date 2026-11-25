@@ -28,8 +28,9 @@ EVIDENCE_V16_AT = "2026-11-19T13:40:00Z"  # Galaxy Q3 2026 10-Q (Helios commitme
 EVIDENCE_V17_AT = "2026-11-20T13:40:00Z"  # Anthropic final prospectus (424B4, Q3 2026 figures) read for v17
 EVIDENCE_V18_AT = "2026-11-21T13:40:00Z"  # Alibaba Sep-quarter results (6-K) and remote-access rule disclosure read for v18
 EVIDENCE_V19_AT = "2026-11-24T13:40:00Z"  # NVIDIA CEO-reinstatement 8-K (filed Nov 23) read for v19
-REVISED_AT = "2026-11-24T14:00:00Z"  # editorial revision v19: powered compute updated for NVIDIA's CEO reinstatement
-CONTENT_VERSION = 19
+EVIDENCE_V20_AT = "2026-11-25T13:40:00Z"  # Bending Spoons Q3 2026 results (6-K, Ex. 99.1) read for v20
+REVISED_AT = "2026-11-25T14:00:00Z"  # editorial revision v20: GPU-rent thesis re-reviewed against Bending Spoons' 6-K
+CONTENT_VERSION = 20
 
 SOURCES: list[tuple[str, str, str, str, str]] = [
     ("milkroad", "Milk Road", "discovery", "https://milkroad.com/",
@@ -121,6 +122,9 @@ DOCS: dict[str, tuple[str, str, str, str | None, str | None]] = {
     "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000090/nov23pressrelease.htm":
         ("sec_edgar", "NVIDIA Corporation — CEO reinstatement (8-K, Ex. 99.1) filed 2026-11-23",
          "regulatory_filing", "2026-11-23", "2026-11-22"),
+    "https://www.sec.gov/Archives/edgar/data/2004711/000200471126000027/bsp_ex99-1.htm":
+        ("sec_edgar", "Bending Spoons S.p.A. — Q3 2026 results (6-K, Ex. 99.1) filed 2026-11-19",
+         "regulatory_filing", "2026-11-19", "2026-09-30"),
     "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000075/nvda-20260726.htm":
         ("sec_edgar", "NVIDIA Corporation — Q2 FY2027 10-Q filed 2026-08-26", "regulatory_filing",
          "2026-08-26", "2026-07-26"),
@@ -174,6 +178,7 @@ CRWV = "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000461/corew
 CRWV_Q = "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000465/crwv-20260930.htm"
 NVDA_CEO = "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000082/nvidiaannouncesceotransiti.htm"
 NVDA_CEO2 = "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000090/nov23pressrelease.htm"
+BSP = "https://www.sec.gov/Archives/edgar/data/2004711/000200471126000027/bsp_ex99-1.htm"
 NVDA_Q = "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000075/nvda-20260726.htm"
 NVDA_Q3 = "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000088/q3fy27cfocommentary.htm"
 NBIS = "https://www.sec.gov/Archives/edgar/data/1513845/000110465926126008/tm2629571d1_ex99-1.htm"
@@ -209,6 +214,8 @@ SIGNALS: list[dict[str, Any]] = [
             "9.9% in a week, so this does not show that all compute is getting scarcer.",
             "A margin squeeze for AI software companies is an inference. It has not been shown with comparable unit "
             "economics.",
+            "Bending Spoons' cost per pull request is one company's internal metric for its own engineering work, "
+            "not a market price.",
         ],
         "sector": "AI infrastructure",
         "themes": ["Compute economics", "Inference efficiency", "Compute markets"],
@@ -224,6 +231,8 @@ SIGNALS: list[dict[str, Any]] = [
             "Ramp: blended OpenAI/Anthropic price per million tokens $0.76 → $0.56 (−26.8%), weeks ending Sep 25 → "
             "Oct 23. Token volume +37.1%; token spend +8.9%.",
             "Anthropic's S-1 says newer models cut customer cost per task by roughly 25–40%.",
+            "Bending Spoons runs most AI tasks on self-hosted open-weight models and says inference cost per pull "
+            "request roughly halved in 2026.",
         ],
         "why_now": "Buyers appear to be renting older capacity rather than waiting for newer supply, while model "
                    "vendors keep lowering the cost of a unit of output. Both moves are recent; the rental indices "
@@ -296,7 +305,7 @@ SIGNALS: list[dict[str, Any]] = [
         "thesis_sentence": "Rental prices for older and mid-generation GPUs are rising while blended token prices "
                            "fall, so the cost of AI work increasingly depends on how much useful work each GPU-hour "
                            "produces.",
-        "evidence_reviewed_at": VERIFIED_AT,
+        "evidence_reviewed_at": EVIDENCE_V20_AT,
         "analyst_scores": {"relevance": 5, "impact": 4},
         "match": {"anchors": ["gpu", "gpus", "h100", "a100", "h200", "b200", "b300", "neocloud", "coreweave", "nebius",
                               "gpu rental", "compute prices"],
@@ -322,6 +331,14 @@ SIGNALS: list[dict[str, Any]] = [
             (S1, "primary", "supports",
              "Issuer states newer models cut customer cost per task: ~40% (Opus 5.5 vs Opus 5) and ~25% for typical "
              "workloads (Fable 5.1), up to 45% for complex agentic coding."),
+            (BSP, "primary", "supports",
+             "Q3 2026 results: an in-house harness picks a model per task, using self-hosted open-weight models for "
+             "most tasks and closed-weight models for the hardest ones. Since the start of 2026, pull requests per "
+             "engineer rose more than fourfold while inference cost per pull request fell roughly half."),
+            (BSP, "primary", "challenges",
+             "The same filing says inference cost per pull request is down over 90% from its mid-year peak, which "
+             "implies that peak was at least about five times the start-of-year level (derived): cost per task can "
+             "swing widely within a year, even at one company."),
             (SD, "corroborated", "context",
              "Silicon Data's public page listed H100 rental at $2.97/hr, B200 $6.70/hr, B300 $7.56/hr and its LLM "
              "token index at $0.86 on Nov 5, 2026."),
