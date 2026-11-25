@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
+      url: ${{ steps.deploy.outputs.page_url || steps.deploy_retry.outputs.page_url }}
     env:
       SIGNAL_ATLAS_DATA_DIR: data
     steps:
@@ -69,6 +69,16 @@ jobs:
         if: steps.due.outputs.due == 'true' || github.event_name == 'push'
         with:
           path: site
+      # deploy-pages sometimes fails transiently right after the upload ("No artifacts named github-pages").
+      # The database is already saved by then, so the slot no longer counts as due and nothing would redeploy
+      # until the next slot: retry once here instead.
       - id: deploy
         if: steps.due.outputs.due == 'true' || github.event_name == 'push'
+        continue-on-error: true
+        uses: actions/deploy-pages@v4
+      - name: Wait before retrying the Pages deploy
+        if: steps.deploy.outcome == 'failure'
+        run: sleep 60
+      - id: deploy_retry
+        if: steps.deploy.outcome == 'failure'
         uses: actions/deploy-pages@v4

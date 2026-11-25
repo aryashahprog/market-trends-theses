@@ -47,3 +47,14 @@ def test_every_slot_gets_prompt_and_repeated_attempts_in_edt_and_est():
 
 def test_attempts_avoid_the_congested_top_of_the_hour():
     assert all(m not in (0, 1, 2, 3, 4, 5) for _, m in attempts_utc())
+
+
+def test_pages_deploy_is_retried_once_after_a_transient_failure():
+    text = WORKFLOW.read_text()
+    first = re.search(r"- id: deploy\n((?:        .*\n)+)", text)
+    retry = re.search(r"- id: deploy_retry\n((?:        .*\n)+)", text)
+    assert first and retry
+    assert "continue-on-error: true" in first.group(1)
+    assert "if: steps.deploy.outcome == 'failure'" in retry.group(1) and "deploy-pages" in retry.group(1)
+    assert "continue-on-error" not in retry.group(1)  # a second failure still fails the run
+    assert "steps.deploy_retry.outputs.page_url" in text
