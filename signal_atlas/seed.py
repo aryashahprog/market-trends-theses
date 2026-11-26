@@ -29,8 +29,9 @@ EVIDENCE_V17_AT = "2026-11-20T13:40:00Z"  # Anthropic final prospectus (424B4, Q
 EVIDENCE_V18_AT = "2026-11-21T13:40:00Z"  # Alibaba Sep-quarter results (6-K) and remote-access rule disclosure read for v18
 EVIDENCE_V19_AT = "2026-11-24T13:40:00Z"  # NVIDIA CEO-reinstatement 8-K (filed Nov 23) read for v19
 EVIDENCE_V20_AT = "2026-11-25T13:40:00Z"  # Bending Spoons Q3 2026 results (6-K, Ex. 99.1) read for v20
-REVISED_AT = "2026-11-25T14:00:00Z"  # editorial revision v20: GPU-rent thesis re-reviewed against Bending Spoons' 6-K
-CONTENT_VERSION = 20
+EVIDENCE_V21_AT = "2026-11-26T13:40:00Z"  # Anthropic IPO-closing 8-K (filed Nov 25) read for v21
+REVISED_AT = "2026-11-26T14:00:00Z"  # editorial revision v21: enterprise AI spend thesis re-reviewed against Anthropic's IPO-closing 8-K
+CONTENT_VERSION = 21
 
 SOURCES: list[tuple[str, str, str, str, str]] = [
     ("milkroad", "Milk Road", "discovery", "https://milkroad.com/",
@@ -77,6 +78,9 @@ DOCS: dict[str, tuple[str, str, str, str | None, str | None]] = {
     "https://www.sec.gov/Archives/edgar/data/2130357/000162828026074944/anthropicpbc-424b4.htm":
         ("sec_edgar", "Anthropic, PBC — final prospectus (424B4) filed 2026-11-19", "regulatory_filing",
          "2026-11-19", "2026-09-30"),
+    "https://www.sec.gov/Archives/edgar/data/2130357/000162828026075973/ant-20261119.htm":
+        ("sec_edgar", "Anthropic, PBC — IPO closing and concurrent private placement (8-K) filed 2026-11-25",
+         "regulatory_filing", "2026-11-25", "2026-11-20"),
     "https://www.sec.gov/Archives/edgar/data/1404655/000119312526447363/hubs-20260930.htm":
         ("sec_edgar", "HubSpot, Inc. — 10-Q filed 2026-11-04", "regulatory_filing", "2026-11-04", "2026-09-30"),
     "https://www.sec.gov/Archives/edgar/data/1297989/000129798926000031/exls-20260930.htm":
@@ -161,6 +165,7 @@ SD = "https://www.silicondata.com/products/silicon-index"
 RAMP = "https://ramp.com/data/ai-index"
 S1 = "https://www.sec.gov/Archives/edgar/data/2130357/000162828026067168/anthropicpbc-sx1.htm"
 ANT_P = "https://www.sec.gov/Archives/edgar/data/2130357/000162828026074944/anthropicpbc-424b4.htm"
+ANT_8K = "https://www.sec.gov/Archives/edgar/data/2130357/000162828026075973/ant-20261119.htm"
 HUBS = "https://www.sec.gov/Archives/edgar/data/1404655/000119312526447363/hubs-20260930.htm"
 EXLS = "https://www.sec.gov/Archives/edgar/data/1297989/000129798926000031/exls-20260930.htm"
 INTC = "https://www.sec.gov/Archives/edgar/data/50863/000005086326000191/intc-20260926.htm"
@@ -468,7 +473,7 @@ SIGNALS: list[dict[str, Any]] = [
                      "would point to pilot churn rather than compounding deployment.",
         "thesis_sentence": "Enterprise AI revenue is deepening inside existing customers, creating a fast-growing "
                            "budget line that needs governance, attribution and industry-specific products.",
-        "evidence_reviewed_at": EVIDENCE_V17_AT,
+        "evidence_reviewed_at": EVIDENCE_V21_AT,
         "analyst_scores": {"relevance": 5, "impact": 4},
         "match": {"anchors": ["anthropic", "openai", "enterprise ai", "ai spend", "ai spending", "ai adoption",
                               "ai budget", "ai budgets", "copilot", "net revenue retention"],
@@ -512,6 +517,11 @@ SIGNALS: list[dict[str, Any]] = [
             (ANT_P, "primary", "challenges",
              "Q3 2026 operating loss of $567M; the top five customers were about 25% of nine-month revenue, and about "
              "44% came through cloud-provider marketplaces."),
+            (ANT_8K, "primary", "challenges",
+             "IPO closing 8-K: the IPO and a concurrent private placement raised about $119.5B gross. The placement, "
+             "about $26.0B at the $83.00 IPO price, was bought by AMD, Broadcom, Google, Micron, Microsoft, NVIDIA "
+             "and TSMC, all chip, memory or cloud companies. Part of the money behind its compute commitments comes "
+             "from the industry it buys compute from (analyst inference)."),
         ],
     },
     {
