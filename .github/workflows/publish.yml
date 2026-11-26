@@ -53,7 +53,14 @@ jobs:
           SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
         run: |
           python -m signal_atlas.cli ingest > ingest.json
-          python -c "import json; r=json.load(open('ingest.json')); print(r['status'], [(s['source'], s['status'], s['error']) for s in r['sources']])"
+          python - <<'PY'
+          import json
+          with open("ingest.json") as f:
+              run = json.load(f)
+          print(run["status"], [(s["source"], s["status"], s["error"]) for s in run["sources"]])
+          if any(s["source"] == "sec_edgar" and "SEC_USER_AGENT" in (s["error"] or "") for s in run["sources"]):
+              print("::warning title=SEC EDGAR not configured::Set the SEC_USER_AGENT Actions secret to a project name and contact email.")
+          PY
       - name: Save database to the data branch
         if: steps.due.outputs.due == 'true' || github.event_name == 'push'
         run: |

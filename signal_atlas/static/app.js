@@ -1,4 +1,4 @@
-"use strict";
+import { count, evidenceLabel, sourceCount, staticSchedule } from "./edition.mjs";
 (() => {
   const $ = (s, r = document) => r.querySelector(s);
   const TZ = "America/New_York";
@@ -7,16 +7,14 @@
   const TYPE = { regulatory_filing: "Filing", podcast: "Podcast", newsletter_analysis: "Newsletter", news_brief: "News brief",
     news_headline: "Headline", pricing_dataset: "Pricing dataset", adoption_dataset: "Adoption dataset" };
   const STATIC = document.documentElement.dataset.mode === "static";
-  const safeId = (s) => s.replace(/[^A-Za-z0-9_-]/g, "_");
   function staticPath(p) {
     const u = new URL(p, "http://x"), path = u.pathname;
     if (path === "/api/edition") return `api/edition/${u.searchParams.get("date") || "latest"}.json`;
-    if (path.startsWith("/api/series/")) return `api/series/${safeId(decodeURIComponent(path.slice(12)))}.json`;
     if (path === "/api/leads") return "api/leads.json";
     return `${path.slice(1)}.json`;
   }
   const state = { editions: [], edition: null, status: null, leads: [], q: "", sector: null, aud: null, conf: null, active: 0,
-    openId: null, lastFocus: null, seriesCache: new Map() };
+    openId: null, lastFocus: null };
 
   function h(tag, attrs, ...kids) {
     const el = document.createElement(tag);
@@ -61,20 +59,14 @@
     sig.is_new_in_edition ? [" ", h("span", { class: "tag tag--new" }, "New")] : null);
 
   // ---------- chart (only from sourced series) ----------
-  async function loadSeries(ids) {
-    const out = [];
-    for (const id of ids) {
-      if (!state.seriesCache.has(id)) state.seriesCache.set(id, api(`/api/series/${encodeURIComponent(id)}`).catch(() => null));
-      const s = await state.seriesCache.get(id);
-      if (s && s.points.length >= 2) out.push(s);
-    }
-    return out;
+  function editionSeries(ids) {
+    return ids.map((id) => state.edition.chart_series?.[id]).filter((s) => s?.points.length >= 2);
   }
-  async function chart(sig, host) {
+  function chart(sig, host) {
     if (!sig.chart) return;
-    const series = await loadSeries(sig.chart.series);
+    const series = editionSeries(sig.chart.series);
     if (!series.length) {
-      host.append(h("p", { class: "chart-empty" }, "Chart appears once its source series has been ingested. Nothing is drawn without retrieved data."));
+      host.append(h("p", { class: "chart-empty" }, "No chart was captured for this edition. Newer data is not substituted for archived evidence."));
       return;
     }
     const W = 640, H = 240, P = { l: 40, r: 56, t: 12, b: 26 };
@@ -113,7 +105,7 @@
     host.append(h("figure", { class: "chart" }, h("p", { class: "chart-insight" }, insight), root,
       h("div", { class: "legend" }, series.map((s, i) => { const sw = h("i"); sw.style.background = COLORS[i % COLORS.length];
         return h("span", {}, sw, `${s.label.replace(/ on-demand index$| GPU index \(composite\)$/, "").replace(/^Price of Compute$/, "Composite")} ${s.points.at(-1).value.toFixed(1)}`); })),
-      h("figcaption", {}, `Index, ${fmtDay(days[0])} = 100 · daily to ${fmtDay(days.at(-1))} · Source: `,
+      h("figcaption", {}, `Edition snapshot · Index, ${fmtDay(days[0])} = 100 · Data through ${fmtDay(spec.asof)} · Source: `,
         h("a", { href: src.source_url, target: "_blank", rel: "noopener noreferrer" }, src.attribution), "."), toolbar(spec)));
   }
 
@@ -242,35 +234,42 @@
       h("ul", {}, a.map((x) => h("li", { class: `aud__i aud__i--${x.role}`, title: ROLE[x.role] }, x.segment,
         h("span", { class: "sr-only" }, ` (${ROLE[x.role]})`)))));
   }
-  function stamps(s, compact) {
+  function stamps(s) {
     const rows = [];
-    if (state.status?.last_success_at) rows.push(["Data fetched", rel(state.status.last_success_at), fmtDT(state.status.last_success_at)]);
+    if (state.edition.snapshot_created_at) rows.push(["Edition captured", fmtDT(state.edition.snapshot_created_at), fmtDT(state.edition.snapshot_created_at)]);
     if (s.evidence_reviewed_at) rows.push(["Evidence reviewed", fmtDT(s.evidence_reviewed_at), fmtDT(s.evidence_reviewed_at)]);
     if (s.updated_at) rows.push(["Thesis revised", fmtDT(s.updated_at), fmtDT(s.updated_at)]);
-    return h("dl", { class: "stamps" + (compact ? " stamps--compact" : "") },
+    return h("dl", { class: "stamps" },
       rows.map(([k, v, t]) => h("div", {}, h("dt", {}, k), h("dd", { title: t }, v))));
   }
 
   function renderHero() {
     const ed = state.edition, latest = state.editions[0]?.edition_date, note = ed.note;
     const today = new Intl.DateTimeFormat("en-CA", { timeZone: TZ }).format(new Date());
-    $("#editionLabel").textContent = ed.edition_date !== latest ? "Archived edition" : ed.edition_date === today ? "Today's edition" : "Latest edition";
+    const label = ed.edition_date !== latest ? "Archive" : ed.edition_date === today ? "Today’s edition" : "Latest edition";
+    $("#editionLabel").textContent = `${label} · ${fmtDay(ed.edition_date)}`;
     $("#dateline").textContent = fmtLong(ed.edition_date) + (ed.edition_date !== latest ? " · archive" : "");
     $("#heroHeadline").textContent = note.headline;
     $("#heroSummary").textContent = note.summary || ""; $("#heroSummary").hidden = !note.summary;
+    const takeaways = (note.takeaways || []).slice(0, 3);
+    $("#quickRead").hidden = !takeaways.length;
+    $("#quickList").replaceChildren(...takeaways.map((t) => h("li", {}, t)));
     $("#exportLink").href = `${STATIC ? "" : "/"}api/export/${ed.edition_date}.md`;
     $("#exportLink").download = `market-trends-theses-${ed.edition_date}.md`;
     document.title = `Market Trends → Theses — Edition ${fmtDay(ed.edition_date)}`;
     const top = ed.signals[0], lead = $("#leadSignal"); lead.replaceChildren();
     if (!top) return;
     const vis = h("div", { class: "lead__visual" });
-    lead.append(h("div", { class: "lead__text" }, kicker(top),
+    lead.append(h("div", { class: "lead__text" }, h("p", { class: "lead__flag" }, "Lead thesis"), kicker(top),
       h("h2", {}, h("button", { type: "button", onclick: () => openSignal(top.id) }, top.title)),
+      h("p", { class: "lead__facts" }, [reviewed(top), evidenceLabel(top)].filter(Boolean).join("  /  ")),
       briefList(top), where(top),
-      h("p", { class: "lead__more" }, h("button", { class: "link-btn", type: "button", onclick: () => openSignal(top.id) }, "See the evidence →"))), vis);
+      h("p", { class: "lead__more" }, h("button", { class: "btn", type: "button", onclick: () => openSignal(top.id) }, "Read the thesis →"))), vis);
     primaryVisual(top, vis);
+    if (top.chart && !editionSeries(top.chart.series).length) vis.append(evBalance(top, true));
   }
   const briefList = (s, cls = "brief") => h("ul", { class: cls }, (s.brief?.length ? s.brief : [s.dek]).map((b) => h("li", {}, b)));
+  const reviewed = (s) => s.evidence_reviewed_at ? `Evidence reviewed ${fmtDay(s.evidence_reviewed_at)}` : null;
   const investigate = (s) => (s.implications?.[0]?.investigate || "").replace(/\s*\((categories|category)\)$/, "");
   const where = (s) => investigate(s) ? h("p", { class: "where" }, h("span", {}, "Where to look"), investigate(s)) : null;
   function evCounts(s) {
@@ -283,10 +282,10 @@
     const seg = (k, label) => c[k] ? h("i", { class: `evb__${k}`, style: `flex:${c[k]}`, title: `${c[k]} ${label}` }) : null;
     return h("figure", { class: "evb" + (big ? " evb--big" : "") },
       big ? h("p", { class: "chart-title" }, "Evidence balance") : null,
-      h("div", { class: "evb__bar", role: "img", "aria-label": `${c.supports} supporting, ${c.context} context, ${c.challenges} challenging; ${c.primary} of ${n} from primary sources` },
+      h("div", { class: "evb__bar", role: "img", "aria-label": `${c.supports} supporting, ${c.context} context, ${c.challenges} challenging; ${c.primary} of ${n} claims from primary sources` },
         seg("supports", "supporting"), seg("context", "context"), seg("challenges", "challenging")),
       h("figcaption", {}, h("span", { class: "k k--s" }, `${c.supports} for`), h("span", { class: "k k--c" }, `${c.context} context`),
-        h("span", { class: "k k--x" }, `${c.challenges} against`), h("span", {}, `${c.primary} of ${n} primary sources`)));
+        h("span", { class: "k k--x" }, `${c.challenges} against`), h("span", {}, `${count(c.primary, "primary claim")} · ${count(sourceCount(s.evidence), "source")}`)));
   }
   const figNum = (b) => `${Number(b.value).toLocaleString("en-US")}${b.note === "more than" ? "+" : ""}`;
   function miniFigure(f) {
@@ -295,8 +294,8 @@
       h("div", { class: "mini__bars", "aria-hidden": "true" }, [a, b].map((x, i) => h("i", { class: i ? "on" : "", style: `width:${Math.max(4, (100 * x.value) / max).toFixed(1)}%` }))),
       h("figcaption", {}, `${f.title} · ${a.label} → ${b.label}`));
   }
-  async function miniSeries(s, host) {
-    const [ser] = await loadSeries(s.chart.series.slice(0, 1)); if (!ser) { host.append(evBalance(s)); return; }
+  function miniSeries(s, host) {
+    const [ser] = editionSeries(s.chart.series.slice(0, 1)); if (!ser) { host.append(evBalance(s)); return; }
     const pts = ser.points, W = 300, H = 56, vs = pts.map((p) => p.value), lo = Math.min(...vs), hi = Math.max(...vs);
     const x = (i) => (i / (pts.length - 1)) * W, y = (v) => H - 4 - ((v - lo) / (hi - lo || 1)) * (H - 8);
     const root = svg("svg", { viewBox: `0 0 ${W} ${H}`, class: "spark", "aria-hidden": "true" });
@@ -347,9 +346,11 @@
     $("#feedEmpty").hidden = items.length > 0;
     items.forEach((s, i) => {
       const open = h("button", { class: "item__open", type: "button", "data-id": s.id, onclick: () => openSignal(s.id) },
+        h("span", { class: "card__flag", "aria-hidden": "true" },
+        h("span", { class: "card__rank" }, String(s.rank).padStart(2, "0")), h("span", { class: "card__arrow" }, "↗")),
         kicker(s), h("h3", {}, s.title));
       const li = h("li", { class: "item card" }, open, miniVisual(s), where(s),
-        h("p", { class: "card__meta" }, confLine(s), h("span", {}, `${s.evidence.length} sources`)));
+        h("p", { class: "card__meta" }, confLine(s), h("span", {}, evidenceLabel(s))));
       li.style.animationDelay = `${Math.min(i, 8) * 40}ms`;
       list.append(li);
     });
@@ -394,37 +395,38 @@
       ...Object.entries(r.components).map(([k, v]) => h("li", {}, h("strong", {}, `${k[0].toUpperCase() + k.slice(1)} (${Math.round(r.weights[k] * 100)}%). `), v)));
     $("#sourceList").replaceChildren(...(state.status?.sources || []).map((s) => h("li", {}, h("strong", {}, s.name), ` — ${s.kind}. ${s.access_note || ""}`)));
   }
+  function goPipeline() {
+    location.hash = "#/about";
+    setTimeout(() => $("#pipeline").scrollIntoView(), 50);
+  }
   function renderStatus() {
     const s = state.status; if (!s) return;
-    if (STATIC) {  // status.json is frozen at build time: re-derive the overdue and next slots from the clock
-      const now = Date.now(), grace = (s.stale_grace_minutes || 90) * 60000;
-      const slots = (s.slots || [s.next_scheduled]).map((x) => d(x).getTime());
-      const overdue = slots.filter((t) => t + grace < now);
-      s.stale = !!s.last_success_at && overdue.length > 0;
-      if (overdue.length) s.previous_slot = new Date(overdue.at(-1)).toISOString();
-      const next = slots.find((t) => t > now);
-      s.next_scheduled = next ? new Date(next).toISOString() : null;
-    }
-    const rs = s.refresh_summary, issues = (rs?.issues || []).filter((x) => !/^not configured/.test(x.reason || "")), partial = issues.length > 0;
+    const { due, next } = STATIC ? staticSchedule(s, Date.now()) : { due: s.due_slot, next: s.next_scheduled };
+    const rs = s.refresh_summary, issues = rs?.issues || [], partial = issues.length > 0;
     const pill = $("#statusPill"), never = !s.last_success_at;
-    pill.dataset.state = s.running ? "running" : never ? "never" : s.stale ? "stale" : partial ? "partial" : "fresh";
-    $("#statusText").textContent = s.running ? "Refreshing data…" : never ? "No data refresh yet"
-      : `${s.stale ? "Stale · " : ""}Updated ${rel(s.last_success_at)}`;
-    pill.title = partial ? `Some sources didn't update: ${issues.map((x) => x.source).join(", ")}` : "Data sources";
-    $("#pipelineSummary").textContent = partial ? `Some sources didn't update on ${fmtDT(rs.finished_at)}: ${issues.map((x) => x.source).join(", ")}.` : "";
+    const stale = !never && d(s.last_success_at) < d(due);
+    const coverage = rs ? `${rs.ok}/${rs.total} sources` : "";
+    const coverageDetail = rs ? `${rs.ok} of ${rs.total} sources fully updated` : "";
+    pill.dataset.state = s.running ? "running" : never ? "never" : stale ? "stale" : partial ? "partial" : "fresh";
+    $("#statusText").textContent = [s.running ? "Refreshing" : never ? "No fetch yet" : stale ? "Refresh overdue" : `Fetched ${rel(s.last_success_at)}`, coverage]
+      .filter(Boolean).join(" · ");
+    const issueText = issues.map((x) => `${x.source} — ${x.reason}`).join("; ");
+    $("#pipelineSummary").textContent = partial ? `${coverageDetail} in the latest run: ${issueText}.` : "";
     const b = $("#staleBanner");
-    b.classList.toggle("banner--info", !(never || s.stale) && partial);
-    if (never || s.stale) {
-      b.hidden = false;
-      b.replaceChildren(h("div", { class: "wrap" }, h("strong", {}, never ? "No data refresh has completed yet." : "Data may be stale."),
-        h("span", {}, never ? "Showing the reviewed first edition only." : `Last successful data fetch ${fmtDT(s.last_success_at)}; the ${fmtDT(s.previous_slot)} scheduled refresh has not completed. Published theses are preserved.`)));
-    } else b.hidden = true;
+    b.hidden = !(never || stale || partial);
+    b.classList.toggle("banner--info", !(never || stale) && partial);
+    const bannerLabel = never ? "No data fetch yet" : stale ? "Refresh overdue" : "Partial source coverage";
+    const secMissing = issues.some((x) => x.source.startsWith("SEC EDGAR") && x.reason.startsWith("not configured"));
+    const bannerDetail = [never ? "Showing reviewed research only." : stale ? `Missed ${fmtDT(due)}. Last fetched ${fmtDT(s.last_success_at)}.` : "",
+      partial ? `Latest run: ${coverage} updated.` : "", secMissing ? "SEC EDGAR is not configured." : ""].filter(Boolean).join(" ");
+    if ($("#bannerLabel").textContent !== bannerLabel) $("#bannerLabel").textContent = bannerLabel;
+    if ($("#bannerDetail").textContent !== bannerDetail) $("#bannerDetail").textContent = bannerDetail;
     const sch = s.scheduler, lr = s.last_run;
-    const kv = [["Schedule", s.schedule], ["Next scheduled", fmtDT(s.next_scheduled)],
+    const kv = [["Schedule", s.schedule], ["Next scheduled", fmtDT(next)],
       ["Data last fetched", s.last_success_at ? `${fmtDT(s.last_success_at)} (${rel(s.last_success_at)})` : "none yet"],
-      ["Latest refresh", rs ? `${partial ? "partial" : "complete"} · ${rs.ok} of ${rs.total - ((rs.issues || []).length - issues.length)} sources updated` : lr ? lr.status : "none"],
+      ["Latest refresh", rs ? `${rs.status === "failed" ? "failed" : partial ? "partial" : "complete"} · ${coverageDetail}` : lr ? lr.status : "none"],
       ["Scheduler", STATIC ? "GitHub Actions workflow · 08:00 & 16:00 ET" : sch.alive ? `running · heartbeat ${rel(sch.heartbeat_at)}` : sch.heartbeat_at ? `not responding · last heartbeat ${rel(sch.heartbeat_at)}` : "not detected"],
-      ["Freshness", s.stale ? "stale" : "current"],
+      ["Freshness", never ? "No data fetch yet" : stale ? "Refresh overdue" : "Current"],
       ["Archive", `${s.counts.snapshots} snapshots · ${s.counts.documents} documents · ${s.counts.clusters} story clusters`],
       ["Manual refresh", STATIC ? "maintainers only (workflow dispatch)" : s.manual_refresh_enabled ? "enabled (token required)" : "disabled on this server"]];
     $("#pipelineKv").replaceChildren(...kv.flatMap(([k, v]) => [h("dt", {}, k),
@@ -432,7 +434,7 @@
     $("#sourceRows").replaceChildren(...s.sources.map((x) => h("tr", {},
       h("td", {}, h("a", { href: x.homepage, target: "_blank", rel: "noopener noreferrer" }, x.name)),
       h("td", {}, x.kind), h("td", {}, x.last_success_at ? rel(x.last_success_at) : "—"),
-      /^not configured/.test(x.plain_error || "") ? h("td", {}, h("span", { class: "badge badge--none" }, "off"), h("span", { class: "err err--quiet" }, "Not set up yet")) :
+      /^not configured/.test(x.plain_error || "") ? h("td", {}, h("span", { class: "badge badge--none" }, "Not configured"), h("span", { class: "err err--quiet" }, "EDGAR requires a contact email.")) :
       h("td", {}, h("span", { class: `badge badge--${x.last_status || "none"}` }, x.last_status || "not run"),
         x.plain_error ? h("span", { class: "err" }, x.plain_error) : null,
         x.plain_error && x.last_error ? h("details", { class: "diag" }, h("summary", {}, "Technical detail"), h("code", {}, x.last_error)) : null))));
@@ -493,8 +495,8 @@
       h("div", { class: "d-head" },
         h("div", { class: "d-head__top" }, h("button", { class: "d-back", type: "button", "data-close": "" }, "← All theses")),
         kicker(s),
-        h("p", { class: "d-label" }, "The thesis"), h("h2", { id: "dTitle" }, s.title),
-        h("div", { class: "meta" }, confLine(s), h("span", {}, `Updated ${fmtDay(s.updated_at)}`))),
+        h("p", { class: "d-label" }, `The thesis · ${fmtDay(state.edition.edition_date)} edition`), h("h2", { id: "dTitle" }, s.title),
+        h("div", { class: "meta" }, confLine(s), h("span", {}, reviewed(s)), h("span", {}, evidenceLabel(s)))),
       h("div", { class: "d-body" },
         h("section", { class: "d-brief", "aria-labelledby": "pBrief" }, h("h3", { id: "pBrief" }, "Why we think so"), briefList(s, "brief brief--big")),
         vis,
@@ -564,6 +566,7 @@
     if (about) { closeSignal(true); if (!state.edition) await loadEdition(); window.scrollTo(0, 0); return; }
     const [, date, id] = (location.hash.match(/^#\/(\d{4}-\d{2}-\d{2})?\/?([\w-]+)?/) || []);
     if (!state.edition || (date && date !== state.edition.edition_date)) {
+      closeSignal(true);
       try { await loadEdition(date); } catch { await loadEdition(); }
     }
     if (id && id !== state.openId) openSignal(id, false); else if (!id) closeSignal();
@@ -575,7 +578,8 @@
     if (e.target.closest("[data-close]")) closeSignal();
     if (e.target.closest('a[href="#wire"]')) $("#wireDetails").open = true;
   });
-  $("#statusPill").addEventListener("click", () => { location.hash = "#/about"; setTimeout(() => $("#pipeline").scrollIntoView(), 50); });
+  $("#statusPill").addEventListener("click", goPipeline);
+  $("#bannerLink").addEventListener("click", goPipeline);
   $("#filterToggle").addEventListener("click", (e) => { const p = $("#filterPanel"); p.hidden = !p.hidden; e.currentTarget.setAttribute("aria-expanded", String(!p.hidden)); });
   $("#clearFilters").addEventListener("click", () => { state.sector = state.aud = state.conf = null; state.q = ""; $("#search").value = ""; renderControls(); renderFeed(); });
   $("#editionSelect").addEventListener("change", (e) => goEdition(e.target.value));
@@ -623,7 +627,7 @@
   });
   async function refreshAll() {
     state.editions = await api("/api/editions"); state.leads = await api("/api/leads?days=3&limit=120").catch(() => []);
-    state.seriesCache.clear(); await loadStatus(); await loadEdition(state.edition?.edition_date === state.editions[1]?.edition_date ? state.edition.edition_date : undefined);
+    await loadStatus(); await loadEdition(state.edition?.edition_date === state.editions[1]?.edition_date ? state.edition.edition_date : undefined);
   }
 
   (async () => {

@@ -9,7 +9,7 @@
 <link rel="preload" href="/static/fonts/newsreader.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/static/styles.css">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2324262A'/%3E%3Cpath d='M7 22 13 14l5 5 7-10' stroke='%235FB3AA' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
-<script src="/static/app.js" defer></script>
+<script src="/static/app.js" type="module"></script>
 </head>
 <body>
 <a class="skip" href="#feed">Skip to theses</a>
@@ -20,7 +20,7 @@
       <svg class="brand__mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M5 23 12 14l6 6 9-12" /></svg>
       <span>Market Trends → Theses</span>
     </a>
-    <button class="status-pill" id="statusPill" type="button" aria-describedby="statusText">
+    <button class="status-pill" id="statusPill" type="button" title="View source health">
       <span class="dot" aria-hidden="true"></span><span id="statusText">Loading status…</span>
     </button>
   </div>
@@ -29,14 +29,25 @@
     <span class="tabs__links"><a href="#wire">Wire</a><a href="#/about">Method</a></span>
   </nav>
 </header>
-<div id="staleBanner" class="banner" role="status" hidden></div>
+<div id="staleBanner" class="banner" hidden>
+  <div class="wrap banner__row">
+    <div class="banner__message" role="status"><strong id="bannerLabel"></strong><span id="bannerDetail"></span></div>
+    <button type="button" class="link-btn banner__link" id="bannerLink">Source health →</button>
+  </div>
+</div>
 <main id="main">
   <section class="wrap front" aria-labelledby="heroHeadline">
-    <header class="front__head">
-      <p class="eyebrow" id="editionLabel">Edition</p>
-      <h1 id="heroHeadline" class="front__headline">Loading edition…</h1>
-      <p id="heroSummary" class="front__summary"></p>
-    </header>
+    <div class="front__head">
+      <header class="front__intro">
+        <p class="eyebrow edition-stamp" id="editionLabel">Edition</p>
+        <h1 id="heroHeadline" class="front__headline">Loading edition…</h1>
+        <p id="heroSummary" class="front__summary"></p>
+      </header>
+      <section class="front__read" id="quickRead" aria-labelledby="quickTitle" hidden>
+        <h2 id="quickTitle">The quick read</h2>
+        <ol class="quick-list" id="quickList"></ol>
+      </section>
+    </div>
     <article class="lead" id="leadSignal" aria-label="Top-ranked thesis"></article>
   </section>
 
@@ -93,6 +104,7 @@
           <dt><span class="claim claim--reported">Reported</span></dt><dd>A claim made by a newsletter, podcast or article that has not been independently verified.</dd>
           <dt><span class="claim claim--inference">Analyst inference</span></dt><dd>Editorial reasoning: why now, who it matters to, business implications. Labelled wherever it appears.</dd>
         </dl>
+        <p class="hint">One source document can support several claims. Source totals count distinct documents, not claims.</p>
         <h3 class="method__sub">Three different timestamps</h3>
         <dl class="defs">
           <dt><strong>Data fetched</strong></dt><dd>When the sources were last retrieved.</dd>
