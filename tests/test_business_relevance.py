@@ -84,7 +84,7 @@ def test_sync_content_revises_without_rewriting_archived_snapshots(tmp_path):
         assert conn.execute("SELECT payload FROM edition_snapshots WHERE id=?", (r["id"],)).fetchone()[0] == r["payload"]
     new = latest_snapshot(conn, "2026-11-07")
     gpu = next(x for x in new["signals"] if x["id"] == old["id"])
-    assert gpu["title"] == old["title"] and gpu["evidence_reviewed_at"] == "2026-11-05T15:45:00Z"
+    assert gpu["title"] == old["title"] and gpu["evidence_reviewed_at"] == old["evidence_reviewed_at"]
     assert gpu["since_last"]["revised"][0]["from"] == "Old headline"
     assert sync_content(conn) == 0  # idempotent
 
